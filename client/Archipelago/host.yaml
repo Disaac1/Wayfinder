@@ -1,0 +1,7 @@
+
+pokemon_emerald_options:
+  rom_file: ""
+
+bizhawkclient_options:
+  emuhawk_path: "C:/Users/disaa/AppData/Roaming/Godot/app_userdata/Wayfinder/tools/BizHawk/EmuHawk.exe"
+  rom_start: true

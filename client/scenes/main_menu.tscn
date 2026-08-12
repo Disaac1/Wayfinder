@@ -1,0 +1,161 @@
+[gd_scene load_steps=2 format=3 uid="uid://c1v1r5y3m4n82"]
+
+[ext_resource type="Script" path="res://scripts/main_menu.gd" id="1_xxxx"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_xxxx")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.08, 0.09, 0.12, 1)
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HBox" type="HBoxContainer" parent="CenterContainer"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="CardPanel" type="PanelContainer" parent="CenterContainer/HBox"]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="CenterContainer/HBox/CardPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 32
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 32
+
+[node name="VBox" type="VBoxContainer" parent="CenterContainer/HBox/CardPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="CenterContainer/HBox/CardPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.67, 0.44, 0.98, 1)
+theme_override_font_sizes/font_size = 28
+text = "WAYFINDER"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="CenterContainer/HBox/CardPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.55, 0.6, 1)
+theme_override_font_sizes/font_size = 14
+text = "Archipelago Lobby System"
+horizontal_alignment = 1
+
+[node name="Separator" type="HSeparator" parent="CenterContainer/HBox/CardPanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="Form" type="VBoxContainer" parent="CenterContainer/HBox/CardPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="NameLabel" type="Label" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "PLAYER NAME"
+
+[node name="NameInput" type="LineEdit" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form"]
+unique_name_in_owner = true
+layout_mode = 2
+placeholder_text = "Enter name..."
+max_length = 20
+
+[node name="ServerLabel" type="Label" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "SERVER ADDRESS"
+
+[node name="ServerInput" type="LineEdit" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "ws://localhost:8080"
+placeholder_text = "ws://..."
+
+[node name="Separator2" type="HSeparator" parent="CenterContainer/HBox/CardPanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="CreateBtn" type="Button" parent="CenterContainer/HBox/CardPanel/Margin/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+text = "Create Room"
+
+[node name="Separator3" type="HSeparator" parent="CenterContainer/HBox/CardPanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="JoinBox" type="HBoxContainer" parent="CenterContainer/HBox/CardPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CodeInput" type="LineEdit" parent="CenterContainer/HBox/CardPanel/Margin/VBox/JoinBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "ROOM CODE"
+alignment = 1
+max_length = 6
+
+[node name="JoinBtn" type="Button" parent="CenterContainer/HBox/CardPanel/Margin/VBox/JoinBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 40)
+layout_mode = 2
+text = "Join"
+
+[node name="ErrorLabel" type="Label" parent="CenterContainer/HBox/CardPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
+theme_override_font_sizes/font_size = 12
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="RecentPanel" type="PanelContainer" parent="CenterContainer/HBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 420)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="CenterContainer/HBox/RecentPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="CenterContainer/HBox/RecentPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="CenterContainer/HBox/RecentPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "RESUME RECENT LOBBIES"
+horizontal_alignment = 1
+
+[node name="Scroll" type="ScrollContainer" parent="CenterContainer/HBox/RecentPanel/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="RecentLobbiesContainer" type="VBoxContainer" parent="CenterContainer/HBox/RecentPanel/Margin/VBox/Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8

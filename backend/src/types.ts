@@ -1,0 +1,27 @@
+// WebSocket Message Protocols
+
+export interface PlayerState {
+  userId: string;
+  name: string;
+  games: string[];
+  isReady: boolean;
+  isConnected: boolean;
+  isHost: boolean;
+  yaml: string | null;
+}
+
+// Messages sent by Clients to the Server
+export type ClientMessage =
+  | { type: 'create_room'; playerName: string }
+  | { type: 'join_room'; roomCode: string; playerName: string }
+  | { type: 'reconnect'; userId: string; roomCode: string }
+  | { type: 'update_state'; games: string[]; isReady: boolean; yaml: string | null }
+  | { type: 'generate_seed' };
+
+// Messages sent by the Server to Clients
+export type ServerMessage =
+  | { type: 'room_created'; roomCode: string; userId: string }
+  | { type: 'room_joined'; roomCode: string; userId: string; players: PlayerState[]; seedStatus: 'idle' | 'generating' | 'done'; seedZipName: string | null; seedSpoilerName: string | null; tunnelUrl?: string | null; lockedBy?: string | null }
+  | { type: 'room_state'; roomCode: string; players: PlayerState[]; seedStatus: 'idle' | 'generating' | 'done'; seedZipName: string | null; seedSpoilerName: string | null; tunnelUrl?: string | null; lockedBy?: string | null }
+  | { type: 'error'; message: string }
+  | { type: 'generation_log'; line: string };

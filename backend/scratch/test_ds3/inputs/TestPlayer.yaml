@@ -1,0 +1,69 @@
+name: TestPlayer
+game: Dark Souls III
+Dark Souls III:
+  progression_balancing: 50
+  accessibility: full
+  local_items: []
+  non_local_items: []
+  start_inventory: {}
+  start_hints: []
+  start_location_hints: []
+  exclude_locations:
+    - Small Souls
+    - Upgrade
+    - Hidden
+    - Small Crystal Lizards
+    - Miscellaneous
+  priority_locations: []
+  item_links: []
+  plando_items: []
+  early_banner: off
+  late_basin_of_vows: off
+  late_dlc: off
+  death_link: false
+  enable_dlc: false
+  enable_ngp: false
+  random_starting_loadout: true
+  require_one_handed_starting_weapons: true
+  auto_equip: false
+  lock_equip: false
+  no_equip_load: false
+  no_weapon_requirements: false
+  no_spell_requirements: false
+  randomize_infusion: false
+  randomize_infusion_percentage: 33
+  randomize_weapon_level: none
+  randomize_weapon_level_percentage: 33
+  min_levels_in_5: 1
+  max_levels_in_5: 5
+  min_levels_in_10: 1
+  max_levels_in_10: 10
+  smooth_soul_items: true
+  smooth_upgrade_items: true
+  smooth_upgraded_weapons: true
+  randomize_enemies: true
+  simple_early_bosses: true
+  scale_enemies: true
+  randomize_mimics_with_enemies: false
+  randomize_small_crystal_lizards_with_enemies: false
+  reduce_harmless_enemies: false
+  all_chests_are_mimics: false
+  impatient_mimics: false
+  random_enemy_preset: {}
+  excluded_location_behavior: forbid_useful
+  missable_location_behavior: forbid_useful
+  pool_type: 
+  enable_weapon_locations: 
+  enable_shield_locations: 
+  enable_armor_locations: 
+  enable_ring_locations: 
+  enable_spell_locations: 
+  enable_key_locations: 
+  enable_boss_locations: 
+  enable_npc_locations: 
+  enable_misc_locations: 
+  enable_health_upgrade_locations: 
+  enable_progressive_locations: 
+  guaranteed_items: 
+  excluded_locations: 
+  missable_locations: 

@@ -1,0 +1,63 @@
+name: TestPlayer
+game: Factorio
+Factorio:
+  progression_balancing: 50
+  accessibility: full
+  local_items: []
+  non_local_items: []
+  start_inventory: {}
+  start_hints: []
+  start_location_hints: []
+  exclude_locations: []
+  priority_locations: []
+  item_links: []
+  plando_items: []
+  max_science_pack: space_science_pack
+  goal: rocket
+  craftsanity: 0
+  tech_tree_layout: single
+  min_tech_cost: 5
+  max_tech_cost: 500
+  tech_cost_distribution: even
+  tech_cost_mix: 70
+  ramping_tech_costs: false
+  silo: vanilla
+  satellite: vanilla
+  free_samples: stack
+  free_samples_quality: normal
+  tech_tree_information: full
+  starting_items:
+    burner-mining-drill: 4
+    stone-furnace: 4
+    raw-fish: 50
+  free_sample_blacklist: []
+  free_sample_whitelist: []
+  recipe_time: vanilla
+  recipe_ingredients: rocket
+  recipe_ingredients_offset: 0
+  imported_blueprints: true
+  world_gen:
+    autoplace_controls: [object Object]
+    seed: null
+    starting_area: 1
+    peaceful_mode: false
+    no_enemies_mode: false
+    cliff_settings: [object Object]
+    property_expression_names: [object Object]
+    pollution: [object Object]
+    enemy_evolution: [object Object]
+    enemy_expansion: [object Object]
+  progressive: on
+  teleport_traps: 0
+  grenade_traps: 0
+  cluster_grenade_traps: 0
+  artillery_traps: 0
+  atomic_rocket_traps: 0
+  atomic_cliff_remover_traps: 0
+  inventory_spill_traps: 0
+  attack_traps: 0
+  evolution_traps: 0
+  evolution_trap_increase: 10
+  death_link: false
+  energy_link: false
+  start_inventory_from_pool: {}

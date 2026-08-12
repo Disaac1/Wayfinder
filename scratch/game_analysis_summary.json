@@ -1,0 +1,569 @@
+[
+  {
+    "game": "A Hat in Time",
+    "folder": "ahit",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# Setup Guide for A Hat in Time in Archipelago  ## Required Software - [Steam release of A Hat in Time](https://store.steampowered.com/app/253230/A_Hat_in_Time/)  - [Archipelago Workshop Mod for A Hat in Time](https://steamcommunity.com/sharedfiles/filedetails/?id=3026842601)   ## Optional Software "
+  },
+  {
+    "game": "A Link to the Past",
+    "folder": "alttp",
+    "platform": "PC / Standalone / Mod",
+    "has_setup_doc": false,
+    "doc_snippet": "No setup doc"
+  },
+  {
+    "game": "A Short Hike",
+    "folder": "shorthike",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# A Short Hike Multiworld Setup Guide  ## Required Software  - A Short Hike: [Steam](https://store.steampowered.com/app/1055540/A_Short_Hike/)     - The Epic Games Store or itch.io version of A Short Hike will also work. - A Short Hike Randomizer: [GitHub](https://github.com/BrandenEK/AShortHike.Ran"
+  },
+  {
+    "game": "adventure",
+    "folder": "adventure",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# Setup Guide for Adventure: Archipelago  ## Important  As we are using BizHawk, this guide is only applicable to Windows and Linux systems.  ## Required Software  - BizHawk: [BizHawk Releases from TASVideos](https://tasvideos.org/BizHawk/ReleaseHistory)   - Version 2.3.1 and later are supported. Ve"
+  },
+  {
+    "game": "apquest",
+    "folder": "apquest",
+    "platform": "GBA",
+    "has_setup_doc": true,
+    "doc_snippet": "# APQuest Randomizer Setup-Anleitung  ## Ben\u00f6tigte Software  - [Archipelago](https://github.com/ArchipelagoMW/Archipelago/releases/latest) - Die [APQuest-apworld](https://github.com/NewSoupVi/Archipelago/releases),    falls diese nicht mit deiner Version von Archipelago geb\u00fcndelt ist.  ## Optionale "
+  },
+  {
+    "game": "Aquaria",
+    "folder": "aquaria",
+    "platform": "NES",
+    "has_setup_doc": true,
+    "doc_snippet": "# Aquaria Randomizer Setup Guide  ## Required Software  - The original Aquaria Game (purchasable from most online game stores) - The [Aquaria randomizer](https://github.com/tioui/Aquaria_Randomizer/releases/latest)  ## Optional Software   - For sending [commands](/tutorial/Archipelago/commands/en) l"
+  },
+  {
+    "game": "Archipelago",
+    "folder": "generic",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# Archipelago Setup Guide  This guide is intended to provide an overview of how to: - Install, set up, and run the Archipelago multiworld software - Generate and host multiworlds - Connect to the multiworld after hosting has begun  This is a general overview. For more specific steps, reference the r"
+  },
+  {
+    "game": "Blasphemous",
+    "folder": "blasphemous",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# Blasphemous Multiworld Setup Guide  It is recommended to use the [Mod Installer](https://github.com/BrandenEK/Blasphemous.Modding.Installer) to handle installing and updating mods. If you would prefer to install mods manually, instructions can also be found at the Mod Installer repository.   You w"
+  },
+  {
+    "game": "Bomb Rush Cyberfunk",
+    "folder": "bomb_rush_cyberfunk",
+    "platform": "NES",
+    "has_setup_doc": true,
+    "doc_snippet": "# Bomb Rush Cyberfunk Multiworld Setup Guide  ## Quick Links  - Bomb Rush Cyberfunk: [Steam](https://store.steampowered.com/app/1353230/Bomb_Rush_Cyberfunk/) - Archipelago Mod: [Thunderstore](https://thunderstore.io/c/bomb-rush-cyberfunk/p/TRPG/BRC_Archipelago/),  [GitHub](https://github.com/TRPG0/B"
+  },
+  {
+    "game": "Bumper Stickers",
+    "folder": "bumpstik",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "## Required Software  Download the game from the [Bumper Stickers GitHub releases page](https://github.com/FelicitusNeko/FlixelBumpStik/releases), or from the [Bumper Stickers AP Itch page](https://kewliomzx.itch.io/bumpstik-ap), where you can also play it in your browser.  ## Installation Procedure"
+  },
+  {
+    "game": "Castlevania - Circle of the Moon",
+    "folder": "cvcotm",
+    "platform": "GBA",
+    "has_setup_doc": true,
+    "doc_snippet": "# Castlevania: Circle of the Moon Setup Guide  ## Required Software  - [Archipelago](https://github.com/ArchipelagoMW/Archipelago/releases/latest). - A Castlevania: Circle of the Moon ROM of the US version specifically. The Archipelago community cannot provide this. The Castlevania Advance Collectio"
+  },
+  {
+    "game": "Castlevania 64",
+    "folder": "cv64",
+    "platform": "N64",
+    "has_setup_doc": true,
+    "doc_snippet": "# Castlevania 64 Setup Guide  ## Required Software  - [Archipelago](https://github.com/ArchipelagoMW/Archipelago/releases) - A Castlevania 64 ROM of the US 1.0 version specifically. The Archipelago community cannot provide this. - [BizHawk](https://tasvideos.org/BizHawk/ReleaseHistory) 2.7 or later "
+  },
+  {
+    "game": "Celeste (Open World)",
+    "folder": "celeste_open_world",
+    "platform": "PC / Standalone / Mod",
+    "has_setup_doc": false,
+    "doc_snippet": "No setup doc"
+  },
+  {
+    "game": "Celeste 64",
+    "folder": "celeste64",
+    "platform": "PC / Standalone / Mod",
+    "has_setup_doc": false,
+    "doc_snippet": "No setup doc"
+  },
+  {
+    "game": "ChecksFinder",
+    "folder": "checksfinder",
+    "platform": "PC / Standalone / Mod",
+    "has_setup_doc": true,
+    "doc_snippet": "# ChecksFinder Randomizer Setup Guide  ## Required Software  - ChecksFinder from   the [Github releases Page for the game](https://github.com/jonloveslegos/ChecksFinder/releases) (latest version), or    from the [itch.io Page for the game](https://suncat0.itch.io/checksfinder) (including web version"
+  },
+  {
+    "game": "Choo-Choo Charles",
+    "folder": "cccharles",
+    "platform": "GBA",
+    "has_setup_doc": true,
+    "doc_snippet": "# Choo-Choo Charles MultiWorld Setup Guide This page is a simplified guide of the [Choo-Choo Charles Multiworld Randomizer Mod page](https://github.com/lgbarrere/CCCharles-Random?tab=readme-ov-file#cccharles-random).  ## Requirements and Required Softwares * A computer running Windows (the Mod is no"
+  },
+  {
+    "game": "Civilization VI",
+    "folder": "civ_6",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# Setup Guide for Civilization VI Archipelago  This guide is meant to help you get up and running with Civilization VI in Archipelago. Note that this requires you to have both Rise & Fall and Gathering Storm installed. This will not work unless both of those DLCs are enabled.  ## Requirements  The f"
+  },
+  {
+    "game": "Dark Souls III",
+    "folder": "dark_souls_3",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# Dark Souls III Randomizer Setup Guide  [Game Page] | Setup | [Items] | [Locations] | [Enemy Randomization]  [Game Page]: /games/Dark%20Souls%20III/info/en [Items]: /tutorial/Dark%20Souls%20III/items/en [Locations]: /tutorial/Dark%20Souls%20III/locations/en [Enemy Randomization]: /tutorial/Dark%20S"
+  },
+  {
+    "game": "DLCQuest",
+    "folder": "dlcquest",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# DLCQuest Randomizer Setup Guide  ## Required Software  - DLC Quest on PC (Recommended: [Steam version](https://store.steampowered.com/app/230050/DLC_Quest/)) - [DLCQuestipelago](https://github.com/agilbert1412/DLCQuestipelago/releases) - BepinEx (Used as a modloader for DLCQuest. The Mod release a"
+  },
+  {
+    "game": "DOOM 1993",
+    "folder": "doom_1993",
+    "platform": "TextClient / Manual",
+    "has_setup_doc": true,
+    "doc_snippet": "# DOOM 1993 Randomizer Setup  ## Required Software  - [DOOM 1993 (e.g. Steam version)](https://store.steampowered.com/app/2280/DOOM__DOOM_II/) - [Archipelago Crispy DOOM](https://github.com/Daivuk/apdoom/releases)  ## Optional Software  - [ArchipelagoTextClient](https://github.com/ArchipelagoMW/Arch"
+  },
+  {
+    "game": "DOOM II",
+    "folder": "doom_ii",
+    "platform": "TextClient / Manual",
+    "has_setup_doc": true,
+    "doc_snippet": "# DOOM II Randomizer Setup  ## Required Software  - [DOOM II (e.g. Steam version)](https://store.steampowered.com/app/2280/DOOM__DOOM_II/) - [Archipelago Crispy DOOM](https://github.com/Daivuk/apdoom/releases)  ## Optional Software  - [ArchipelagoTextClient](https://github.com/ArchipelagoMW/Archipel"
+  },
+  {
+    "game": "EarthBound",
+    "folder": "earthbound",
+    "platform": "SNES",
+    "has_setup_doc": true,
+    "doc_snippet": "# EarthBound Archipelago Randomizer Setup Guide  ## Required Software  - [Archipelago](https://github.com/ArchipelagoMW/Archipelago/releases).   - Hardware or software capable of loading and playing SNES ROM files     - An emulator capable of connecting to SNI such as:         - snes9x-rr from: [sne"
+  },
+  {
+    "game": "Factorio",
+    "folder": "factorio",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# Factorio Randomizer Setup Guide  ## Required Software  ##### Players  - Factorio: [Factorio Official Website](https://factorio.com)     - Needed by Players and Hosts     - Players will need to download an additional copy of Factorio for Archipelago to use. If you already own the game, you can down"
+  },
+  {
+    "game": "Faxanadu",
+    "folder": "faxanadu",
+    "platform": "NES",
+    "has_setup_doc": true,
+    "doc_snippet": "# Faxanadu Randomizer Setup  ## Required Software  - [Daxanadu](https://github.com/Daivuk/Daxanadu/releases/) - Faxanadu ROM, English version  ## Optional Software  - [ArchipelagoTextClient](https://github.com/ArchipelagoMW/Archipelago/releases)  ## Installing Daxanadu 1. Download [Daxanadu.zip](htt"
+  },
+  {
+    "game": "Final Fantasy",
+    "folder": "ff1",
+    "platform": "PC / Standalone / Mod",
+    "has_setup_doc": false,
+    "doc_snippet": "No setup doc"
+  },
+  {
+    "game": "Final Fantasy Mystic Quest",
+    "folder": "ffmq",
+    "platform": "SNES",
+    "has_setup_doc": true,
+    "doc_snippet": "# Final Fantasy Mystic Quest Setup Guide  ## Required Software  - [Archipelago](https://github.com/ArchipelagoMW/Archipelago/releases).  - Hardware or software capable of loading and playing SNES ROM files     - An emulator capable of connecting to SNI such as:         - snes9x-rr from: [snes9x rr]("
+  },
+  {
+    "game": "Heretic",
+    "folder": "heretic",
+    "platform": "TextClient / Manual",
+    "has_setup_doc": true,
+    "doc_snippet": "# Heretic Randomizer Setup  ## Required Software  - [Heretic (e.g. Steam version)](https://store.steampowered.com/app/3286930/Heretic__Hexen/) - [Archipelago Crispy DOOM](https://github.com/Daivuk/apdoom/releases) (Same download for DOOM 1993, DOOM II and Heretic)  ## Optional Software  - [Archipela"
+  },
+  {
+    "game": "Hollow Knight",
+    "folder": "hk",
+    "platform": "NES",
+    "has_setup_doc": true,
+    "doc_snippet": "# Hollow Knight for Archipelago Setup Guide  ## Required Software * Download and unzip the Lumafly Mod Manager from the [Lumafly website](https://themulhima.github.io/Lumafly/). * A legal copy of Hollow Knight.     * Steam, Gog, and Xbox Game Pass versions of the game are supported.     * Windows, M"
+  },
+  {
+    "game": "Hylics 2",
+    "folder": "hylics2",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# Hylics 2 Randomizer Setup Guide  ## Required Software  - Hylics 2 from: [Steam](https://store.steampowered.com/app/1286710/Hylics_2/) or [itch.io](https://mason-lindroth.itch.io/hylics-2) - BepInEx from: [GitHub](https://github.com/BepInEx/BepInEx/releases) - Archipelago Mod for Hylics 2 from: [Gi"
+  },
+  {
+    "game": "Inscryption",
+    "folder": "inscryption",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# Inscryption Randomizer Setup Guide  ## Required Software  - [Inscryption](https://store.steampowered.com/app/1092790/Inscryption/) - For easy setup (recommended):   - [r2modman](https://inscryption.thunderstore.io/package/ebkr/r2modman/) OR [Thunderstore Mod Manager](https://www.overwolf.com/app/T"
+  },
+  {
+    "game": "jakanddaxter",
+    "folder": "jakanddaxter",
+    "platform": "NES",
+    "has_setup_doc": true,
+    "doc_snippet": "# Jak And Daxter (ArchipelaGOAL) Setup Guide  ## Required Software  - A legally purchased copy of *Jak And Daxter: The Precursor Legacy.* - [The OpenGOAL Launcher](https://opengoal.dev/)  This method of setup works on Windows and Linux.  ## Installation via OpenGOAL Launcher  **You must set up a van"
+  },
+  {
+    "game": "Kingdom Hearts",
+    "folder": "kh1",
+    "platform": "PC / Standalone / Mod",
+    "has_setup_doc": false,
+    "doc_snippet": "No setup doc"
+  },
+  {
+    "game": "Kingdom Hearts 2",
+    "folder": "kh2",
+    "platform": "NES",
+    "has_setup_doc": true,
+    "doc_snippet": "# Kingdom Hearts 2 Archipelago Setup Guide  ## Quick Links  - [Game Info Page](../../../../games/Kingdom%20Hearts%202/info/en) - [Player Options Page](../../../../games/Kingdom%20Hearts%202/player-options)  ## Required Software:  Kingdom Hearts II Final Mix from the [Epic Games Store](https://store."
+  },
+  {
+    "game": "Kirby",
+    "folder": "kdl3",
+    "platform": "SNES",
+    "has_setup_doc": true,
+    "doc_snippet": "# Kirby's Dream Land 3 Randomizer Setup Guide  ## Required Software  - [Archipelago](https://github.com/ArchipelagoMW/Archipelago/releases). - Hardware or software capable of loading and playing SNES ROM files     - An emulator capable of connecting to SNI with ROM access. Any one of the following w"
+  },
+  {
+    "game": "ladx",
+    "folder": "ladx",
+    "platform": "PC / Standalone / Mod",
+    "has_setup_doc": true,
+    "doc_snippet": "# Links Awakening DX Multiworld Setup Guide  ## Required Software  - [Archipelago](https://github.com/ArchipelagoMW/Archipelago/releases).  - Software capable of loading and playing GBC ROM files     - [RetroArch](https://retroarch.com?page=platforms) 1.10.3 or newer.     - [BizHawk](https://tasvide"
+  },
+  {
+    "game": "Landstalker - The Treasures of King Nole",
+    "folder": "landstalker",
+    "platform": "PC / Standalone / Mod",
+    "has_setup_doc": false,
+    "doc_snippet": "No setup doc"
+  },
+  {
+    "game": "Lingo",
+    "folder": "lingo",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# Lingo Randomizer Setup  ## Required Software  - [Lingo](https://store.steampowered.com/app/1814170/Lingo/) - [Lingo Archipelago Randomizer](https://steamcommunity.com/sharedfiles/filedetails/?id=3092505110)  ## Optional Software  - [Archipelago Text Client](https://github.com/ArchipelagoMW/Archipe"
+  },
+  {
+    "game": "lufia2ac",
+    "folder": "lufia2ac",
+    "platform": "SNES",
+    "has_setup_doc": true,
+    "doc_snippet": "# Lufia II Ancient Cave Multiworld Setup Guide  ## Required Software  - [Archipelago](https://github.com/ArchipelagoMW/Archipelago/releases).  - Hardware or software capable of loading and playing SNES ROM files     - An emulator capable of connecting to SNI       ([snes9x rr](https://github.com/goc"
+  },
+  {
+    "game": "Mario & Luigi Superstar Saga",
+    "folder": "mlss",
+    "platform": "GBA",
+    "has_setup_doc": true,
+    "doc_snippet": "# Setup Guide for Mario & Luigi: Superstar Saga Archipelago  ## Important  As we are using Bizhawk, this guide is only applicable to Windows and Linux systems.  ## Required Software  - Bizhawk: [Bizhawk Releases from TASVideos](https://tasvideos.org/BizHawk/ReleaseHistory)   - Version 2.9.1 is recom"
+  },
+  {
+    "game": "Mega Man 2",
+    "folder": "mm2",
+    "platform": "NES",
+    "has_setup_doc": true,
+    "doc_snippet": "# Mega Man 2 Setup Guide  ## Required Software  - [Archipelago](https://github.com/ArchipelagoMW/Archipelago/releases) - An English Mega Man 2 ROM. Alternatively, the [Mega Man Legacy Collection](https://store.steampowered.com/app/363440/Mega_Man_Legacy_Collection/) on Steam. - [BizHawk](https://tas"
+  },
+  {
+    "game": "Mega Man 3",
+    "folder": "mm3",
+    "platform": "NES",
+    "has_setup_doc": true,
+    "doc_snippet": "# Mega Man 3 Setup Guide  ## Required Software  - [Archipelago](https://github.com/ArchipelagoMW/Archipelago/releases) - An English Mega Man 3 ROM. Alternatively, the [Mega Man Legacy Collection](https://store.steampowered.com/app/363440/Mega_Man_Legacy_Collection/) on Steam. - [BizHawk](https://tas"
+  },
+  {
+    "game": "MegaMan Battle Network 3",
+    "folder": "mmbn3",
+    "platform": "GBA",
+    "has_setup_doc": true,
+    "doc_snippet": "# Setup Guide for MegaMan Battle Network 3 Archipelago  ## Important  As we are using Bizhawk, this guide is only applicable to Windows and Linux systems.  ## Required Software  - Bizhawk: [Bizhawk Releases from TASVideos](https://tasvideos.org/BizHawk/ReleaseHistory)   - Version 2.7.0 and later are"
+  },
+  {
+    "game": "Meritous",
+    "folder": "meritous",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# Meritous Randomizer Setup Guide  ## Required Software  Download the game from the [Meritous Gaiden GitHub releases page](https://github.com/FelicitusNeko/meritous-ap/releases)  ## Installation Procedures  Simply download the latest version of Meritous Gaiden from the link above, and extract it whe"
+  },
+  {
+    "game": "Muse Dash",
+    "folder": "musedash",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# Muse Dash Randomizer Setup Guide  ## Quick Links - [Main Page](../../../../games/Muse%20Dash/info/en) - [Options Page](../../../../games/Muse%20Dash/player-options)  ## Required Software  - Windows 8 or Newer. - Muse Dash: [Available on Steam](https://store.steampowered.com/app/774171/Muse_Dash/) "
+  },
+  {
+    "game": "Noita",
+    "folder": "noita",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# Noita Setup Guide  ## Installation  ### Game  Go through the standard installation process for [Noita](https://noitagame.com/) on any of its supported platforms.  ### Install Archipelago Mod  Download the Archipelago mod zip from the GitHub page:  [Archipelago Mod Download](https://github.com/Daft"
+  },
+  {
+    "game": "Ocarina of Time",
+    "folder": "oot",
+    "platform": "N64",
+    "has_setup_doc": true,
+    "doc_snippet": "# Setup Anleitung f\u00fcr Ocarina of Time: Archipelago Edition  ## WICHTIG  Da wir BizHawk benutzen, gilt diese Anleitung nur f\u00fcr Windows und Linux.  ## Ben\u00f6tigte Software  - BizHawk: [BizHawk Ver\u00f6ffentlichungen von TASVideos](https://tasvideos.org/BizHawk/ReleaseHistory)   - Version 2.10 und neuer werd"
+  },
+  {
+    "game": "Old School Runescape",
+    "folder": "osrs",
+    "platform": "NES",
+    "has_setup_doc": true,
+    "doc_snippet": "# Setup Guide for Old School Runescape  ## Required Software  - [RuneLite](https://runelite.net/) - If the account being used has been migrated to a Jagex Account, the [Jagex Launcher](https://www.jagex.com/en-GB/launcher) will also be necessary to run RuneLite  ## Configuring your YAML file  ### Wh"
+  },
+  {
+    "game": "Overcooked! 2",
+    "folder": "overcooked2",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# Overcooked! 2 Randomizer Setup Guide  ## Quick Links - [Main Page](../../../../games/Overcooked!%202/info/en) - [Options Page](../../../../games/Overcooked!%202/player-options) - [OC2-Modding GitHub](https://github.com/toasterparty/oc2-modding)  ## Required Software  - Windows 10+ - [Overcooked! 2"
+  },
+  {
+    "game": "Paint",
+    "folder": "paint",
+    "platform": "PC / Standalone / Mod",
+    "has_setup_doc": false,
+    "doc_snippet": "No setup doc"
+  },
+  {
+    "game": "Pokemon Emerald",
+    "folder": "pokemon_emerald",
+    "platform": "GBA",
+    "has_setup_doc": true,
+    "doc_snippet": "# Pok\u00e9mon Emerald Setup Guide  ## Required Software  - [Archipelago](https://github.com/ArchipelagoMW/Archipelago/releases) - An English Pok\u00e9mon Emerald ROM. The Archipelago community cannot provide this. - [BizHawk](https://tasvideos.org/BizHawk/ReleaseHistory) 2.7 or later  ### Configuring BizHawk"
+  },
+  {
+    "game": "Pokemon Red and Blue",
+    "folder": "pokemon_rb",
+    "platform": "NES",
+    "has_setup_doc": true,
+    "doc_snippet": "# Setup Guide for Pok\u00e9mon Red and Blue: Archipelago  ## Important  As we are using BizHawk, this guide is only applicable to Windows and Linux systems.  ## Required Software  - BizHawk: [BizHawk Releases from TASVideos](https://tasvideos.org/BizHawk/ReleaseHistory)   - Version 2.3.1 and later are su"
+  },
+  {
+    "game": "Raft",
+    "folder": "raft",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# Raft Randomizer Setup Guide  ## Required Software  - [Raft](https://store.steampowered.com/app/648800/Raft/) - [Raft Mod Loader](https://www.raftmodding.com/loader) (\"*RML*\") - [ModUtils mod](https://www.raftmodding.com/mods/modutils) - [Raftipelago mod](https://www.raftmodding.com/mods/raftipelag"
+  },
+  {
+    "game": "Risk of Rain 2",
+    "folder": "ror2",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# Risk of Rain 2 Setup Guide  ## Install using r2modman  ### Install r2modman  Head on over to the `r2modman` page on Thunderstore and follow the installation instructions.  [r2modman Page](https://thunderstore.io/package/ebkr/r2modman/)  ### Install Archipelago Mod using r2modman  You can install t"
+  },
+  {
+    "game": "Satisfactory",
+    "folder": "satisfactory",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# Satisfactory Setup Guide  <!-- Spellchecker config - cspell:ignore FICSIT Randomizer Plando -->  ## Required Software  - Satisfactory, either   - Steam [Satisfactory (Steam)](https://store.steampowered.com/app/526870/Satisfactory/)   - Epic [Satisfactory (Epic)](https://www.epicgames.com/store/en-"
+  },
+  {
+    "game": "saving_princess",
+    "folder": "saving_princess",
+    "platform": "NES",
+    "has_setup_doc": true,
+    "doc_snippet": "# Saving Princess Setup Guide  ## Quick Links - [Game Info](/games/Saving%20Princess/info/en) - [Options Page](/games/Saving%20Princess/player-options) - [Saving Princess Archipelago GitHub](https://github.com/LeonarthCG/saving-princess-archipelago)  ## Installation Procedures  ### Automated Install"
+  },
+  {
+    "game": "Secret of Evermore",
+    "folder": "soe",
+    "platform": "PC / Standalone / Mod",
+    "has_setup_doc": false,
+    "doc_snippet": "No setup doc"
+  },
+  {
+    "game": "shapez",
+    "folder": "shapez",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# Setup-Anleitung f\u00fcr shapez: Archipelago  ## Schnelle Links  - Info-Seite zum Spiel     * [English](/games/shapez/info/en)     * [Deutsch](/games/shapez/info/de) - [Spieler-Optionen-Seite](/games/shapez/player-options)  ## Ben\u00f6tigte Software  - Eine installierbare und aktuelle PC-Version von shapez"
+  },
+  {
+    "game": "Shivers",
+    "folder": "shivers",
+    "platform": "PC / Standalone / Mod",
+    "has_setup_doc": true,
+    "doc_snippet": "# Shivers Randomizer Setup Guide   ## Required Software  - [Shivers (GOG version)](https://www.gog.com/en/game/shivers) or original disc - [ScummVM](https://www.scummvm.org/downloads/) version 2.7.0 or later - [Shivers Randomizer Client](https://github.com/Shivers-Randomizer/Shivers-Randomizer/relea"
+  },
+  {
+    "game": "SMZ3",
+    "folder": "smz3",
+    "platform": "PC / Standalone / Mod",
+    "has_setup_doc": false,
+    "doc_snippet": "No setup doc"
+  },
+  {
+    "game": "Sonic Adventure 2 Battle",
+    "folder": "sa2b",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# Sonic Adventure 2: Battle Randomizer Setup Guide  ## Required Software  - Sonic Adventure 2: Battle from: [Sonic Adventure 2: Battle Steam Store Page](https://store.steampowered.com/app/213610/Sonic_Adventure_2/) \t- The Battle DLC is required if you choose to add Chao Karate locations to the rando"
+  },
+  {
+    "game": "Starcraft 2",
+    "folder": "sc2",
+    "platform": "NES",
+    "has_setup_doc": true,
+    "doc_snippet": "# StarCraft 2 Randomizer Setup Guide  This guide contains instructions on how to install and troubleshoot the StarCraft 2 Archipelago client, as well as  where to obtain a config file for StarCraft 2.  ## Required Software  - [StarCraft 2](https://starcraft2.com/en-us/)    - While StarCraft 2 Archip"
+  },
+  {
+    "game": "stardew_valley",
+    "folder": "stardew_valley",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# Stardew Valley Randomizer Setup Guide  ## Required Software  - Stardew Valley 1.6 on PC (Recommended: [Steam version](https://store.steampowered.com/app/413150/Stardew_Valley/)) - SMAPI ([Mod loader for Stardew Valley](https://smapi.io/) ([Nexus](https://www.nexusmods.com/stardewvalley/mods/2400?t"
+  },
+  {
+    "game": "Subnautica",
+    "folder": "subnautica",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# Subnautica Randomizer Setup Guide  ## Required Software  - Subnautica from: [Subnautica Steam Store Page](https://store.steampowered.com/app/264710/Subnautica/) | [Subnautica Epic Game Store Page](https://store.epicgames.com/p/subnautica) - Archipelago Mod for Subnautica   from: [Subnautica Archip"
+  },
+  {
+    "game": "Super Mario 64",
+    "folder": "sm64ex",
+    "platform": "NES",
+    "has_setup_doc": true,
+    "doc_snippet": "# Super Mario 64 EX MultiWorld Setup Guide  ## Required Software  - Super Mario 64 US or JP Rom (Europe and Shindou not supported) - Either of     - [SM64AP-Launcher](https://github.com/N00byKing/SM64AP-Launcher/releases) or     - Cloning and building [sm64ex](https://github.com/N00byKing/sm64ex) ma"
+  },
+  {
+    "game": "Super Mario Land 2",
+    "folder": "marioland2",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# Setup Guide for Super Mario Land 2: 6 Golden Coins  ## Important  As we are using BizHawk, this guide is only applicable to Windows and Linux systems.  ## Required Software  - BizHawk: [BizHawk Releases from TASVideos](https://tasvideos.org/BizHawk/ReleaseHistory)   - Version 2.9.1 is recommended."
+  },
+  {
+    "game": "Super Mario World",
+    "folder": "smw",
+    "platform": "SNES",
+    "has_setup_doc": true,
+    "doc_snippet": "# Super Mario World Randomizer Setup Guide  ## Required Software  - [Archipelago](https://github.com/ArchipelagoMW/Archipelago/releases).   - Hardware or software capable of loading and playing SNES ROM files     - An emulator capable of connecting to SNI such as:         - snes9x-rr from: [snes9x r"
+  },
+  {
+    "game": "Super Metroid",
+    "folder": "sm",
+    "platform": "PC / Standalone / Mod",
+    "has_setup_doc": false,
+    "doc_snippet": "No setup doc"
+  },
+  {
+    "game": "Terraria",
+    "folder": "terraria",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# Terraria for Archipelago Setup Guide  ## Required Software  Download and install [Terraria](https://store.steampowered.com/app/105600/Terraria/) and [tModLoader](https://store.steampowered.com/app/1281930/tModLoader/) on Steam  ## Installing the Archipelago Mod  1. Subscribe to [the mod](https://s"
+  },
+  {
+    "game": "The Legend of Zelda",
+    "folder": "tloz",
+    "platform": "PC / Standalone / Mod",
+    "has_setup_doc": false,
+    "doc_snippet": "No setup doc"
+  },
+  {
+    "game": "The Messenger",
+    "folder": "messenger",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# The Messenger Randomizer Setup Guide  ## Quick Links - [Game Info](/games/The%20Messenger/info/en) - [Options Page](/games/The%20Messenger/player-options) - [Courier Github](https://github.com/Brokemia/Courier) - [The Messenger Randomizer AP Github](https://github.com/alwaysintreble/TheMessengerRa"
+  },
+  {
+    "game": "The Wind Waker",
+    "folder": "tww",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# Setup Guide for The Wind Waker Archipelago  Welcome to The Wind Waker Archipelago! This guide will help you set up the randomizer and play your first multiworld. If you're playing The Wind Waker, you must follow a few simple steps to get started.  ## Requirements  You'll need the following compone"
+  },
+  {
+    "game": "The Witness",
+    "folder": "witness",
+    "platform": "NES",
+    "has_setup_doc": true,
+    "doc_snippet": "# The Witness Randomizer Setup  ## Ben\u00f6tigte Software  - [The Witness f\u00fcr ein 64-bit-Windows-Betriebssystem (z.B. Steam-Version)](https://store.steampowered.com/app/210970/The_Witness/) - [The Witness Archipelago Randomizer](https://github.com/NewSoupVi/The-Witness-Randomizer-for-Archipelago/release"
+  },
+  {
+    "game": "Timespinner",
+    "folder": "timespinner",
+    "platform": "PC / Standalone / Mod",
+    "has_setup_doc": true,
+    "doc_snippet": "# Timespinner Randomizer Installationsanweisungen  ## Ben\u00f6tigte Software  - [Timespinner (Steam)](https://store.steampowered.com/app/368620/Timespinner/)   , [Timespinner (Humble)](https://www.humblebundle.com/store/timespinner)   oder [Timespinner (GOG)](https://www.gog.com/game/timespinner) (ander"
+  },
+  {
+    "game": "TUNIC",
+    "folder": "tunic",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# TUNIC Setup Guide  ## Required Software  - [TUNIC](https://tunicgame.com/) for PC (Steam Deck also supported) - [TUNIC Randomizer Mod](https://github.com/silent-destroyer/tunic-randomizer/releases/latest) - [BepInEx 6.0.0-pre.1 (Unity IL2CPP x64)](https://github.com/BepInEx/BepInEx/releases/tag/v6"
+  },
+  {
+    "game": "Undertale",
+    "folder": "undertale",
+    "platform": "PC / Standalone / Mod",
+    "has_setup_doc": true,
+    "doc_snippet": "# Undertale Randomizer Setup Guide  ### Required Software  - Undertale from the [Steam page](https://store.steampowered.com/app/391540) - Archipelago from the [Archipelago Releases Page](https://github.com/ArchipelagoMW/Archipelago/releases)  ### First time setup  Start the Undertale client from you"
+  },
+  {
+    "game": "VVVVVV",
+    "folder": "v6",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# VVVVVV MultiWorld Setup Guide  ## Required Software  - VVVVVV   - [Steam Store Page](https://store.steampowered.com/app/70300/VVVVVV/)   - [GOG Store Page](https://www.gog.com/game/vvvvvv) - [V6AP](https://github.com/N00byKing/VVVVVV/releases)  ## Installation and Game Start Procedures  1. Install"
+  },
+  {
+    "game": "Wargroove",
+    "folder": "wargroove",
+    "platform": "PC / Standalone / Mod",
+    "has_setup_doc": false,
+    "doc_snippet": "No setup doc"
+  },
+  {
+    "game": "Yacht Dice",
+    "folder": "yachtdice",
+    "platform": "PC Mod (BepInEx / Unity)",
+    "has_setup_doc": true,
+    "doc_snippet": "# Yacht Dice Randomizer Setup Guide  ## Required Software  - A browser (you are probably using one right now!).  ## Playing the game Open the Yacht Dice website. There are two options: - Cruise over to the [Yacht Dice Website](https://yacht-dice-ap.netlify.app/). This is the easiest option. If the w"
+  },
+  {
+    "game": "Yoshi",
+    "folder": "yoshisisland",
+    "platform": "SNES",
+    "has_setup_doc": true,
+    "doc_snippet": "# Yoshi's Island Archipelago Randomizer Setup Guide  ## Required Software  - [Archipelago](https://github.com/ArchipelagoMW/Archipelago/releases).   - Hardware or software capable of loading and playing SNES ROM files     - An emulator capable of connecting to SNI such as:         - snes9x-rr from: "
+  },
+  {
+    "game": "Yu-Gi-Oh! 2006",
+    "folder": "yugioh06",
+    "platform": "GBA",
+    "has_setup_doc": true,
+    "doc_snippet": "# Setup Guide for Yu-Gi-Oh! Ultimate Masters: World Championship Tournament 2006 Archipelago  ## Important  As we are using Bizhawk, this guide is only applicable to Windows and Linux systems.  ## Required Software  - Bizhawk: [Bizhawk Releases from TASVideos](https://tasvideos.org/BizHawk/ReleaseHi"
+  },
+  {
+    "game": "Zillion",
+    "folder": "zillion",
+    "platform": "NES",
+    "has_setup_doc": true,
+    "doc_snippet": "# Zillion Setup Guide  ## Required Software  - [Archipelago](https://github.com/ArchipelagoMW/Archipelago/releases).  - RetroArch 1.10.3 or newer from: [RetroArch Website](https://retroarch.com?page=platforms).  - Your legally obtained Zillion ROM file, named `Zillion (UE) [!].sms`  ## Installation "
+  }
+]

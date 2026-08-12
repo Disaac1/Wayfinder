@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wayfinder Backend Management Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-text">
+          <h1>Wayfinder</h1>
+          <span>Backend Console</span>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <button class="nav-item active" data-tab="overview">
+          <span class="nav-icon">📊</span>
+          <span class="nav-label">Overview</span>
+        </button>
+        <button class="nav-item" data-tab="rooms">
+          <span class="nav-icon">🎮</span>
+          <span class="nav-label">Rooms & Sessions</span>
+          <span class="badge" id="badge-rooms">0</span>
+        </button>
+        <button class="nav-item" data-tab="servers">
+          <span class="nav-icon">⚡</span>
+          <span class="nav-label">AP Servers</span>
+          <span class="badge" id="badge-servers">0</span>
+        </button>
+        <button class="nav-item" data-tab="apworlds">
+          <span class="nav-icon">📦</span>
+          <span class="nav-label">Custom APWorlds</span>
+          <span class="badge" id="badge-apworlds">0</span>
+        </button>
+        <button class="nav-item" data-tab="database">
+          <span class="nav-icon">🗄️</span>
+          <span class="nav-label">Database</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="security-tag">
+          <span class="dot"></span>
+          <span>Localhost Secured</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Bar -->
+      <header class="topbar">
+        <div class="topbar-title">
+          <h2 id="page-title">System Overview</h2>
+          <span class="subtitle" id="page-subtitle">Real-time telemetry and management tools</span>
+        </div>
+
+        <div class="topbar-actions">
+          <div class="vitals-chip" id="vitals-chip">
+            <span class="pulse-indicator"></span>
+            <span id="system-status-text">Backend Active</span>
+          </div>
+
+          <button class="btn btn-danger btn-sm" id="btn-purge-all" title="Delete all rooms, users, sessions, and temp files">
+            🔥 Purge All Data
+          </button>
+
+          <button class="btn btn-secondary btn-sm" id="btn-clear-cache" title="Invalidate Archipelago options & games cache">
+            🧹 Clear Cache
+          </button>
+
+          <button class="btn btn-primary btn-sm" id="btn-refresh">
+            🔄 Refresh Data
+          </button>
+        </div>
+      </header>
+
+      <!-- Dynamic Tab Views -->
+      <div class="tab-content">
+        <!-- 1. OVERVIEW TAB -->
+        <section class="tab-pane active" id="tab-overview">
+          <div class="stats-grid">
+            <div class="stat-card gradient-purple">
+              <div class="stat-header">
+                <span class="stat-title">Active Rooms</span>
+                <span class="stat-icon">🎮</span>
+              </div>
+              <div class="stat-value" id="stat-active-rooms">0</div>
+              <div class="stat-footer" id="stat-total-rooms">0 total created rooms</div>
+            </div>
+
+            <div class="stat-card gradient-cyan">
+              <div class="stat-header">
+                <span class="stat-title">Connected Players</span>
+                <span class="stat-icon">👥</span>
+              </div>
+              <div class="stat-value" id="stat-connected-users">0</div>
+              <div class="stat-footer" id="stat-total-users">0 total registered players</div>
+            </div>
+
+            <div class="stat-card gradient-amber">
+              <div class="stat-header">
+                <span class="stat-title">AP Servers Running</span>
+                <span class="stat-icon">⚡</span>
+              </div>
+              <div class="stat-value" id="stat-active-servers">0</div>
+              <div class="stat-footer">Live MultiServer processes</div>
+            </div>
+
+            <div class="stat-card gradient-rose">
+              <div class="stat-header">
+                <span class="stat-title">Save Locks</span>
+                <span class="stat-icon">🔒</span>
+              </div>
+              <div class="stat-value" id="stat-locked-sessions">0</div>
+              <div class="stat-footer">Sessions currently checked out</div>
+            </div>
+          </div>
+
+          <div class="dashboard-widgets">
+            <div class="widget-card">
+              <div class="widget-header">
+                <h3>🖥️ System Vitals & Resources</h3>
+              </div>
+              <div class="widget-body">
+                <div class="vitals-grid">
+                  <div class="vital-item">
+                    <span class="vital-label">Uptime</span>
+                    <span class="vital-value" id="vital-uptime">0s</span>
+                  </div>
+                  <div class="vital-item">
+                    <span class="vital-label">Node Version</span>
+                    <span class="vital-value" id="vital-node">--</span>
+                  </div>
+                  <div class="vital-item">
+                    <span class="vital-label">Memory (Heap Used)</span>
+                    <span class="vital-value" id="vital-memory">-- MB</span>
+                  </div>
+                  <div class="vital-item">
+                    <span class="vital-label">Custom Worlds (.apworld)</span>
+                    <span class="vital-value" id="vital-apworlds">0</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="widget-card">
+              <div class="widget-header">
+                <h3>🚀 Quick Control Panel</h3>
+              </div>
+              <div class="widget-body">
+                <div class="quick-controls">
+                  <button class="quick-btn quick-btn-danger" id="qbtn-purge-all">
+                    <span class="qbtn-icon">🔥</span>
+                    <div class="qbtn-text">
+                      <strong>Delete All Server Data</strong>
+                      <small>Wipe rooms, sessions, users, and generated files</small>
+                    </div>
+                  </button>
+                  <button class="quick-btn" id="qbtn-clear-cache">
+                    <span class="qbtn-icon">⚡</span>
+                    <div class="qbtn-text">
+                      <strong>Purge Archipelago Cache</strong>
+                      <small>Invalidate parsed games & options schemas</small>
+                    </div>
+                  </button>
+                  <button class="quick-btn" id="qbtn-refresh-all">
+                    <span class="qbtn-icon">🔄</span>
+                    <div class="qbtn-text">
+                      <strong>Refresh Vitals & Telemetry</strong>
+                      <small>Fetch immediate server state snapshot</small>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. ROOMS & SESSIONS TAB -->
+        <section class="tab-pane" id="tab-rooms">
+          <div class="table-container">
+            <div class="table-header-toolbar">
+              <h3>Active & Historic Multiworld Rooms</h3>
+              <div class="table-search">
+                <input type="text" id="search-rooms" placeholder="Search by Room Code or Host...">
+              </div>
+            </div>
+            <table class="data-table" id="rooms-table">
+              <thead>
+                <tr>
+                  <th>Room Code</th>
+                  <th>Status</th>
+                  <th>Seed Status</th>
+                  <th>AP Server Port</th>
+                  <th>Players</th>
+                  <th>Save Lock</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="rooms-table-body">
+                <tr><td colspan="7" class="loading-cell">Loading room telemetry...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 3. AP SERVERS TAB -->
+        <section class="tab-pane" id="tab-servers">
+          <div class="table-container">
+            <div class="table-header-toolbar">
+              <h3>Live Archipelago MultiServer Processes</h3>
+              <p class="table-subtitle">Subprocesses launched by the orchestrator for active rooms</p>
+            </div>
+            <table class="data-table" id="servers-table">
+              <thead>
+                <tr>
+                  <th>Room Code</th>
+                  <th>Port</th>
+                  <th>PID</th>
+                  <th>Save File Path</th>
+                  <th>Status</th>
+                  <th>Control</th>
+                </tr>
+              </thead>
+              <tbody id="servers-table-body">
+                <tr><td colspan="6" class="loading-cell">Checking server processes...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 4. CUSTOM APWORLDS TAB -->
+        <section class="tab-pane" id="tab-apworlds">
+          <div class="apworld-container">
+            <!-- Dropzone uploader -->
+            <div class="upload-card">
+              <div class="dropzone" id="apworld-dropzone">
+                <div class="dropzone-icon">📦</div>
+                <h3>Upload Custom `.apworld` File</h3>
+                <p>Drag & drop your Archipelago game package here, or click to browse</p>
+                <input type="file" id="apworld-file-input" accept=".apworld" style="display: none;">
+                <button class="btn btn-secondary" id="btn-browse-apworld">Select .apworld File</button>
+              </div>
+              <div class="upload-progress" id="upload-progress" style="display: none;">
+                <div class="progress-bar-container">
+                  <div class="progress-bar-fill" id="progress-fill"></div>
+                </div>
+                <span id="upload-status-text">Uploading...</span>
+              </div>
+            </div>
+
+            <!-- Installed APWorlds Table -->
+            <div class="table-container">
+              <div class="table-header-toolbar">
+                <h3>Installed Custom APWorlds</h3>
+              </div>
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Filename</th>
+                    <th>Size</th>
+                    <th>Last Modified</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="apworlds-table-body">
+                  <tr><td colspan="4" class="loading-cell">Loading installed worlds...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. DATABASE EXPLORER TAB -->
+        <section class="tab-pane" id="tab-database">
+          <div class="db-explorer">
+            <div class="db-tabs">
+              <button class="db-tab-btn active" data-dbtable="Rooms">Rooms Table</button>
+              <button class="db-tab-btn" data-dbtable="Users">Users Table</button>
+              <button class="db-tab-btn" data-dbtable="Sessions">Sessions Table</button>
+            </div>
+            <div class="table-container">
+              <table class="data-table db-raw-table">
+                <thead id="db-table-head">
+                  <!-- Dynamic Head -->
+                </thead>
+                <tbody id="db-table-body">
+                  <tr><td class="loading-cell">Loading table data...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Player List Modal -->
+  <div class="modal-backdrop" id="player-modal" style="display: none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-room-title">Room Players</h3>
+        <button class="btn-close" id="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-player-list">
+        <!-- Dynamic content -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Purge All Data Confirmation Modal -->
+  <div class="modal-backdrop" id="purge-modal" style="display: none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 style="color: var(--accent-rose);">🔥 Purge All Backend Data</h3>
+        <button class="btn-close" id="purge-modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 1rem; color: var(--text-primary);">Are you sure you want to delete all server data? This operation cannot be undone.</p>
+        <div style="background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.25rem;">
+          <ul style="margin-left: 1.25rem; font-size: 0.85rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.35rem;">
+            <li>Terminates all active Archipelago server subprocesses</li>
+            <li>Clears all Rooms, Users, Sessions, and OptionsCache in SQLite</li>
+            <li>Deletes all generated seed files and output zip files in <code>temp_seeds/</code></li>
+            <li>Deletes failed generation logs</li>
+          </ul>
+        </div>
+        <div style="margin-bottom: 1.5rem;">
+          <label style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem; color: var(--text-primary); cursor: pointer; user-select: none;">
+            <input type="checkbox" id="chk-purge-apworlds" style="width: 16px; height: 16px; accent-color: var(--accent-rose);">
+            <span>Also delete installed custom <code>.apworld</code> packages</span>
+          </label>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button class="btn btn-secondary" id="btn-cancel-purge">Cancel</button>
+          <button class="btn btn-danger" id="btn-confirm-purge">🔥 Delete All Data</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification System -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="admin.js" type="module"></script>
+</body>
+</html>

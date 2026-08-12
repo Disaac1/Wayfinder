@@ -1,0 +1,847 @@
+[gd_scene load_steps=3 format=3 uid="uid://ddy27qbyhws82"]
+
+[ext_resource type="Script" path="res://scripts/lobby.gd" id="1_yyyy"]
+[ext_resource type="Script" path="res://scripts/loading_spinner.gd" id="2_spinner"]
+
+[node name="Lobby" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_yyyy")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.08, 0.09, 0.12, 1)
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="VBox" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Header" type="HBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+
+[node name="RoomLabel" type="Label" parent="Margin/VBox/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.67, 0.44, 0.98, 1)
+theme_override_font_sizes/font_size = 20
+text = "ROOM: ------"
+
+[node name="ActiveSeedBadge" type="PanelContainer" parent="Margin/VBox/Header"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="Margin/VBox/Header/ActiveSeedBadge"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 4
+
+[node name="BadgeLabel" type="Label" parent="Margin/VBox/Header/ActiveSeedBadge/Margin"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.9, 0.5, 1)
+theme_override_font_sizes/font_size = 13
+text = "● RUNNING SEED ACTIVE"
+
+[node name="ViewSwitcherHBox" type="HBoxContainer" parent="Margin/VBox/Header"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="PlayViewBtn" type="Button" parent="Margin/VBox/Header/ViewSwitcherHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(130, 32)
+layout_mode = 2
+toggle_mode = true
+button_pressed = true
+text = "Play Dashboard"
+
+[node name="SetupViewBtn" type="Button" parent="Margin/VBox/Header/ViewSwitcherHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 32)
+layout_mode = 2
+toggle_mode = true
+text = "Room Setup (Locked)"
+
+[node name="Spacer" type="Control" parent="Margin/VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StatusLabel" type="Label" parent="Margin/VBox/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.55, 0.6, 1)
+text = "Connected"
+
+[node name="ServerLabel" type="Label" parent="Margin/VBox/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.8, 0.4, 1)
+text = ""
+
+[node name="LockStatusLabel" type="Label" parent="Margin/VBox/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.6, 0.15, 1)
+text = ""
+
+[node name="Separator" type="HSeparator" parent="Margin/VBox"]
+layout_mode = 2
+
+[node name="LobbySetupView" type="VBoxContainer" parent="Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Margin/VBox/LobbySetupView"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Players & Games Selection"
+
+[node name="PlayersPanel" type="PanelContainer" parent="Margin/VBox/LobbySetupView"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Margin" type="MarginContainer" parent="Margin/VBox/LobbySetupView/PlayersPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="Scroll" type="ScrollContainer" parent="Margin/VBox/LobbySetupView/PlayersPanel/Margin"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PlayerList" type="VBoxContainer" parent="Margin/VBox/LobbySetupView/PlayersPanel/Margin/Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="PlayDashboardView" type="VBoxContainer" parent="Margin/VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="StatsSummaryBar" type="HBoxContainer" parent="Margin/VBox/PlayDashboardView"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ChecksProgressCard" type="PanelContainer" parent="Margin/VBox/PlayDashboardView/StatsSummaryBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Margin" type="MarginContainer" parent="Margin/VBox/PlayDashboardView/StatsSummaryBar/ChecksProgressCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="VBox" type="VBoxContainer" parent="Margin/VBox/PlayDashboardView/StatsSummaryBar/ChecksProgressCard/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="Margin/VBox/PlayDashboardView/StatsSummaryBar/ChecksProgressCard/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.8, 1)
+theme_override_font_sizes/font_size = 13
+text = "Session Progress"
+
+[node name="ChecksStatsLabel" type="Label" parent="Margin/VBox/PlayDashboardView/StatsSummaryBar/ChecksProgressCard/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Checks: 0 / 0 (0%)"
+
+[node name="ChecksProgressBar" type="ProgressBar" parent="Margin/VBox/PlayDashboardView/StatsSummaryBar/ChecksProgressCard/Margin/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+show_percentage = false
+
+[node name="ServerInfoCard" type="PanelContainer" parent="Margin/VBox/PlayDashboardView/StatsSummaryBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Margin" type="MarginContainer" parent="Margin/VBox/PlayDashboardView/StatsSummaryBar/ServerInfoCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="VBox" type="VBoxContainer" parent="Margin/VBox/PlayDashboardView/StatsSummaryBar/ServerInfoCard/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="Margin/VBox/PlayDashboardView/StatsSummaryBar/ServerInfoCard/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.8, 1)
+theme_override_font_sizes/font_size = 13
+text = "MultiServer Status"
+
+[node name="ServerStatusValue" type="Label" parent="Margin/VBox/PlayDashboardView/StatsSummaryBar/ServerInfoCard/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.8, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "Central Server: Active"
+
+[node name="ServerPortValue" type="Label" parent="Margin/VBox/PlayDashboardView/StatsSummaryBar/ServerInfoCard/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.65, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+text = "Port: 38000"
+
+[node name="QuickActionsCard" type="PanelContainer" parent="Margin/VBox/PlayDashboardView/StatsSummaryBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Margin" type="MarginContainer" parent="Margin/VBox/PlayDashboardView/StatsSummaryBar/QuickActionsCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="VBox" type="VBoxContainer" parent="Margin/VBox/PlayDashboardView/StatsSummaryBar/QuickActionsCard/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="Margin/VBox/PlayDashboardView/StatsSummaryBar/QuickActionsCard/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.8, 1)
+theme_override_font_sizes/font_size = 13
+text = "Quick Actions"
+
+[node name="QuickActionsHBox" type="HBoxContainer" parent="Margin/VBox/PlayDashboardView/StatsSummaryBar/QuickActionsCard/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DashViewSpoilerBtn" type="Button" parent="Margin/VBox/PlayDashboardView/StatsSummaryBar/QuickActionsCard/Margin/VBox/QuickActionsHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Spoiler Log"
+
+[node name="DashDownloadSeedBtn" type="Button" parent="Margin/VBox/PlayDashboardView/StatsSummaryBar/QuickActionsCard/Margin/VBox/QuickActionsHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Download Seed"
+
+[node name="GamesSectionHeader" type="HBoxContainer" parent="Margin/VBox/PlayDashboardView"]
+layout_mode = 2
+
+[node name="GamesSectionLabel" type="Label" parent="Margin/VBox/PlayDashboardView/GamesSectionHeader"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Your Multiworld Games"
+
+[node name="Spacer" type="Control" parent="Margin/VBox/PlayDashboardView/GamesSectionHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="GamesCountLabel" type="Label" parent="Margin/VBox/PlayDashboardView/GamesSectionHeader"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.67, 0.44, 0.98, 1)
+text = "0 Games"
+
+[node name="GamesScroll" type="ScrollContainer" parent="Margin/VBox/PlayDashboardView"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="GamesGridContainer" type="HFlowContainer" parent="Margin/VBox/PlayDashboardView/GamesScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 16
+
+[node name="Separator2" type="HSeparator" parent="Margin/VBox"]
+layout_mode = 2
+
+[node name="Footer" type="HBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+
+[node name="LeaveBtn" type="Button" parent="Margin/VBox/Footer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 40)
+layout_mode = 2
+text = "Leave Lobby"
+
+[node name="RefreshBtn" type="Button" parent="Margin/VBox/Footer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 40)
+layout_mode = 2
+text = "Refresh Catalog"
+
+[node name="Spacer" type="Control" parent="Margin/VBox/Footer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StartGameBtn" type="Button" parent="Margin/VBox/Footer"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(160, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.8, 0.4, 1)
+text = "Start Game"
+
+[node name="DownloadSeedBtn" type="Button" parent="Margin/VBox/Footer"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(150, 40)
+layout_mode = 2
+text = "Download Seed"
+
+[node name="ViewSpoilerBtn" type="Button" parent="Margin/VBox/Footer"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(150, 40)
+layout_mode = 2
+text = "View Spoiler"
+
+[node name="CheckoutSaveBtn" type="Button" parent="Margin/VBox/Footer"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(150, 40)
+layout_mode = 2
+text = "Checkout Save"
+
+[node name="CheckinSaveBtn" type="Button" parent="Margin/VBox/Footer"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(150, 40)
+layout_mode = 2
+text = "Checkin Save"
+
+[node name="ForceUnlockBtn" type="Button" parent="Margin/VBox/Footer"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(150, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
+text = "Force Unlock"
+
+
+
+[node name="AddGameOverlay" type="Control" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dimmer" type="ColorRect" parent="AddGameOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Center" type="CenterContainer" parent="AddGameOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PopupPanel" type="PanelContainer" parent="AddGameOverlay/Center"]
+custom_minimum_size = Vector2(500, 400)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="AddGameOverlay/Center/PopupPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="AddGameOverlay/Center/PopupPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Header" type="HBoxContainer" parent="AddGameOverlay/Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="AddGameOverlay/Center/PopupPanel/Margin/VBox/Header"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Add Game to Your List"
+
+[node name="Spacer" type="Control" parent="AddGameOverlay/Center/PopupPanel/Margin/VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="AddGameCloseBtn" type="Button" parent="AddGameOverlay/Center/PopupPanel/Margin/VBox/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+text = "X"
+
+[node name="SearchInput" type="LineEdit" parent="AddGameOverlay/Center/PopupPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+placeholder_text = "Search games..."
+clear_button_enabled = true
+
+[node name="AddGameSpinner" type="Control" parent="AddGameOverlay/Center/PopupPanel/Margin/VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+script = ExtResource("2_spinner")
+
+[node name="Scroll" type="ScrollContainer" parent="AddGameOverlay/Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="GamePopupGrid" type="GridContainer" parent="AddGameOverlay/Center/PopupPanel/Margin/VBox/Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+columns = 3
+
+[node name="ConfigOverlay" type="Control" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dimmer" type="ColorRect" parent="ConfigOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Center" type="CenterContainer" parent="ConfigOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PopupPanel" type="PanelContainer" parent="ConfigOverlay/Center"]
+custom_minimum_size = Vector2(900, 620)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="ConfigOverlay/Center/PopupPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="ConfigOverlay/Center/PopupPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Header" type="HBoxContainer" parent="ConfigOverlay/Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="ConfigTitle" type="Label" parent="ConfigOverlay/Center/PopupPanel/Margin/VBox/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Configure Options"
+
+[node name="Spacer" type="Control" parent="ConfigOverlay/Center/PopupPanel/Margin/VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ConfigCloseBtn" type="Button" parent="ConfigOverlay/Center/PopupPanel/Margin/VBox/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+text = "X"
+
+[node name="ConfigSpinner" type="Control" parent="ConfigOverlay/Center/PopupPanel/Margin/VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+script = ExtResource("2_spinner")
+
+[node name="Scroll" type="ScrollContainer" parent="ConfigOverlay/Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ConfigPopupOptionsContainer" type="VBoxContainer" parent="ConfigOverlay/Center/PopupPanel/Margin/VBox/Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="Footer" type="HBoxContainer" parent="ConfigOverlay/Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ConfigRemoveBtn" type="Button" parent="ConfigOverlay/Center/PopupPanel/Margin/VBox/Footer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 35)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
+text = "Remove Game"
+
+[node name="Spacer" type="Control" parent="ConfigOverlay/Center/PopupPanel/Margin/VBox/Footer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ConfigSaveBtn" type="Button" parent="ConfigOverlay/Center/PopupPanel/Margin/VBox/Footer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 35)
+layout_mode = 2
+text = "Save"
+
+[node name="ItemBrowserOverlay" type="Control" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dimmer" type="ColorRect" parent="ItemBrowserOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Center" type="CenterContainer" parent="ItemBrowserOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PopupPanel" type="PanelContainer" parent="ItemBrowserOverlay/Center"]
+custom_minimum_size = Vector2(450, 450)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="ItemBrowserOverlay/Center/PopupPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="ItemBrowserOverlay/Center/PopupPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Header" type="HBoxContainer" parent="ItemBrowserOverlay/Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="ItemBrowserTitle" type="Label" parent="ItemBrowserOverlay/Center/PopupPanel/Margin/VBox/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "Select Items"
+
+[node name="Spacer" type="Control" parent="ItemBrowserOverlay/Center/PopupPanel/Margin/VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ItemBrowserCloseBtn" type="Button" parent="ItemBrowserOverlay/Center/PopupPanel/Margin/VBox/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+text = "X"
+
+[node name="ItemSearchInput" type="LineEdit" parent="ItemBrowserOverlay/Center/PopupPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+placeholder_text = "Search catalog..."
+clear_button_enabled = true
+
+[node name="Scroll" type="ScrollContainer" parent="ItemBrowserOverlay/Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ItemBrowserList" type="VBoxContainer" parent="ItemBrowserOverlay/Center/PopupPanel/Margin/VBox/Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="GeneratingOverlay" type="Control" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dimmer" type="ColorRect" parent="GeneratingOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.65)
+
+[node name="Center" type="CenterContainer" parent="GeneratingOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="GeneratingOverlay/Center"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="GeneratingSpinner" type="Control" parent="GeneratingOverlay/Center/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+script = ExtResource("2_spinner")
+
+[node name="GeneratingLabel" type="Label" parent="GeneratingOverlay/Center/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Generating Archipelago Seed..."
+horizontal_alignment = 1
+
+[node name="GeneratingStatusLabel" type="Label" parent="GeneratingOverlay/Center/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.65, 0.7, 1)
+theme_override_font_sizes/font_size = 12
+text = "Preparing generation..."
+horizontal_alignment = 1
+
+[node name="LaunchOverlay" type="Control" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dimmer" type="ColorRect" parent="LaunchOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Center" type="CenterContainer" parent="LaunchOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PopupPanel" type="PanelContainer" parent="LaunchOverlay/Center"]
+custom_minimum_size = Vector2(500, 380)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="LaunchOverlay/Center/PopupPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="LaunchOverlay/Center/PopupPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Header" type="HBoxContainer" parent="LaunchOverlay/Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="LaunchTitle" type="Label" parent="LaunchOverlay/Center/PopupPanel/Margin/VBox/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Launch Game Setup"
+
+[node name="Spacer" type="Control" parent="LaunchOverlay/Center/PopupPanel/Margin/VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LaunchCloseBtn" type="Button" parent="LaunchOverlay/Center/PopupPanel/Margin/VBox/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+text = "X"
+
+[node name="Separator" type="HSeparator" parent="LaunchOverlay/Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="Scroll" type="ScrollContainer" parent="LaunchOverlay/Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ScrollVBox" type="VBoxContainer" parent="LaunchOverlay/Center/PopupPanel/Margin/VBox/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="LaunchInstructions" type="RichTextLabel" parent="LaunchOverlay/Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+fit_content = true
+text = "Instructions placeholder..."
+
+[node name="GameSelectionSection" type="VBoxContainer" parent="LaunchOverlay/Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="GameSelectionLabel" type="Label" parent="LaunchOverlay/Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/GameSelectionSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.8, 1)
+text = "Select Game to Launch"
+
+[node name="GameSelectionButtons" type="VBoxContainer" parent="LaunchOverlay/Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/GameSelectionSection"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PathSection" type="VBoxContainer" parent="LaunchOverlay/Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PathLabel" type="Label" parent="LaunchOverlay/Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/PathSection"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.8, 1)
+text = "Executable Path"
+
+[node name="PathHBox" type="HBoxContainer" parent="LaunchOverlay/Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/PathSection"]
+layout_mode = 2
+
+[node name="LaunchPathInput" type="LineEdit" parent="LaunchOverlay/Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/PathSection/PathHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Select path to game executable..."
+
+[node name="LaunchPathBrowseBtn" type="Button" parent="LaunchOverlay/Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/PathSection/PathHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "Browse"
+
+[node name="EmulatorPathSection" type="VBoxContainer" parent="LaunchOverlay/Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="EmulatorPathLabel" type="Label" parent="LaunchOverlay/Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/EmulatorPathSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.8, 1)
+text = "SNES Emulator Path"
+
+[node name="EmulatorPathHBox" type="HBoxContainer" parent="LaunchOverlay/Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/EmulatorPathSection"]
+layout_mode = 2
+
+[node name="LaunchEmulatorPathInput" type="LineEdit" parent="LaunchOverlay/Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/EmulatorPathSection/EmulatorPathHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Select path to emulator..."
+
+[node name="LaunchEmulatorPathBrowseBtn" type="Button" parent="LaunchOverlay/Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/EmulatorPathSection/EmulatorPathHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "Browse"
+
+[node name="Separator2" type="HSeparator" parent="LaunchOverlay/Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="Footer" type="HBoxContainer" parent="LaunchOverlay/Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="LaunchCancelBtn" type="Button" parent="LaunchOverlay/Center/PopupPanel/Margin/VBox/Footer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 35)
+layout_mode = 2
+text = "Cancel"
+
+[node name="Spacer2" type="Control" parent="LaunchOverlay/Center/PopupPanel/Margin/VBox/Footer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LaunchConfirmBtn" type="Button" parent="LaunchOverlay/Center/PopupPanel/Margin/VBox/Footer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 35)
+layout_mode = 2
+text = "Launch"
+
+[node name="LaunchFileDialog" type="FileDialog" parent="."]
+unique_name_in_owner = true
+title = "Open a File"
+size = Vector2i(600, 400)
+access = 2
+filters = PackedStringArray("*.exe ; Executables", "*.sfc ; SNES ROMs", "* ; All Files")
+
+
