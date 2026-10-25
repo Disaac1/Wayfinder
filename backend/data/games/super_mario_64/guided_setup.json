@@ -1,0 +1,220 @@
+{
+  "game_title": "Super Mario 64",
+  "default_config": {
+    "completion_type": 0,
+    "amount_of_stars": 120,
+    "stars_to_finish": 58,
+    "first_bowser_star_door_cost": 7,
+    "basement_star_door_cost": 25,
+    "second_floor_star_door_cost": 42,
+    "mips1_cost": 12,
+    "mips2_cost": 42,
+    "area_rando": 0,
+    "enable_locked_paintings": false,
+    "progressive_keys": true,
+    "enable_coin_stars": 0,
+    "buddy_checks": false,
+    "exclamation_boxes": false,
+    "enable_move_rando": false,
+    "strict_cap_requirements": true,
+    "strict_cannon_requirements": true,
+    "strict_move_requirements": true,
+    "death_link": false
+  },
+  "required_schema_keys": [
+    "completion_type",
+    "amount_of_stars",
+    "stars_to_finish",
+    "area_rando",
+    "progressive_keys",
+    "enable_move_rando"
+  ],
+  "steps": [
+    {
+      "num": 1,
+      "title": "1. Goal & Stars",
+      "description": "Step 1: Choose Victory Goal, Star Pool & Star Door Costs",
+      "controls": [
+        {
+          "type": "card_grid",
+          "option_key": "completion_type",
+          "columns": 2,
+          "items": [
+            {
+              "id": 0,
+              "title": "👑 Beat Final Bowser",
+              "desc": "Defeat Bowser in the Sky (Bowser 3) to clear the game."
+            },
+            {
+              "id": 1,
+              "title": "🏰 Defeat All Bowser Stages",
+              "desc": "Defeat Bowser in Dark World, Fire Sea & Sky to win."
+            }
+          ]
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "slider",
+          "option_key": "amount_of_stars",
+          "label": "Total Power Stars in Pool:",
+          "min": 35,
+          "max": 120,
+          "step": 5,
+          "suffix": " Stars"
+        },
+        {
+          "type": "slider",
+          "option_key": "stars_to_finish",
+          "label": "Endless Stairs Requirement:",
+          "min": 0,
+          "max": 90,
+          "step": 5,
+          "suffix": "% of Stars"
+        },
+        {
+          "type": "slider",
+          "option_key": "first_bowser_star_door_cost",
+          "label": "First Star Door (Bowser 1):",
+          "min": 0,
+          "max": 40,
+          "step": 1,
+          "suffix": "%"
+        },
+        {
+          "type": "slider",
+          "option_key": "basement_star_door_cost",
+          "label": "Basement Star Door (Bowser 2):",
+          "min": 0,
+          "max": 50,
+          "step": 1,
+          "suffix": "%"
+        },
+        {
+          "type": "slider",
+          "option_key": "second_floor_star_door_cost",
+          "label": "Second Floor Star Door:",
+          "min": 0,
+          "max": 70,
+          "step": 1,
+          "suffix": "%"
+        }
+      ]
+    },
+    {
+      "num": 2,
+      "title": "2. World & Entrances",
+      "description": "Step 2: Entrance Randomizer & Castle Access",
+      "controls": [
+        {
+          "type": "card_grid",
+          "option_key": "area_rando",
+          "columns": 3,
+          "items": [
+            {
+              "id": 0,
+              "name": "🚪 Vanilla Entrances",
+              "desc": "Paintings & levels lead to their original destinations."
+            },
+            {
+              "id": 1,
+              "name": "🌀 Course Shuffle",
+              "desc": "Randomize course painting destinations (Secrets stay vanilla)."
+            },
+            {
+              "id": 3,
+              "name": "🌌 Full Entrance Rando",
+              "desc": "Randomize all course paintings & secret level entrances!"
+            }
+          ]
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "toggle",
+          "option_key": "enable_locked_paintings",
+          "label": "🖼️ Enable Locked Paintings (Requires finding painting keys to enter)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "progressive_keys",
+          "label": "🔑 Progressive Keys (1st Key = Basement, 2nd Key = Upper Floor)"
+        }
+      ]
+    },
+    {
+      "num": 3,
+      "title": "3. Location Pools",
+      "description": "Step 3: Extra Location Checks & Coin Stars",
+      "controls": [
+        {
+          "type": "dropdown",
+          "option_key": "enable_coin_stars",
+          "label": "100 Coin Stars Pool:",
+          "choices": [
+            { "id": 0, "title": "Off (100 Coin Stars removed from pool)" },
+            { "id": 1, "title": "On (100 Coin Stars in pool & randomized)" },
+            { "id": 2, "title": "Vanilla (100 Coin Stars in pool, non-randomized)" }
+          ]
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "toggle",
+          "option_key": "buddy_checks",
+          "label": "💣 Bob-omb Buddy Checks (Buddies hold items & unlock cannons)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "exclamation_boxes",
+          "label": "🎁 Randomize 1Up !-Blocks (Adds 29 1Up box locations)"
+        }
+      ]
+    },
+    {
+      "num": 4,
+      "title": "4. Mario Moves",
+      "description": "Step 4: Mario Move Randomizer & Logic Requirements",
+      "controls": [
+        {
+          "type": "toggle",
+          "option_key": "enable_move_rando",
+          "label": "🏃 Enable Move Randomizer (Mario unlocks Long Jump, Wall Kick, Triple Jump as items!)"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "toggle",
+          "option_key": "strict_cap_requirements",
+          "label": "🧢 Strict Cap Requirements (Stars expecting Metal/Wing/Vanish cap logically require caps)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "strict_cannon_requirements",
+          "label": "💣 Strict Cannon Requirements"
+        },
+        {
+          "type": "toggle",
+          "option_key": "strict_move_requirements",
+          "label": "🤸 Strict Move Requirements (If move rando on, stars expecting long jump require it in logic)"
+        }
+      ]
+    },
+    {
+      "num": 5,
+      "title": "5. QoL & Extras",
+      "description": "Step 5: Quality of Life & Multiplayer Extras",
+      "controls": [
+        {
+          "type": "toggle",
+          "option_key": "death_link",
+          "label": "💀 DeathLink (Dying sends death to multiworld partners)"
+        }
+      ]
+    }
+  ]
+}

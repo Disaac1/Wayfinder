@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wayfinder - Archipelago Multiworld Platform</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <!-- Header / Navigation -->
+  <header class="navbar">
+    <a href="/" class="brand">
+      <img src="/icon.png" alt="Wayfinder Logo" class="brand-logo-img" width="32px">
+      <span>Wayfinder</span>
+    </a>
+    <div class="nav-actions">
+      <div class="status-badge">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Checking Server...</span>
+      </div>
+      <a href="/admin" class="admin-link">Admin Portal</a>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <main class="hero">
+    <div class="hero-tag">Zero-Config Multiworld Randomizer</div>
+    <h1>Effortless Archipelago Sessions on <span class="gradient-text">Wayfinder</span></h1>
+    <p>
+      Connect with friends anywhere in the world. Generate multiworld seeds, host Archipelago lobbies with instant room codes, and track items in real-time without configuring router ports.
+    </p>
+
+    <div class="cta-group">
+      <a href="/api/client/download-client" class="btn btn-primary" id="downloadClientBtn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span id="downloadBtnText">Download for Windows</span>
+      </a>
+      <a href="/tools" class="btn btn-secondary">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+        </svg>
+        <span>Tools & Apworlds</span>
+      </a>
+    </div>
+
+    <!-- Features -->
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="card-icon">⚡</div>
+        <h3>Instant Room Codes</h3>
+        <p>No port-forwarding needed. Start a room, get a 6-letter code, and invite players directly.</p>
+      </div>
+      <div class="feature-card">
+        <div class="card-icon">🌐</div>
+        <h3>Global Cloudflare Tunnel</h3>
+        <p>Ultra-low latency edge routing powered by Cloudflare with automatic WSS encryption.</p>
+      </div>
+      <div class="feature-card">
+        <div class="card-icon">🎮</div>
+        <h3>Auto Game Launcher</h3>
+        <p>Seamlessly integrates with emulators and native ports. Auto-patches seeds and connects directly.</p>
+      </div>
+      <div class="feature-card">
+        <div class="card-icon">📊</div>
+        <h3>Live Sync & Tracking</h3>
+        <p>Real-time checks progress tracker and activity monitoring for all players in your session.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Instructions Section -->
+  <section class="instructions-section">
+    <div class="instructions-container">
+      <h2 class="section-title">How It Works</h2>
+      <div class="steps-list">
+        <div class="step-item">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h4>Launch Wayfinder</h4>
+            <p>Download and open the Wayfinder client. It connects automatically to <code>wss://wayfinder.disaac1.com</code>.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h4>Create or Join a Room</h4>
+            <p>Create a fresh room with your preferred YAML options or enter your friend's 6-character room code.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h4>Generate & Play</h4>
+            <p>Generate the multiworld seed in one click. Wayfinder spins up the server, injects your patch files, and opens your game!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>Wayfinder Multiworld Platform &bull; Powered by Archipelago &bull; Hosted on disaac1.com</p>
+  </footer>
+
+  <script>
+    async function checkServerHealth() {
+      const dot = document.getElementById('statusDot');
+      const text = document.getElementById('statusText');
+      try {
+        const start = performance.now();
+        const res = await fetch('/health', { cache: 'no-store' });
+        const latency = Math.round(performance.now() - start);
+        if (res.ok) {
+          dot.className = 'status-dot online';
+          text.textContent = `Online (${latency}ms)`;
+        } else {
+          dot.className = 'status-dot offline';
+          text.textContent = 'Degraded';
+        }
+      } catch (e) {
+        dot.className = 'status-dot offline';
+        text.textContent = 'Server Offline';
+      }
+    }
+
+    async function checkVersion() {
+      try {
+        const res = await fetch('/api/client/version');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.version) {
+            const btnText = document.getElementById('downloadBtnText');
+            if (btnText) btnText.textContent = `Download for Windows (v${data.version})`;
+          }
+        }
+      } catch (e) {}
+    }
+
+    // Initial check and periodic polling
+    checkServerHealth();
+    checkVersion();
+    setInterval(checkServerHealth, 15000);
+  </script>
+</body>
+</html>

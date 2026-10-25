@@ -1,0 +1,27 @@
+{
+  "game_name": "Super Mario 64",
+  "support_tier": 1,
+  "launch_mode": "native_cli",
+  "patch_extension": ".apsm64ex",
+  "patch_extension_aliases": [
+    ".apsm64ex"
+  ],
+  "client_tool": "sm64ex",
+  "required_rom": "Super Mario 64 (USA).z64",
+  "rom_aliases": [
+    "baserom.us.z64",
+    "Super Mario 64 (U) [!].z64"
+  ],
+  "rom_hashes": {
+    "sha1": "9bef11204cf1976c1e796e11476008134793d526"
+  },
+  "cli": {
+    "args_template": [
+      "--sm64ap_name", "{player_name}",
+      "--sm64ap_ip", "{server_clean_url}"
+    ],
+    "patch_arg": "--sm64ap_file"
+  },
+  "auto_connect": true,
+  "install_instructions": "Tier 1 Full Support: Click Launch to automatically set connection arguments and launch Super Mario 64 EX connected to the server. If SM64EX is missing, click Auto-Install below."
+}

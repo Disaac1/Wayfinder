@@ -1,0 +1,218 @@
+{
+  "game_title": "Plants vs. Zombies",
+  "default_config": {
+    "adventure_levels_goal": 49,
+    "fast_goal": false,
+    "adventure_mode_progression": "area_unlock_items",
+    "minigame_levels": "randomised_order",
+    "puzzle_levels": "off",
+    "survival_levels": "off",
+    "bonus_levels": "off",
+    "early_sunflower": true,
+    "early_shovel": true,
+    "starting_seed_slots": 6,
+    "zombie_randomisation": false,
+    "death_link": false
+  },
+  "required_schema_keys": [
+    "adventure_levels_goal",
+    "adventure_mode_progression"
+  ],
+  "steps": [
+    {
+      "num": 1,
+      "title": "1. Presets",
+      "description": "Step 1: Choose a Quick Preset or customize settings step-by-step",
+      "controls": [
+        {
+          "type": "preset_grid",
+          "columns": 3,
+          "presets": [
+            {
+              "id": "casual",
+              "title": "🌻 Casual Adventure",
+              "desc": "Focus on Adventure Mode levels with early sunflower, early shovel, and standard seed slots.",
+              "values": {
+                "adventure_levels_goal": 49,
+                "fast_goal": false,
+                "adventure_mode_progression": "area_unlock_items",
+                "minigame_levels": "off",
+                "puzzle_levels": "off",
+                "survival_levels": "off",
+                "bonus_levels": "off",
+                "early_sunflower": true,
+                "early_shovel": true,
+                "starting_seed_slots": 6,
+                "zombie_randomisation": false,
+                "death_link": false
+              }
+            },
+            {
+              "id": "full_game",
+              "title": "🏆 All Modes (Recommended)",
+              "desc": "Adventure Mode, Minigames, and Puzzles randomized into the item pool for a complete multiworld run.",
+              "values": {
+                "adventure_levels_goal": 49,
+                "fast_goal": false,
+                "adventure_mode_progression": "area_unlock_items",
+                "minigame_levels": "randomised_order",
+                "puzzle_levels": "randomised_order",
+                "survival_levels": "randomised_order",
+                "bonus_levels": "off",
+                "early_sunflower": true,
+                "early_shovel": true,
+                "starting_seed_slots": 6,
+                "zombie_randomisation": false,
+                "death_link": false
+              }
+            },
+            {
+              "id": "hardcore",
+              "title": "💀 Hardcore Multiworld",
+              "desc": "All levels unlocked with Zombie Randomisation enabled, limited starting slots, and DeathLink active.",
+              "values": {
+                "adventure_levels_goal": 49,
+                "fast_goal": false,
+                "adventure_mode_progression": "level_items",
+                "minigame_levels": "level_items",
+                "puzzle_levels": "level_items",
+                "survival_levels": "level_items",
+                "bonus_levels": "level_items",
+                "early_sunflower": false,
+                "early_shovel": false,
+                "starting_seed_slots": 4,
+                "zombie_randomisation": true,
+                "death_link": true
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 2,
+      "title": "2. Goal & Level Progression",
+      "description": "Step 2: Choose how many levels unlock the boss and which extra modes are randomized",
+      "controls": [
+        {
+          "type": "slider",
+          "option_key": "adventure_levels_goal",
+          "label": "Adventure Levels Required Before Boss (5-10)",
+          "min": 0,
+          "max": 49,
+          "step": 1,
+          "suffix": " Levels"
+        },
+        {
+          "type": "toggle",
+          "option_key": "fast_goal",
+          "label": "Fast Boss Access (Dr. Zomboss unlocked immediately once level goal is met)"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "card_grid",
+          "option_key": "adventure_mode_progression",
+          "columns": 2,
+          "items": [
+            {
+              "id": "area_unlock_items",
+              "title": "Area Unlock Items (Standard)",
+              "desc": "Unlock Day, Night, Pool, Fog, and Roof areas as progression items."
+            },
+            {
+              "id": "linear",
+              "title": "Linear Adventure",
+              "desc": "Classic linear story progression from level 1-1 to 5-10."
+            },
+            {
+              "id": "open_area_unlock_items",
+              "title": "Open Area Progression",
+              "desc": "All areas accessible with unlock items scattered across the pool."
+            },
+            {
+              "id": "level_items",
+              "title": "Individual Level Items",
+              "desc": "Every single level must be unlocked as an individual item."
+            }
+          ]
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "card_grid",
+          "option_key": "minigame_levels",
+          "columns": 3,
+          "items": [
+            {
+              "id": "off",
+              "title": "Minigames: Off",
+              "desc": "Do not include Minigames in the randomization pool."
+            },
+            {
+              "id": "randomised_order",
+              "title": "Minigames: Shuffled",
+              "desc": "Minigames are shuffled and rewarded upon completion."
+            },
+            {
+              "id": "level_items",
+              "title": "Minigames: Level Items",
+              "desc": "Individual minigames unlock as items in the multiworld."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 3,
+      "title": "3. Starting Plants & Seed Slots",
+      "description": "Step 3: Configure starting equipment and seed pack limits",
+      "controls": [
+        {
+          "type": "slider",
+          "option_key": "starting_seed_slots",
+          "label": "Starting Seed Packet Slots",
+          "min": 4,
+          "max": 10,
+          "step": 1,
+          "suffix": " Slots"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "toggle",
+          "option_key": "early_sunflower",
+          "label": "Guarantee Early Sunflower / Sun Producer"
+        },
+        {
+          "type": "toggle",
+          "option_key": "early_shovel",
+          "label": "Guarantee Early Shovel"
+        }
+      ]
+    },
+    {
+      "num": 4,
+      "title": "4. Difficulty & Multiworld",
+      "description": "Step 4: Configure zombie randomization and multiworld options",
+      "controls": [
+        {
+          "type": "toggle",
+          "option_key": "zombie_randomisation",
+          "label": "Randomise Zombie Spawns Across Levels"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "toggle",
+          "option_key": "death_link",
+          "label": "DeathLink (Share lawn mower losses / game overs with multiworld)"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "game_name": "Factorio",
+  "support_tier": 2,
+  "launch_mode": "direct",
+  "executable_name": "factorio.exe",
+  "sub_folders": [
+    "Factorio/bin/x64",
+    "Factorio"
+  ],
+  "clipboard_action": "copy_server_address",
+  "install_instructions": "1. Open Factorio.\n2. Click Multiplayer -> Connect to Server.\n3. Paste the server URL from your clipboard."
+}

@@ -1,0 +1,394 @@
+{
+  "game_title": "Castlevania: Symphony of the Night",
+  "default_config": {
+    "item_pool": "full",
+    "starting_zone": "vanilla",
+    "difficult": "normal",
+    "drop_mod": "normal",
+    "open_no4": "open",
+    "open_are": true,
+    "unlocked_mode": true,
+    "skip_nz1": true,
+    "my_purse": true,
+    "remove_prologue": true,
+    "auto_heal": true,
+    "fast_warp": true,
+    "anti_freeze": true,
+    "infinite_wing_smash": false,
+    "reverse_library": true,
+    "powerful_items": true,
+    "boss_locations": true,
+    "rng_start_gear": false,
+    "random_shop": "on",
+    "shop_prices": false,
+    "relic_suprise": false,
+    "enemysanity": false,
+    "death_link": false
+  },
+  "required_schema_keys": [
+    "item_pool",
+    "open_no4"
+  ],
+  "steps": [
+    {
+      "num": 1,
+      "title": "1. Presets",
+      "description": "Step 1: Choose a Quick Preset or configure settings step-by-step",
+      "controls": [
+        {
+          "type": "preset_grid",
+          "columns": 3,
+          "presets": [
+            {
+              "id": "full_multiworld",
+              "title": "🏰 Full Multiworld (Recommended)",
+              "desc": "Full item pool with boss drops, powerful weapons, library shop, open shortcuts, and quality-of-life.",
+              "values": {
+                "item_pool": "full",
+                "starting_zone": "vanilla",
+                "difficult": "normal",
+                "drop_mod": "normal",
+                "open_no4": "open",
+                "open_are": true,
+                "unlocked_mode": true,
+                "skip_nz1": true,
+                "my_purse": true,
+                "remove_prologue": true,
+                "auto_heal": true,
+                "fast_warp": true,
+                "anti_freeze": true,
+                "infinite_wing_smash": false,
+                "reverse_library": true,
+                "powerful_items": true,
+                "boss_locations": true,
+                "rng_start_gear": false,
+                "random_shop": "on",
+                "shop_prices": false,
+                "relic_suprise": false,
+                "enemysanity": false,
+                "death_link": false
+              }
+            },
+            {
+              "id": "relic_rush",
+              "title": "⚡ Casual Relic Rush",
+              "desc": "Fast-paced seed focusing strictly on relics, holy glasses, and rings with helpful QoL upgrades enabled.",
+              "values": {
+                "item_pool": "relic_prog",
+                "starting_zone": "vanilla",
+                "difficult": "easy",
+                "drop_mod": "increased",
+                "open_no4": "open",
+                "open_are": true,
+                "unlocked_mode": true,
+                "skip_nz1": true,
+                "my_purse": true,
+                "remove_prologue": true,
+                "auto_heal": true,
+                "fast_warp": true,
+                "anti_freeze": true,
+                "infinite_wing_smash": true,
+                "reverse_library": true,
+                "powerful_items": true,
+                "boss_locations": false,
+                "rng_start_gear": false,
+                "random_shop": "off",
+                "shop_prices": false,
+                "relic_suprise": false,
+                "enemysanity": false,
+                "death_link": false
+              }
+            },
+            {
+              "id": "inverted_hardcore",
+              "title": "💀 Inverted Hardcore",
+              "desc": "Spawn in a random castle area on Hard difficulty with full Enemysanity and DeathLink enabled.",
+              "values": {
+                "item_pool": "full",
+                "starting_zone": "any_castle",
+                "difficult": "hard",
+                "drop_mod": "normal",
+                "open_no4": "open",
+                "open_are": false,
+                "unlocked_mode": false,
+                "skip_nz1": false,
+                "my_purse": false,
+                "remove_prologue": true,
+                "auto_heal": false,
+                "fast_warp": true,
+                "anti_freeze": true,
+                "infinite_wing_smash": false,
+                "reverse_library": true,
+                "powerful_items": false,
+                "boss_locations": true,
+                "rng_start_gear": true,
+                "random_shop": "on",
+                "shop_prices": true,
+                "relic_suprise": true,
+                "enemysanity": true,
+                "death_link": true
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 2,
+      "title": "2. Item Pool & Castle Doors",
+      "description": "Step 2: Choose item check density, starting location, and castle passage doors",
+      "controls": [
+        {
+          "type": "card_grid",
+          "option_key": "item_pool",
+          "columns": 2,
+          "items": [
+            {
+              "id": "full",
+              "title": "Full Item Pool (Standard)",
+              "desc": "All items, relics, and equipment scattered across Hallownest & both castles."
+            },
+            {
+              "id": "relic_prog",
+              "title": "Relic Progression Only",
+              "desc": "Only relics, silver/gold rings, spike breaker, and holy glasses are check locations."
+            },
+            {
+              "id": "guarded",
+              "title": "Guarded Locations",
+              "desc": "Relics and major guarded check locations only."
+            },
+            {
+              "id": "equipment",
+              "title": "Equipment & Relics",
+              "desc": "Relics and prominent equipment locations included."
+            }
+          ]
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "card_grid",
+          "option_key": "starting_zone",
+          "columns": 2,
+          "items": [
+            {
+              "id": "vanilla",
+              "title": "Vanilla Castle Entrance",
+              "desc": "Start at the Castle Entrance as Alucard enters the castle."
+            },
+            {
+              "id": "normal_castle",
+              "title": "Random Normal Castle Zone",
+              "desc": "Teleport to a random zone in the first castle after the entrance."
+            },
+            {
+              "id": "reverse_castle",
+              "title": "Random Inverted Castle Zone",
+              "desc": "Start directly inside the Inverted Castle in a random zone."
+            },
+            {
+              "id": "any_castle",
+              "title": "Any Castle Zone",
+              "desc": "Completely random spawn in either the Normal or Inverted Castle."
+            }
+          ]
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "card_grid",
+          "option_key": "open_no4",
+          "columns": 3,
+          "items": [
+            {
+              "id": "open",
+              "title": "Back Door: Open",
+              "desc": "Back door from Entrance to Underground Cavern is open."
+            },
+            {
+              "id": "closed",
+              "title": "Back Door: Closed",
+              "desc": "Classic vanilla closed door behavior."
+            },
+            {
+              "id": "open_early",
+              "title": "Back Door: Open Early",
+              "desc": "Door opens early upon reaching the entrance."
+            }
+          ]
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "toggle",
+          "option_key": "open_are",
+          "label": "Open Chapel to Colosseum Back Door"
+        },
+        {
+          "type": "toggle",
+          "option_key": "unlocked_mode",
+          "label": "Unlock All Castle Shortcuts (5 in first castle, 1 in inverted castle)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "skip_nz1",
+          "label": "Skip Clock Tower Puzzle (Hitting any gear opens the secret door)"
+        }
+      ]
+    },
+    {
+      "num": 3,
+      "title": "3. Equipment, Drops & Shops",
+      "description": "Step 3: Configure boss rewards, high-tier loot, and Master Librarian shops",
+      "controls": [
+        {
+          "type": "toggle",
+          "option_key": "boss_locations",
+          "label": "Boss Drops in Item Pool (Bosses award multiworld checks)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "powerful_items",
+          "label": "Include Powerful Weapons (Duplicator, Crissaegrim, Ring of Varda, Masamune)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "my_purse",
+          "label": "Keep Starting Gear (Prevent Death from stealing your Alucard equipment!)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "rng_start_gear",
+          "label": "Random Starting Equipment"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "dropdown",
+          "option_key": "random_shop",
+          "label": "Master Librarian Shop Items",
+          "choices": [
+            { "id": "on", "name": "Randomized Shop (On)" },
+            { "id": "off", "name": "Vanilla Shop (Off)" },
+            { "id": "on_lib", "name": "Randomized (Always sells Library Card)" },
+            { "id": "on_no_prog", "name": "Randomized (No Progression Items)" },
+            { "id": "on_no_prog_lib", "name": "Randomized (No Progression + Library Card)" }
+          ]
+        },
+        {
+          "type": "toggle",
+          "option_key": "shop_prices",
+          "label": "Randomize Shop Prices (50% to 150%)"
+        },
+        {
+          "type": "dropdown",
+          "option_key": "drop_mod",
+          "label": "Monster Item Drop Rates",
+          "choices": [
+            { "id": "normal", "name": "Normal Drop Rate" },
+            { "id": "increased", "name": "Increased Drops" },
+            { "id": "abundant", "name": "Abundant Drops" },
+            { "id": "guaranteed", "name": "Guaranteed Drops (100%)" }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 4,
+      "title": "4. Quality of Life & Gameplay",
+      "description": "Step 4: Streamline animations, travel convenience, and relic handling",
+      "controls": [
+        {
+          "type": "toggle",
+          "option_key": "remove_prologue",
+          "label": "Skip Richter Prologue Fight"
+        },
+        {
+          "type": "toggle",
+          "option_key": "auto_heal",
+          "label": "Auto-Heal in Save Rooms (Restores full HP and MP upon entering)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "fast_warp",
+          "label": "Fast Teleport Warp Animation"
+        },
+        {
+          "type": "toggle",
+          "option_key": "anti_freeze",
+          "label": "Anti-Freeze (Removes screen freezes during level-ups, relics, and vessels)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "infinite_wing_smash",
+          "label": "Infinite Bat Wing Smash (Continues until hitting wall or canceling)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "reverse_library",
+          "label": "Reverse Library Card (Hold Down while using Library Card to warp to Inverted Library)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "relic_suprise",
+          "label": "Relic Surprise (All relics disguise as identical mystery sprites)"
+        }
+      ]
+    },
+    {
+      "num": 5,
+      "title": "5. Difficulty & Multiworld",
+      "description": "Step 5: Configure combat balance, Enemysanity, and DeathLink",
+      "controls": [
+        {
+          "type": "card_grid",
+          "option_key": "difficult",
+          "columns": 2,
+          "items": [
+            {
+              "id": "easy",
+              "title": "Easy Difficulty",
+              "desc": "50% lower monster HP, attack, and defense with boosted drop rates."
+            },
+            {
+              "id": "normal",
+              "title": "Normal Difficulty (Vanilla)",
+              "desc": "Standard Castlevania SOTN enemy balance and stats."
+            },
+            {
+              "id": "hard",
+              "title": "Hard Difficulty",
+              "desc": "Tougher enemies with increased damage and health."
+            },
+            {
+              "id": "very_hard",
+              "title": "Very Hard Difficulty",
+              "desc": "Brutal combat challenge for veteran vampire hunters."
+            }
+          ]
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "toggle",
+          "option_key": "enemysanity",
+          "label": "Enemysanity (Hitting any unique enemy for the first time gives a multiworld check)"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "toggle",
+          "option_key": "death_link",
+          "label": "DeathLink (Share deaths with other players in the multiworld)"
+        }
+      ]
+    }
+  ]
+}

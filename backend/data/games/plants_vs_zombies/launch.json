@@ -1,0 +1,53 @@
+{
+  "game_name": "Plants vs. Zombies",
+  "aliases": [
+    "Plants vs. Zombies: Replanted",
+    "Plants vs Zombies",
+    "pvz",
+    "pvzr",
+    "pvz_replanted",
+    "plants_vs_zombies_replanted"
+  ],
+  "short_tag": "PvZ",
+  "support_tier": 1,
+  "launch_mode": "direct",
+  "client_executable": "PlantsVsZombies.exe",
+  "executable_aliases": [
+    "PlantsVsZombies.exe",
+    "popcapgame1.exe",
+    "PvZ.exe",
+    "PlantsVsZombiesReplanted.exe",
+    "Replanted.exe"
+  ],
+  "sub_folders": [
+    "Plants vs Zombies",
+    "Plants vs Zombies Replanted",
+    "Plants vs. Zombies",
+    "Plants vs. Zombies GOTY Edition",
+    "PvZ-GOTY/PvZ-Replanted",
+    "PvZ-Replanted",
+    "PvZ-GOTY"
+  ],
+  "packages": [
+    {
+      "name": "MelonLoader",
+      "download_url": "https://github.com/LavaGang/MelonLoader/releases/download/v0.5.7/MelonLoader.x86.zip",
+      "check_file": "version.dll",
+      "extract_target": ""
+    },
+    {
+      "name": "PvZ Replanted Archipelago Mod",
+      "download_url": "{backend_url}/tools/pvz_replanted_archipelago.zip",
+      "check_file": "Mods/PvZReplantedArchipelago.dll",
+      "extract_target": "Mods"
+    }
+  ],
+  "config_writer": {
+    "file_path": "{game_dir}/UserData/MelonPreferences.cfg",
+    "format": "cfg",
+    "template": "[\"Archipelago Connection\"]\nHost = \"{server_url}\"\nSlotName = \"{slot_name}\"\nPassword = \"\"\n"
+  },
+  "clipboard_action": "copy_server_address",
+  "auto_connect": true,
+  "install_instructions": "Tier 1 Full Support: Point Wayfinder to your Plants vs. Zombies executable, or configure a download link in roms.json. Wayfinder will automatically install MelonLoader, deploy the Archipelago mod, configure your multiworld connection, and launch the game."
+}

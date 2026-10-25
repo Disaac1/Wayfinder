@@ -26,7 +26,7 @@ async def run_test():
             "type": "update_state",
             "games": ["Pokemon Emerald"],
             "isReady": True,
-            "yaml": "description: Test\nname: HostPlayer\ngame: Pokemon Emerald\n"
+            "yaml": "description: Test\nname: HostPlayer\ngame: Pokemon Emerald\nPokemon Emerald:\n  extra_boulders: 0\n"
         }))
         await ws.recv() # room_state
         

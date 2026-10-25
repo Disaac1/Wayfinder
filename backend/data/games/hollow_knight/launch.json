@@ -1,0 +1,68 @@
+{
+  "game_name": "Hollow Knight",
+  "short_tag": "HK",
+  "support_tier": 1,
+  "launch_mode": "direct",
+  "executable_name": "hollow_knight.exe",
+  "sub_folders": [
+    "Hollow Knight",
+    "HollowKnight"
+  ],
+  "steam_appid": "367520",
+  "prefer_steam_protocol": true,
+  "required_steam_beta": {
+    "branch_key": "1.5.78",
+    "branch_aliases": [
+      "1.5.78.11833",
+      "1.4.3.2"
+    ],
+    "display_name": "1.5.78 - 1.5.78",
+    "guidance_message": "{game_name}'s default version breaks mod compatibility. Modding and Archipelago multiworld require the [b]{display_name}[/b] Steam beta branch."
+  },
+  "mod_activation": {
+    "target_file": "hollow_knight_Data/Managed/Assembly-CSharp.dll",
+    "modded_backup": "hollow_knight_Data/Managed/Assembly-CSharp.dll.m",
+    "vanilla_backup": "hollow_knight_Data/Managed/Assembly-CSharp.dll.v",
+    "vanilla_fallback_backup": "hollow_knight_Data/Managed/Assembly-CSharp.dll.vanilla.bak",
+    "mod_marker": "ModHooks",
+    "mod_hash": "5944411bd93830369390a4b51766ee68c4ab26195b299e25a07b5e7d0e00086d",
+    "auto_activate": true
+  },
+  "packages": [
+    {
+      "name": "Modding API",
+      "download_url": "https://github.com/hk-modding/api/releases/download/1.5.78.11833-77/moddingapi.v77.windows.zip",
+      "check_file": "hollow_knight_Data/Managed/MMHOOK_Assembly-CSharp.dll",
+      "extract_target": "hollow_knight_Data/Managed",
+      "backup_files": [
+        "Assembly-CSharp.dll"
+      ]
+    },
+    {
+      "name": "Archipelago Mods",
+      "download_url": "{backend_url}/tools/hk_archipelago_mods.zip",
+      "check_file": "hollow_knight_Data/Managed/Mods/Archipelago/Archipelago.HollowKnight.dll",
+      "extract_target": "hollow_knight_Data/Managed/Mods"
+    }
+  ],
+  "modding_api_url": "https://github.com/hk-modding/api/releases/download/1.5.78.11833-77/moddingapi.v77.windows.zip",
+  "modding_api_check_file": "hollow_knight_Data/Managed/MMHOOK_Assembly-CSharp.dll",
+  "modding_api_extract_target": "hollow_knight_Data/Managed",
+  "mods_url": "{backend_url}/tools/hk_archipelago_mods.zip",
+  "mods_check_file": "hollow_knight_Data/Managed/Mods/Archipelago/Archipelago.HollowKnight.dll",
+  "mods_extract_target": "hollow_knight_Data/Managed/Mods",
+  "clipboard_action": "copy_server_address",
+  "config_writer": {
+    "file_path": "{appdata_locallow}/Team Cherry/Hollow Knight/ArchipelagoMod.GlobalSettings.json",
+    "format": "json",
+    "json_template": {
+      "MenuConnectionDetails": {
+        "ServerUrl": "{server_url}",
+        "ServerPort": "{server_port}",
+        "SlotName": "{slot_name}",
+        "ServerPassword": null
+      }
+    }
+  },
+  "install_instructions": "Requires downgrading to the Steam beta branch (1.5.78) for modding. Once downgraded, Wayfinder auto-installs the Modding API and Archipelago mods, pre-configures your multiworld connection, and launches the game directly."
+}

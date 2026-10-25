@@ -10,6 +10,9 @@ CREATE TABLE IF NOT EXISTS Rooms (
     seed_zip_name TEXT DEFAULT NULL,
     seed_spoiler_name TEXT DEFAULT NULL,
     tunnel_url TEXT DEFAULT NULL,
+    server_ip TEXT DEFAULT NULL,
+    server_port INTEGER DEFAULT NULL,
+    deleted_at DATETIME DEFAULT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -17,7 +20,7 @@ CREATE TABLE IF NOT EXISTS Rooms (
 -- Users Table
 CREATE TABLE IF NOT EXISTS Users (
     id TEXT PRIMARY KEY,
-    room_code TEXT REFERENCES Rooms(code) ON DELETE SET NULL,
+    room_code TEXT REFERENCES Rooms(code) ON DELETE CASCADE,
     name TEXT NOT NULL,
     games TEXT DEFAULT '[]',
     is_ready INTEGER DEFAULT 0,

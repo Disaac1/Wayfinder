@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="stylesheet" href="admin.css">
 </head>
 <body>
@@ -14,7 +15,7 @@
     <!-- Sidebar Navigation -->
     <aside class="sidebar">
       <div class="brand">
-        <div class="brand-icon">⚡</div>
+        <img src="/icon.png" alt="Wayfinder Logo" style="width: 34px; height: 34px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 210, 255, 0.4);">
         <div class="brand-text">
           <h1>Wayfinder</h1>
           <span>Backend Console</span>
@@ -33,8 +34,12 @@
         </button>
         <button class="nav-item" data-tab="servers">
           <span class="nav-icon">⚡</span>
-          <span class="nav-label">AP Servers</span>
+          <span class="nav-label">AP Servers & Console</span>
           <span class="badge" id="badge-servers">0</span>
+        </button>
+        <button class="nav-item" data-tab="logs">
+          <span class="nav-icon">📜</span>
+          <span class="nav-label">Live System Logs</span>
         </button>
         <button class="nav-item" data-tab="apworlds">
           <span class="nav-icon">📦</span>
@@ -70,6 +75,13 @@
             <span id="system-status-text">Backend Active</span>
           </div>
 
+          <select id="select-polling-rate" class="select-input" title="Telemetry polling frequency">
+            <option value="3000">Auto-refresh: 3s</option>
+            <option value="5000">Auto-refresh: 5s</option>
+            <option value="10000">Auto-refresh: 10s</option>
+            <option value="0">Auto-refresh: Paused</option>
+          </select>
+
           <button class="btn btn-danger btn-sm" id="btn-purge-all" title="Delete all rooms, users, sessions, and temp files">
             🔥 Purge All Data
           </button>
@@ -78,7 +90,7 @@
             🧹 Clear Cache
           </button>
 
-          <button class="btn btn-primary btn-sm" id="btn-refresh">
+          <button class="btn btn-primary btn-sm" id="btn-refresh" title="Refresh all telemetry data (Hotkey: R)">
             🔄 Refresh Data
           </button>
         </div>
@@ -192,7 +204,7 @@
             <div class="table-header-toolbar">
               <h3>Active & Historic Multiworld Rooms</h3>
               <div class="table-search">
-                <input type="text" id="search-rooms" placeholder="Search by Room Code or Host...">
+                <input type="text" id="search-rooms" placeholder="Search by Room Code or Player...">
               </div>
             </div>
             <table class="data-table" id="rooms-table">
@@ -200,8 +212,8 @@
                 <tr>
                   <th>Room Code</th>
                   <th>Status</th>
-                  <th>Seed Status</th>
-                  <th>AP Server Port</th>
+                  <th>Seed Status & Assets</th>
+                  <th>AP Server</th>
                   <th>Players</th>
                   <th>Save Lock</th>
                   <th>Actions</th>
@@ -214,32 +226,110 @@
           </div>
         </section>
 
-        <!-- 3. AP SERVERS TAB -->
+        <!-- 3. AP SERVERS & CONSOLE TAB -->
         <section class="tab-pane" id="tab-servers">
-          <div class="table-container">
-            <div class="table-header-toolbar">
-              <h3>Live Archipelago MultiServer Processes</h3>
-              <p class="table-subtitle">Subprocesses launched by the orchestrator for active rooms</p>
+          <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <!-- Running MultiServers Table -->
+            <div class="table-container">
+              <div class="table-header-toolbar">
+                <div>
+                  <h3>Live Archipelago MultiServer Processes</h3>
+                  <p class="table-subtitle">Subprocesses launched for generated rooms</p>
+                </div>
+              </div>
+              <table class="data-table" id="servers-table">
+                <thead>
+                  <tr>
+                    <th>Room Code</th>
+                    <th>Port</th>
+                    <th>PID</th>
+                    <th>Save File Path</th>
+                    <th>Status</th>
+                    <th>Process Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="servers-table-body">
+                  <tr><td colspan="6" class="loading-cell">Checking server processes...</td></tr>
+                </tbody>
+              </table>
             </div>
-            <table class="data-table" id="servers-table">
-              <thead>
-                <tr>
-                  <th>Room Code</th>
-                  <th>Port</th>
-                  <th>PID</th>
-                  <th>Save File Path</th>
-                  <th>Status</th>
-                  <th>Control</th>
-                </tr>
-              </thead>
-              <tbody id="servers-table-body">
-                <tr><td colspan="6" class="loading-cell">Checking server processes...</td></tr>
-              </tbody>
-            </table>
+
+            <!-- Interactive MultiServer Console -->
+            <div class="terminal-container">
+              <div class="terminal-toolbar">
+                <div class="terminal-controls-left">
+                  <span style="font-weight: 600; font-size: 0.95rem;">⚡ Archipelago Command Terminal</span>
+                  <select id="console-room-select" class="select-input">
+                    <option value="">Select Running AP Server...</option>
+                  </select>
+                </div>
+                <div class="terminal-controls-right">
+                  <button class="btn btn-secondary btn-sm" id="btn-clear-console">Clear Screen</button>
+                </div>
+              </div>
+
+              <div class="terminal-viewport" id="console-viewport">
+                <div class="log-line" style="color: var(--text-muted); font-style: italic;">
+                  Select an active Archipelago server above to monitor output and execute console commands.
+                </div>
+              </div>
+
+              <!-- Quick Command Chips -->
+              <div class="quick-chips">
+                <span class="chip-label">Quick Commands:</span>
+                <button class="chip-btn" data-cmd="!help">!help</button>
+                <button class="chip-btn" data-cmd="!players">!players</button>
+                <button class="chip-btn" data-cmd="!status">!status</button>
+                <button class="chip-btn" data-cmd="!countdown 10">!countdown 10</button>
+                <button class="chip-btn" data-cmd="!hint">!hint</button>
+                <button class="chip-btn" data-cmd="!forfeit">!forfeit</button>
+              </div>
+
+              <!-- Input Bar -->
+              <form class="terminal-input-bar" id="console-form">
+                <input type="text" class="terminal-input" id="console-input" placeholder="Enter Archipelago command (e.g. !help, !players, or chat message)..." autocomplete="off">
+                <button type="submit" class="btn btn-primary btn-sm" id="console-send-btn">Send Command</button>
+              </form>
+            </div>
           </div>
         </section>
 
-        <!-- 4. CUSTOM APWORLDS TAB -->
+        <!-- 4. LIVE SYSTEM LOGS TAB -->
+        <section class="tab-pane" id="tab-logs">
+          <div class="terminal-container">
+            <div class="terminal-toolbar">
+              <div class="terminal-controls-left">
+                <label style="font-size: 0.85rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.35rem;">
+                  <span>Source:</span>
+                  <select id="log-filter-source" class="select-input">
+                    <option value="all">All Sources</option>
+                    <option value="server">AP Server</option>
+                    <option value="generation">Generation</option>
+                    <option value="system">System</option>
+                    <option value="error">Errors</option>
+                  </select>
+                </label>
+
+                <input type="text" id="log-search-input" class="select-input" placeholder="Filter log text..." style="width: 180px;">
+              </div>
+
+              <div class="terminal-controls-right">
+                <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.825rem; color: var(--text-secondary); cursor: pointer; user-select: none;">
+                  <input type="checkbox" id="chk-log-autoscroll" checked style="accent-color: var(--accent-primary);">
+                  <span>Auto-scroll</span>
+                </label>
+                <button class="btn btn-secondary btn-sm" id="btn-copy-logs" title="Copy all visible logs to clipboard">📋 Copy Logs</button>
+                <button class="btn btn-secondary btn-sm" id="btn-clear-syslogs" title="Clear server log buffer">🧹 Clear Logs</button>
+              </div>
+            </div>
+
+            <div class="terminal-viewport" id="syslogs-viewport" style="height: 520px;">
+              <div class="log-line" style="color: var(--text-muted);">Listening to live backend events...</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. CUSTOM APWORLDS TAB -->
         <section class="tab-pane" id="tab-apworlds">
           <div class="apworld-container">
             <!-- Dropzone uploader -->
@@ -262,33 +352,50 @@
             <!-- Installed APWorlds Table -->
             <div class="table-container">
               <div class="table-header-toolbar">
-                <h3>Installed Custom APWorlds</h3>
+                <div>
+                  <h3>Installed Custom APWorlds</h3>
+                  <p class="table-subtitle">Custom packages available to generation orchestrator</p>
+                </div>
               </div>
               <table class="data-table">
                 <thead>
                   <tr>
+                    <th>World / Game Name</th>
                     <th>Filename</th>
+                    <th>Status</th>
                     <th>Size</th>
                     <th>Last Modified</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="apworlds-table-body">
-                  <tr><td colspan="4" class="loading-cell">Loading installed worlds...</td></tr>
+                  <tr><td colspan="6" class="loading-cell">Loading installed worlds...</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
         </section>
 
-        <!-- 5. DATABASE EXPLORER TAB -->
+        <!-- 6. DATABASE EXPLORER TAB -->
         <section class="tab-pane" id="tab-database">
           <div class="db-explorer">
-            <div class="db-tabs">
-              <button class="db-tab-btn active" data-dbtable="Rooms">Rooms Table</button>
-              <button class="db-tab-btn" data-dbtable="Users">Users Table</button>
-              <button class="db-tab-btn" data-dbtable="Sessions">Sessions Table</button>
+            <div class="db-toolbar">
+              <div class="db-tabs" style="margin-bottom: 0;">
+                <button class="db-tab-btn active" data-dbtable="Rooms">Rooms</button>
+                <button class="db-tab-btn" data-dbtable="Users">Users</button>
+                <button class="db-tab-btn" data-dbtable="Sessions">Sessions</button>
+                <button class="db-tab-btn" data-dbtable="OptionsCache">OptionsCache</button>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <input type="text" id="db-search-input" class="select-input" placeholder="Search table rows..." style="width: 200px;">
+                <span class="db-info-tag" id="db-row-count">0 rows</span>
+                <button class="btn btn-secondary btn-sm" id="btn-export-csv" title="Export this table to CSV format">
+                  📥 Export CSV
+                </button>
+              </div>
             </div>
+
             <div class="table-container">
               <table class="data-table db-raw-table">
                 <thead id="db-table-head">
@@ -305,15 +412,32 @@
     </main>
   </div>
 
-  <!-- Player List Modal -->
+  <!-- Player Moderation Modal -->
   <div class="modal-backdrop" id="player-modal" style="display: none;">
-    <div class="modal">
+    <div class="modal modal-lg">
       <div class="modal-header">
         <h3 id="modal-room-title">Room Players</h3>
         <button class="btn-close" id="modal-close-btn">&times;</button>
       </div>
       <div class="modal-body" id="modal-player-list">
         <!-- Dynamic content -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Code / Text Viewer Modal (Spoilers, Generation Logs, YAML) -->
+  <div class="modal-backdrop" id="viewer-modal" style="display: none;">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h3 id="viewer-modal-title">File Content</h3>
+        <button class="btn-close" id="viewer-modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-bottom: 0.75rem;">
+          <button class="btn btn-secondary btn-sm" id="btn-copy-viewer">📋 Copy</button>
+          <a class="btn btn-primary btn-sm" id="btn-download-viewer" download style="text-decoration: none;">📥 Download</a>
+        </div>
+        <pre class="code-viewer" id="viewer-modal-content">Loading...</pre>
       </div>
     </div>
   </div>
@@ -333,6 +457,7 @@
             <li>Clears all Rooms, Users, Sessions, and OptionsCache in SQLite</li>
             <li>Deletes all generated seed files and output zip files in <code>temp_seeds/</code></li>
             <li>Deletes failed generation logs</li>
+            <li>Clears server live log buffer</li>
           </ul>
         </div>
         <div style="margin-bottom: 1.5rem;">

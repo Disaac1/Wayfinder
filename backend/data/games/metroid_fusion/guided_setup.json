@@ -1,0 +1,430 @@
+{
+  "game_title": "Metroid Fusion",
+  "default_config": {
+    "GameMode": "open_sector_hub",
+    "StartingLocation": "sector_hub",
+    "OpenSectorElevators": true,
+    "InfantMetroidsRequired": 5,
+    "InfantMetroidsInPool": 5,
+    "InfantMetroidLocations": "anywhere",
+    "EarlyProgression": "normal",
+    "SectorTubeShuffle": false,
+    "ElevatorShuffle": "none",
+    "ShinesparkTrickDifficulty": "none",
+    "WallJumpTrickDifficulty": "none",
+    "CombatDifficulty": "beginner",
+    "PointOfNoReturnsInLogic": true,
+    "StartingEnergyTanks": 0,
+    "StartingMajorUpgrades": 0,
+    "RevealHiddenBlocks": true,
+    "FastDoorTransitions": true,
+    "EnableHints": true,
+    "SectorNavigationRoomHintLocks": false,
+    "PaletteRandomization": false,
+    "death_link": false
+  },
+  "required_schema_keys": [
+    "GameMode",
+    "InfantMetroidsRequired"
+  ],
+  "steps": [
+    {
+      "num": 1,
+      "title": "1. Presets",
+      "description": "Step 1: Choose a Quick Preset or configure settings step-by-step",
+      "controls": [
+        {
+          "type": "preset_grid",
+          "columns": 3,
+          "presets": [
+            {
+              "id": "open_hub",
+              "title": "🚀 Open Hub Multiworld (Recommended)",
+              "desc": "Start at the Sector Hub with unlocked elevators, guaranteed early progression, and quality-of-life.",
+              "values": {
+                "GameMode": "open_sector_hub",
+                "StartingLocation": "sector_hub",
+                "OpenSectorElevators": true,
+                "InfantMetroidsRequired": 5,
+                "InfantMetroidsInPool": 5,
+                "InfantMetroidLocations": "anywhere",
+                "EarlyProgression": "normal",
+                "SectorTubeShuffle": false,
+                "ElevatorShuffle": "none",
+                "ShinesparkTrickDifficulty": "none",
+                "WallJumpTrickDifficulty": "none",
+                "CombatDifficulty": "beginner",
+                "StartingEnergyTanks": 0,
+                "StartingMajorUpgrades": 0,
+                "RevealHiddenBlocks": true,
+                "FastDoorTransitions": true,
+                "EnableHints": true,
+                "death_link": false
+              }
+            },
+            {
+              "id": "boss_hunt",
+              "title": "👾 Metroid Boss Hunt",
+              "desc": "Infant Metroids exclusively awarded by major X-Parasite bosses, starting with an Energy Tank and Major Upgrade.",
+              "values": {
+                "GameMode": "open_sector_hub",
+                "StartingLocation": "sector_hub",
+                "OpenSectorElevators": true,
+                "InfantMetroidsRequired": 6,
+                "InfantMetroidsInPool": 6,
+                "InfantMetroidLocations": "only_bosses",
+                "EarlyProgression": "normal",
+                "SectorTubeShuffle": false,
+                "ElevatorShuffle": "none",
+                "ShinesparkTrickDifficulty": "none",
+                "WallJumpTrickDifficulty": "none",
+                "CombatDifficulty": "advanced",
+                "StartingEnergyTanks": 1,
+                "StartingMajorUpgrades": 1,
+                "RevealHiddenBlocks": true,
+                "FastDoorTransitions": true,
+                "EnableHints": true,
+                "death_link": false
+              }
+            },
+            {
+              "id": "station_chaos",
+              "title": "🌀 Station Entrance Chaos",
+              "desc": "Shuffled sector connection tubes, shuffled elevators, beginner tricks required, and DeathLink active.",
+              "values": {
+                "GameMode": "open_sector_hub",
+                "StartingLocation": "sector_hub",
+                "OpenSectorElevators": true,
+                "InfantMetroidsRequired": 5,
+                "InfantMetroidsInPool": 7,
+                "InfantMetroidLocations": "bosses_encouraged",
+                "EarlyProgression": "advanced",
+                "SectorTubeShuffle": true,
+                "ElevatorShuffle": "sectors",
+                "ShinesparkTrickDifficulty": "beginner",
+                "WallJumpTrickDifficulty": "beginner",
+                "CombatDifficulty": "advanced",
+                "StartingEnergyTanks": 1,
+                "StartingMajorUpgrades": 0,
+                "RevealHiddenBlocks": true,
+                "FastDoorTransitions": true,
+                "EnableHints": true,
+                "death_link": true
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 2,
+      "title": "2. Game Mode & Station Hub",
+      "description": "Step 2: Choose station accessibility, starting location, and elevator connections",
+      "controls": [
+        {
+          "type": "card_grid",
+          "option_key": "GameMode",
+          "columns": 2,
+          "items": [
+            {
+              "id": "open_sector_hub",
+              "title": "Open Sector Hub (Standard)",
+              "desc": "Main elevator access to Sectors 1-6 is open, offering nonlinear exploration across B.S.L."
+            },
+            {
+              "id": "vanilla",
+              "title": "Vanilla Progression",
+              "desc": "Classic linear story progression unlocking sectors sequentially via Operations Deck orders."
+            }
+          ]
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "card_grid",
+          "option_key": "StartingLocation",
+          "columns": 2,
+          "items": [
+            {
+              "id": "sector_hub",
+              "title": "Sector Hub",
+              "desc": "Start at the central hub with direct elevator shafts to Sectors 1-6."
+            },
+            {
+              "id": "docking_bay",
+              "title": "Docking Bay",
+              "desc": "Start at Samus's gunship in the Main Deck Docking Bay."
+            },
+            {
+              "id": "operations_deck",
+              "title": "Operations Deck",
+              "desc": "Start near the Main Deck operations room."
+            },
+            {
+              "id": "concourse_save_station",
+              "title": "Concourse Save Station",
+              "desc": "Start at the Main Deck concourse save room."
+            }
+          ]
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "toggle",
+          "option_key": "OpenSectorElevators",
+          "label": "Open Sector Elevators (Sector elevators unlock without vanilla keycard requirements)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "SectorTubeShuffle",
+          "label": "Shuffle Sector Tubes (Randomizes connection tubes linking different sectors)"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "card_grid",
+          "option_key": "ElevatorShuffle",
+          "columns": 3,
+          "items": [
+            {
+              "id": "none",
+              "title": "Vanilla Elevators",
+              "desc": "All elevator shafts lead to their vanilla destinations."
+            },
+            {
+              "id": "sectors",
+              "title": "Shuffle Sector Elevators",
+              "desc": "Sector Hub elevators connect to randomized sector shafts."
+            },
+            {
+              "id": "all",
+              "title": "Shuffle All Elevators",
+              "desc": "Every elevator across B.S.L. connects to a random destination."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 3,
+      "title": "3. Win Condition (Infant Metroids)",
+      "description": "Step 3: Configure Infant Metroid rescue requirements and goal locations",
+      "controls": [
+        {
+          "type": "slider",
+          "option_key": "InfantMetroidsRequired",
+          "label": "Infant Metroids Required to Beat the Game",
+          "min": 1,
+          "max": 15,
+          "step": 1,
+          "suffix": " Metroids"
+        },
+        {
+          "type": "slider",
+          "option_key": "InfantMetroidsInPool",
+          "label": "Total Infant Metroids in Item Pool",
+          "min": 1,
+          "max": 20,
+          "step": 1,
+          "suffix": " Metroids in Pool"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "card_grid",
+          "option_key": "InfantMetroidLocations",
+          "columns": 3,
+          "items": [
+            {
+              "id": "anywhere",
+              "title": "Placed Anywhere",
+              "desc": "Infant Metroids can appear in any item check across the station."
+            },
+            {
+              "id": "bosses_encouraged",
+              "title": "Bosses Encouraged",
+              "desc": "Higher probability of Metroids placed on major X-parasite bosses."
+            },
+            {
+              "id": "only_bosses",
+              "title": "Only Bosses",
+              "desc": "Infant Metroids are exclusively awarded by defeating bosses."
+            }
+          ]
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "card_grid",
+          "option_key": "EarlyProgression",
+          "columns": 3,
+          "items": [
+            {
+              "id": "normal",
+              "title": "Early Progression (Normal)",
+              "desc": "Guarantees a key progression item in one of your early reachable checks."
+            },
+            {
+              "id": "advanced",
+              "title": "Advanced Early Logic",
+              "desc": "Allows more complex sequence breaks in early checks."
+            },
+            {
+              "id": "none",
+              "title": "No Guarantee (None)",
+              "desc": "Completely random item distribution from check 1."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 4,
+      "title": "4. Movement Tricks & Logic",
+      "description": "Step 4: Configure required shinespark tricks, wall jumps, and combat expectations",
+      "controls": [
+        {
+          "type": "card_grid",
+          "option_key": "ShinesparkTrickDifficulty",
+          "columns": 3,
+          "items": [
+            {
+              "id": "none",
+              "title": "No Shinespark Tricks",
+              "desc": "No advanced Speed Booster tricks required in logic."
+            },
+            {
+              "id": "beginner",
+              "title": "Beginner Shinesparks",
+              "desc": "Requires basic shinespark storage, straight charges, and standard ramps."
+            },
+            {
+              "id": "advanced",
+              "title": "Advanced Shinesparks",
+              "desc": "Expects mid-air spark resets, spark cancels, and complex tight maneuvers."
+            }
+          ]
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "card_grid",
+          "option_key": "WallJumpTrickDifficulty",
+          "columns": 3,
+          "items": [
+            {
+              "id": "none",
+              "title": "No Wall Jump Tricks",
+              "desc": "No wall jump mastery required to progress."
+            },
+            {
+              "id": "beginner",
+              "title": "Beginner Wall Jumps",
+              "desc": "Requires basic single-wall climbs and easy wall jumps."
+            },
+            {
+              "id": "advanced",
+              "title": "Advanced Wall Jumps",
+              "desc": "Expects continuous vertical climbs up single flat shafts without Space Jump."
+            }
+          ]
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "card_grid",
+          "option_key": "CombatDifficulty",
+          "columns": 3,
+          "items": [
+            {
+              "id": "beginner",
+              "title": "Beginner Combat",
+              "desc": "Expects adequate health and beam/missile upgrades for late bosses."
+            },
+            {
+              "id": "advanced",
+              "title": "Advanced Combat",
+              "desc": "Expects defeating bosses with fewer health tanks and weapon upgrades."
+            },
+            {
+              "id": "expert",
+              "title": "Expert Combat",
+              "desc": "Late-game bosses in logic with minimal Energy Tanks and base weapons."
+            }
+          ]
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "toggle",
+          "option_key": "PointOfNoReturnsInLogic",
+          "label": "Include Point of No Return Locations in Logic (Ensures one-way drops are logically safe)"
+        }
+      ]
+    },
+    {
+      "num": 5,
+      "title": "5. Starting Gear & Quality of Life",
+      "description": "Step 5: Configure starting tanks, revealed blocks, door transitions, and multiworld",
+      "controls": [
+        {
+          "type": "slider",
+          "option_key": "StartingEnergyTanks",
+          "label": "Starting Energy Tanks",
+          "min": 0,
+          "max": 10,
+          "step": 1,
+          "suffix": " Energy Tanks"
+        },
+        {
+          "type": "slider",
+          "option_key": "StartingMajorUpgrades",
+          "label": "Starting Major Upgrades (Morph Ball, Missiles, Beams, etc.)",
+          "min": 0,
+          "max": 5,
+          "step": 1,
+          "suffix": " Upgrades"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "toggle",
+          "option_key": "RevealHiddenBlocks",
+          "label": "Reveal Hidden Blocks (Destructible pit/bomb blocks are visible from the start)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "FastDoorTransitions",
+          "label": "Fast Door Transitions (Removes door animation delays for fast room transitions)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "EnableHints",
+          "label": "Enable In-Game Hints (Navigation Terminals provide item location hints)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "PaletteRandomization",
+          "label": "Randomize In-Game Color Palettes"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "toggle",
+          "option_key": "death_link",
+          "label": "DeathLink (Share Samus's deaths across the multiworld)"
+        }
+      ]
+    }
+  ]
+}

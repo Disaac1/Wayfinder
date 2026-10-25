@@ -1,0 +1,26 @@
+{
+  "game_name": "Metroid Fusion",
+  "short_tag": "Fusion",
+  "support_tier": 1,
+  "launch_mode": "ap_client",
+  "patch_extension": ".apmetfus",
+  "patch_extension_aliases": [
+    ".apmetfus",
+    ".apmf",
+    ".apgba"
+  ],
+  "client_tool": "archipelago_client",
+  "client_component": "BizHawk Client",
+  "emulator_tool": "bizhawk",
+  "required_rom": "Metroid Fusion (USA).gba",
+  "rom_aliases": [
+    "Metroid Fusion (USA, Australia).gba",
+    "Metroid Fusion (Europe) (En,Fr,De,Es,It).gba"
+  ],
+  "host_yaml": {
+    "section": "metroid_fusion_options",
+    "rom_file_key": "rom_file"
+  },
+  "auto_connect": true,
+  "install_instructions": "Tier 1 Full Support: Click Launch to automatically prepare the ROM, update client settings, and auto-start the game connected to the server. If Archipelago Client or BizHawk are missing, click Auto-Install below."
+}

@@ -1,0 +1,6 @@
+{
+  "name": "BizHawk Prerequisites",
+  "executable": "msvcp100.dll",
+  "sub_folders": [],
+  "download_url": "https://github.com/TASEmulators/BizHawk-Prereqs/releases/download/2.4.8_1/bizhawk_prereqs_v2.4.8_1.zip"
+}

@@ -1,0 +1,17 @@
+{
+  "game_name": "Stardew Valley",
+  "support_tier": 3,
+  "launch_mode": "mod_injector",
+  "client_executable": "StardewModdingAPI.exe",
+  "config_writer": {
+    "file_path": "{game_dir}/Mods/Archipelago/config.json",
+    "format": "json",
+    "json_template": {
+      "Server": "{server_host}",
+      "Port": "{server_port}",
+      "Slot": "{player_name}",
+      "Password": "{password}"
+    }
+  },
+  "install_instructions": "Tier 3 Support: Select your StardewModdingAPI.exe in your Stardew Valley game directory. Wayfinder will automatically configure your Archipelago mod connection and launch the game."
+}

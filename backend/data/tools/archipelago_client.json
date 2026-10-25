@@ -1,0 +1,14 @@
+{
+  "name": "Archipelago Client",
+  "executable": "ArchipelagoLauncher.exe",
+  "executable_aliases": [
+    "ArchipelagoLauncher.exe",
+    "ArchipelagoBizHawkClient.exe",
+    "ArchipelagoGBAClient.exe"
+  ],
+  "sub_folders": [
+    "Archipelago"
+  ],
+  "download_url": "/tools/archipelago.zip",
+  "fallback_download_url": "https://github.com/ArchipelagoMW/Archipelago/releases/download/0.6.7/Setup.Archipelago.0.6.7.exe"
+}

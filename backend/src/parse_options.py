@@ -24,19 +24,11 @@ def main():
     # Inject Archipelago core repository in system path
     sys.path.insert(0, archipelago_path)
 
-    # Inject custom worlds directory
+    # Note: Archipelago core's worlds package already automatically scans both worlds/
+    # and custom_worlds/ (or user_folder) as apworld containers under worlds.<pkg_name>.
+    # If custom_worlds_dir is provided and distinct from user_folder, we ensure sys.path includes it.
     if custom_worlds_dir and os.path.exists(custom_worlds_dir):
         sys.path.insert(0, custom_worlds_dir)
-        # Scan and dynamically load any apworld files (zipped packages)
-        for item in os.listdir(custom_worlds_dir):
-            if item.endswith(".apworld"):
-                apworld_path = os.path.join(custom_worlds_dir, item)
-                pkg_name = item[:-8] # strip ".apworld"
-                sys.path.insert(0, apworld_path)
-                try:
-                    importlib.import_module(pkg_name)
-                except Exception as e:
-                    print(f"Error loading custom apworld {item}: {e}", file=sys.stderr)
 
     try:
         # Import core World Registration mechanism

@@ -1,0 +1,693 @@
+{
+  "game_title": "Hollow Knight",
+  "default_config": {
+    "Goal": "any",
+    "GrubHuntGoal": 23,
+    "WhitePalace": "exclude",
+    "ExtraPlatforms": true,
+    "StartingGeo": 0,
+    "RandomizeSkills": true,
+    "RandomizeDreamers": true,
+    "RandomizeCharms": true,
+    "RandomizeCharmNotches": true,
+    "RandomizeKeys": true,
+    "RandomizeMaskShards": true,
+    "RandomizeVesselFragments": true,
+    "RandomizePaleOre": true,
+    "RandomizeStags": true,
+    "RandomizeLifebloodCocoons": true,
+    "RandomizeRelics": true,
+    "RandomizeRancidEggs": true,
+    "RandomizeGrubs": false,
+    "RandomizeMimics": false,
+    "RandomizeWhisperingRoots": false,
+    "RandomizeBossEssence": false,
+    "RandomizeGeoChests": false,
+    "RandomizeSoulTotems": false,
+    "RandomizeLoreTablets": false,
+    "PreciseMovement": false,
+    "ProficientCombat": false,
+    "BackgroundObjectPogos": false,
+    "EnemyPogos": false,
+    "ShadeSkips": false,
+    "FireballSkips": false,
+    "AcidSkips": false,
+    "SpikeTunnels": false,
+    "DarkRooms": false,
+    "DamageBoosts": false,
+    "RandomizeNail": false,
+    "SplitMothwingCloak": false,
+    "SplitMantisClaw": false,
+    "SplitCrystalHeart": false,
+    "RandomizeFocus": false,
+    "RandomizeSwim": false,
+    "RandomizeElevatorPass": false,
+    "RemoveSpellUpgrades": false,
+    "CostSanity": "off",
+    "RandomCharmCosts": -1,
+    "DeathLink": false,
+    "DeathLinkShade": "shade",
+    "DeathLinkBreaksFragileCharms": false
+  },
+  "required_schema_keys": [
+    "Goal",
+    "WhitePalace",
+    "RandomizeSkills",
+    "RandomizeCharms"
+  ],
+  "steps": [
+    {
+      "num": 1,
+      "title": "1. Presets",
+      "description": "Step 1: Choose a Quick Preset or configure settings step-by-step",
+      "controls": [
+        {
+          "type": "preset_grid",
+          "columns": 3,
+          "presets": [
+            {
+              "id": "standard",
+              "title": "⚔️ Standard Multiworld (Recommended)",
+              "desc": "Balanced multiworld with core progression, charms, masks, stags, and standard logic.",
+              "values": {
+                "Goal": "any",
+                "GrubHuntGoal": 23,
+                "WhitePalace": "exclude",
+                "ExtraPlatforms": true,
+                "StartingGeo": 0,
+                "RandomizeSkills": true,
+                "RandomizeDreamers": true,
+                "RandomizeCharms": true,
+                "RandomizeCharmNotches": true,
+                "RandomizeKeys": true,
+                "RandomizeMaskShards": true,
+                "RandomizeVesselFragments": true,
+                "RandomizePaleOre": true,
+                "RandomizeStags": true,
+                "RandomizeLifebloodCocoons": true,
+                "RandomizeRelics": true,
+                "RandomizeRancidEggs": true,
+                "RandomizeGrubs": false,
+                "RandomizeMimics": false,
+                "RandomizeWhisperingRoots": false,
+                "RandomizeBossEssence": false,
+                "RandomizeGeoChests": false,
+                "RandomizeSoulTotems": false,
+                "RandomizeLoreTablets": false,
+                "PreciseMovement": false,
+                "ProficientCombat": false,
+                "BackgroundObjectPogos": false,
+                "EnemyPogos": false,
+                "ShadeSkips": false,
+                "FireballSkips": false,
+                "AcidSkips": false,
+                "SpikeTunnels": false,
+                "DarkRooms": false,
+                "DamageBoosts": false,
+                "RandomizeNail": false,
+                "SplitMothwingCloak": false,
+                "SplitMantisClaw": false,
+                "SplitCrystalHeart": false,
+                "RandomizeFocus": false,
+                "RandomizeSwim": false,
+                "RandomizeElevatorPass": false,
+                "RemoveSpellUpgrades": false,
+                "CostSanity": "off",
+                "DeathLink": false
+              }
+            },
+            {
+              "id": "quick_hunter",
+              "title": "⚡ Quick Hunter (Fast / Casual)",
+              "desc": "Faster seed focused on defeating The Hollow Knight with extra starting geo and key stags.",
+              "values": {
+                "Goal": "hollowknight",
+                "GrubHuntGoal": 23,
+                "WhitePalace": "exclude",
+                "ExtraPlatforms": true,
+                "StartingGeo": 400,
+                "RandomizeSkills": true,
+                "RandomizeDreamers": true,
+                "RandomizeCharms": true,
+                "RandomizeCharmNotches": true,
+                "RandomizeKeys": true,
+                "RandomizeMaskShards": true,
+                "RandomizeVesselFragments": true,
+                "RandomizePaleOre": true,
+                "RandomizeStags": true,
+                "RandomizeLifebloodCocoons": true,
+                "RandomizeRelics": false,
+                "RandomizeRancidEggs": false,
+                "RandomizeGrubs": false,
+                "RandomizeMimics": false,
+                "RandomizeWhisperingRoots": false,
+                "RandomizeBossEssence": false,
+                "RandomizeGeoChests": false,
+                "RandomizeSoulTotems": false,
+                "RandomizeLoreTablets": false,
+                "PreciseMovement": false,
+                "ProficientCombat": false,
+                "BackgroundObjectPogos": false,
+                "EnemyPogos": false,
+                "ShadeSkips": false,
+                "FireballSkips": false,
+                "AcidSkips": false,
+                "SpikeTunnels": false,
+                "DarkRooms": false,
+                "DamageBoosts": false,
+                "RandomizeNail": false,
+                "SplitMothwingCloak": false,
+                "SplitMantisClaw": false,
+                "SplitCrystalHeart": false,
+                "RandomizeFocus": false,
+                "RandomizeSwim": false,
+                "RandomizeElevatorPass": false,
+                "RemoveSpellUpgrades": false,
+                "CostSanity": "off",
+                "DeathLink": false
+              }
+            },
+            {
+              "id": "completionist",
+              "title": "🏆 All Locations (Completionist)",
+              "desc": "Maximum multiworld checks: Grubs, Whispering Roots, Boss Essence, Relics, and White Palace.",
+              "values": {
+                "Goal": "radiance",
+                "GrubHuntGoal": 46,
+                "WhitePalace": "include",
+                "ExtraPlatforms": true,
+                "StartingGeo": 100,
+                "RandomizeSkills": true,
+                "RandomizeDreamers": true,
+                "RandomizeCharms": true,
+                "RandomizeCharmNotches": true,
+                "RandomizeKeys": true,
+                "RandomizeMaskShards": true,
+                "RandomizeVesselFragments": true,
+                "RandomizePaleOre": true,
+                "RandomizeStags": true,
+                "RandomizeLifebloodCocoons": true,
+                "RandomizeRelics": true,
+                "RandomizeRancidEggs": true,
+                "RandomizeGrubs": true,
+                "RandomizeMimics": true,
+                "RandomizeWhisperingRoots": true,
+                "RandomizeBossEssence": true,
+                "RandomizeGeoChests": true,
+                "RandomizeSoulTotems": false,
+                "RandomizeLoreTablets": false,
+                "PreciseMovement": false,
+                "ProficientCombat": false,
+                "BackgroundObjectPogos": false,
+                "EnemyPogos": false,
+                "ShadeSkips": false,
+                "FireballSkips": false,
+                "AcidSkips": false,
+                "SpikeTunnels": false,
+                "DarkRooms": false,
+                "DamageBoosts": false,
+                "RandomizeNail": false,
+                "SplitMothwingCloak": false,
+                "SplitMantisClaw": false,
+                "SplitCrystalHeart": false,
+                "RandomizeFocus": false,
+                "RandomizeSwim": false,
+                "RandomizeElevatorPass": false,
+                "RemoveSpellUpgrades": false,
+                "CostSanity": "off",
+                "DeathLink": false
+              }
+            },
+            {
+              "id": "speedrunner",
+              "title": "🔥 Hardcore / Speedrunner",
+              "desc": "Advanced skips enabled in logic: Shade Skips, Acid Skips, Fireball Skips, Pogos, and DeathLink.",
+              "values": {
+                "Goal": "any",
+                "GrubHuntGoal": 23,
+                "WhitePalace": "nopathofpain",
+                "ExtraPlatforms": false,
+                "StartingGeo": 0,
+                "RandomizeSkills": true,
+                "RandomizeDreamers": true,
+                "RandomizeCharms": true,
+                "RandomizeCharmNotches": true,
+                "RandomizeKeys": true,
+                "RandomizeMaskShards": true,
+                "RandomizeVesselFragments": true,
+                "RandomizePaleOre": true,
+                "RandomizeStags": true,
+                "RandomizeLifebloodCocoons": true,
+                "RandomizeRelics": true,
+                "RandomizeRancidEggs": true,
+                "RandomizeGrubs": false,
+                "RandomizeMimics": false,
+                "RandomizeWhisperingRoots": false,
+                "RandomizeBossEssence": false,
+                "RandomizeGeoChests": false,
+                "RandomizeSoulTotems": false,
+                "RandomizeLoreTablets": false,
+                "PreciseMovement": true,
+                "ProficientCombat": true,
+                "BackgroundObjectPogos": true,
+                "EnemyPogos": true,
+                "ShadeSkips": true,
+                "FireballSkips": true,
+                "AcidSkips": true,
+                "SpikeTunnels": true,
+                "DarkRooms": true,
+                "DamageBoosts": true,
+                "RandomizeNail": false,
+                "SplitMothwingCloak": false,
+                "SplitMantisClaw": false,
+                "SplitCrystalHeart": false,
+                "RandomizeFocus": false,
+                "RandomizeSwim": false,
+                "RandomizeElevatorPass": false,
+                "RemoveSpellUpgrades": false,
+                "CostSanity": "off",
+                "DeathLink": true
+              }
+            },
+            {
+              "id": "cursed_chaos",
+              "title": "🌀 Directional & Cursed Chaos",
+              "desc": "Split nail directions (Left/Right/Up), Split Dash, Split Claws, Focus and Swim shuffled into the pool!",
+              "values": {
+                "Goal": "any",
+                "GrubHuntGoal": 23,
+                "WhitePalace": "exclude",
+                "ExtraPlatforms": true,
+                "StartingGeo": 150,
+                "RandomizeSkills": true,
+                "RandomizeDreamers": true,
+                "RandomizeCharms": true,
+                "RandomizeCharmNotches": true,
+                "RandomizeKeys": true,
+                "RandomizeMaskShards": true,
+                "RandomizeVesselFragments": true,
+                "RandomizePaleOre": true,
+                "RandomizeStags": true,
+                "RandomizeLifebloodCocoons": true,
+                "RandomizeRelics": true,
+                "RandomizeRancidEggs": true,
+                "RandomizeGrubs": false,
+                "RandomizeMimics": false,
+                "RandomizeWhisperingRoots": false,
+                "RandomizeBossEssence": false,
+                "RandomizeGeoChests": false,
+                "RandomizeSoulTotems": false,
+                "RandomizeLoreTablets": false,
+                "PreciseMovement": false,
+                "ProficientCombat": false,
+                "BackgroundObjectPogos": false,
+                "EnemyPogos": false,
+                "ShadeSkips": false,
+                "FireballSkips": false,
+                "AcidSkips": false,
+                "SpikeTunnels": false,
+                "DarkRooms": false,
+                "DamageBoosts": false,
+                "RandomizeNail": true,
+                "SplitMothwingCloak": true,
+                "SplitMantisClaw": true,
+                "SplitCrystalHeart": true,
+                "RandomizeFocus": true,
+                "RandomizeSwim": true,
+                "RandomizeElevatorPass": true,
+                "RemoveSpellUpgrades": false,
+                "CostSanity": "shopsonly",
+                "DeathLink": false
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 2,
+      "title": "2. Goal & Endgame",
+      "description": "Step 2: Configure your win condition, White Palace, and access platforms",
+      "controls": [
+        {
+          "type": "card_grid",
+          "option_key": "Goal",
+          "columns": 3,
+          "items": [
+            {
+              "id": "any",
+              "title": "Any Ending",
+              "desc": "Victory upon achieving any game completion ending."
+            },
+            {
+              "id": "hollowknight",
+              "title": "The Hollow Knight",
+              "desc": "Defeat The Hollow Knight inside the Temple of the Black Egg."
+            },
+            {
+              "id": "siblings",
+              "title": "Sealed Siblings",
+              "desc": "Complete the Sealed Siblings or Dream No More ending with Void Heart."
+            },
+            {
+              "id": "radiance",
+              "title": "The Radiance",
+              "desc": "Defeat The Radiance within The Hollow Knight's dream."
+            },
+            {
+              "id": "godhome",
+              "title": "Godhome (Pantheon 5)",
+              "desc": "Conquer Pantheon 5 and achieve the Embrace the Void ending."
+            },
+            {
+              "id": "grub_hunt",
+              "title": "Grub Hunt",
+              "desc": "Free a specific quota of trapped Grubs across Hallownest."
+            }
+          ]
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "slider",
+          "option_key": "GrubHuntGoal",
+          "label": "Grub Hunt Goal Quota (if Grub Hunt is chosen)",
+          "min": 1,
+          "max": 46,
+          "step": 1,
+          "suffix": " Grubs"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "card_grid",
+          "option_key": "WhitePalace",
+          "columns": 2,
+          "items": [
+            {
+              "id": "exclude",
+              "title": "Exclude White Palace",
+              "desc": "No randomized items or checks inside White Palace."
+            },
+            {
+              "id": "kingfragment",
+              "title": "King Fragment Only",
+              "desc": "Only the Kingsoul fragment at the Pale King's throne is in the pool."
+            },
+            {
+              "id": "nopathofpain",
+              "title": "White Palace (No Path of Pain)",
+              "desc": "Standard palace checks are randomized; Path of Pain is excluded."
+            },
+            {
+              "id": "include",
+              "title": "Include All (With Path of Pain)",
+              "desc": "All palace locations including Path of Pain are randomized."
+            }
+          ]
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "toggle",
+          "option_key": "ExtraPlatforms",
+          "label": "Add Extra Platforms (Convenient platforms throughout Hallownest for accessibility)"
+        }
+      ]
+    },
+    {
+      "num": 3,
+      "title": "3. Item Pools & Checks",
+      "description": "Step 3: Choose which items, collectibles, and locations are shuffled into the multiworld",
+      "controls": [
+        {
+          "type": "toggle",
+          "option_key": "RandomizeSkills",
+          "label": "Randomize Movement Skills & Spells (Cloak, Claw, Wings, Tear, C-Heart, Spells)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "RandomizeDreamers",
+          "label": "Randomize The 3 Dreamers (Lurien, Monomon, Herrah)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "RandomizeCharms",
+          "label": "Randomize Charms & Charm Notches (All 40 charms and Salubra notches)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "RandomizeKeys",
+          "label": "Randomize Keys & Passes (Simple Keys, Shopkeeper's, Elegant, Love Key, Tram Pass)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "RandomizeStags",
+          "label": "Randomize Stag Stations (Stag bell and toll stations unlock via station items)"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "toggle",
+          "option_key": "RandomizeMaskShards",
+          "label": "Randomize Mask Shards (Health upgrades)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "RandomizeVesselFragments",
+          "label": "Randomize Vessel Fragments (Soul meter upgrades)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "RandomizePaleOre",
+          "label": "Randomize Pale Ore (Nail upgrades)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "RandomizeLifebloodCocoons",
+          "label": "Randomize Lifeblood Cocoons"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "toggle",
+          "option_key": "RandomizeGrubs",
+          "label": "Randomize Grub Jars (All 46 trapped grubs)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "RandomizeMimics",
+          "label": "Randomize Grub Mimics"
+        },
+        {
+          "type": "toggle",
+          "option_key": "RandomizeWhisperingRoots",
+          "label": "Randomize Whispering Roots (Essence trees)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "RandomizeBossEssence",
+          "label": "Randomize Dream Warrior & Dream Boss Essence"
+        },
+        {
+          "type": "toggle",
+          "option_key": "RandomizeRelics",
+          "label": "Randomize Relics (Journals, Seals, Idols, Arcane Eggs)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "RandomizeRancidEggs",
+          "label": "Randomize Rancid Eggs"
+        },
+        {
+          "type": "toggle",
+          "option_key": "RandomizeGeoChests",
+          "label": "Randomize Geo Chests"
+        }
+      ]
+    },
+    {
+      "num": 4,
+      "title": "4. Logic & Skips",
+      "description": "Step 4: Configure advanced trick skips and movement techniques expected by the logic",
+      "controls": [
+        {
+          "type": "toggle",
+          "option_key": "PreciseMovement",
+          "label": "Precise Movement (Requires tight platforming around hazards in logic)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "ProficientCombat",
+          "label": "Proficient Combat (Expects beating bosses with low nail upgrades / masks)"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "toggle",
+          "option_key": "EnemyPogos",
+          "label": "Enemy Pogos (Expects bouncing on flying/crawling enemies to cross gaps)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "BackgroundObjectPogos",
+          "label": "Background Pogos (Expects bouncing on scenery, spikes, and objects)"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "toggle",
+          "option_key": "ShadeSkips",
+          "label": "Shade Skips (Dying intentionally to pogo off your own Shade)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "FireballSkips",
+          "label": "Fireball Skips (Using spell recoil to stall or gain horizontal distance)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "AcidSkips",
+          "label": "Acid Skips (Crossing acid pools without Isma's Tear)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "SpikeTunnels",
+          "label": "Spike Tunnels (Dashing through narrow hazard tunnels)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "DarkRooms",
+          "label": "Dark Rooms (Navigating pitch-black rooms without Lumafly Lantern)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "DamageBoosts",
+          "label": "Damage Boosting (Taking damage intentionally to bypass gates or hazards)"
+        }
+      ]
+    },
+    {
+      "num": 5,
+      "title": "5. Split Abilities & Cursed Mechanics",
+      "description": "Step 5: Split attack/movement directions, ability randomization, and multiworld settings",
+      "controls": [
+        {
+          "type": "toggle",
+          "option_key": "RandomizeNail",
+          "label": "Randomize Nail Slash Directions (Splits Left, Right, Up slashes into separate items!)"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "toggle",
+          "option_key": "SplitMothwingCloak",
+          "label": "Split Dash (Splits Mothwing Cloak into Left Dash and Right Dash)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "SplitMantisClaw",
+          "label": "Split Wall Cling (Splits Mantis Claw into Left Wall Cling and Right Wall Cling)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "SplitCrystalHeart",
+          "label": "Split Super Dash (Splits Crystal Heart into Left and Right C-Dash)"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "toggle",
+          "option_key": "RandomizeFocus",
+          "label": "Randomize Focus (Cannot heal until finding Focus in the item pool)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "RandomizeSwim",
+          "label": "Randomize Swim (Cannot swim in water until finding the Swim item)"
+        },
+        {
+          "type": "toggle",
+          "option_key": "RandomizeElevatorPass",
+          "label": "Randomize Elevator Pass (Required to ride City of Tears large elevators)"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "slider",
+          "option_key": "StartingGeo",
+          "label": "Starting Geo",
+          "min": 0,
+          "max": 1000,
+          "step": 50,
+          "suffix": " Geo"
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "card_grid",
+          "option_key": "CostSanity",
+          "columns": 3,
+          "items": [
+            {
+              "id": "off",
+              "title": "Standard Currency",
+              "desc": "Geo for shops, Grubs for Grubfather, Essence for Seer."
+            },
+            {
+              "id": "shopsonly",
+              "title": "Shops Cost Random Items",
+              "desc": "Shops require Grubs, Essence, Eggs, or Charms instead of Geo."
+            },
+            {
+              "id": "on",
+              "title": "Full CostSanity",
+              "desc": "All checks, payments, and shops demand randomized currency types."
+            }
+          ]
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "toggle",
+          "option_key": "DeathLink",
+          "label": "DeathLink (Share deaths across multiworld players)"
+        },
+        {
+          "type": "card_grid",
+          "option_key": "DeathLinkShade",
+          "columns": 3,
+          "items": [
+            {
+              "id": "shade",
+              "title": "Standard Shade",
+              "desc": "Spawns a Shade and leaves Geo at your death spot."
+            },
+            {
+              "id": "shadeless",
+              "title": "Shadeless",
+              "desc": "No Shade spawned and no Geo lost upon DeathLink death."
+            },
+            {
+              "id": "vanilla",
+              "title": "Vanilla Death",
+              "desc": "Follows standard vanilla game death behavior."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

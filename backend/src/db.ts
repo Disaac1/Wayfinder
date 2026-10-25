@@ -8,14 +8,17 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const DB_PATH = process.env.DATABASE_URL || path.join(__dirname, '..', 'database.db');
-const SCHEMA_PATH = path.join(__dirname, 'schema.sql');
+const SCHEMA_PATH = fs.existsSync(path.join(__dirname, 'schema.sql'))
+  ? path.join(__dirname, 'schema.sql')
+  : path.join(__dirname, '..', 'src', 'schema.sql');
 
 console.log(`Connecting to SQLite database at: ${DB_PATH}`);
 
 const db = new Database(DB_PATH);
 
-// Enable foreign keys
+// Enable foreign keys and Write-Ahead Logging (WAL) for high concurrency
 db.pragma('foreign_keys = ON');
+db.pragma('journal_mode = WAL');
 
 // Initialize database schema
 try {
@@ -41,6 +44,24 @@ try {
     db.prepare("ALTER TABLE Rooms ADD COLUMN tunnel_url TEXT DEFAULT NULL").run();
     console.log("Migration: Added tunnel_url to Rooms table");
   }
+  if (!columns.includes('deleted_at')) {
+    db.prepare("ALTER TABLE Rooms ADD COLUMN deleted_at DATETIME DEFAULT NULL").run();
+    console.log("Migration: Added deleted_at to Rooms table");
+  }
+  if (!columns.includes('server_ip')) {
+    db.prepare("ALTER TABLE Rooms ADD COLUMN server_ip TEXT DEFAULT NULL").run();
+    console.log("Migration: Added server_ip to Rooms table");
+  }
+  if (!columns.includes('server_port')) {
+    db.prepare("ALTER TABLE Rooms ADD COLUMN server_port INTEGER DEFAULT NULL").run();
+    console.log("Migration: Added server_port to Rooms table");
+  }
+  
+  // Purge expired rooms and inactive rooms (3+ months)
+  purgeInactiveRooms();
+  
+  // Schedule daily housekeeping
+  setInterval(purgeInactiveRooms, 24 * 60 * 60 * 1000);
   
   // Reset any stale generating status to idle on startup
   db.prepare("UPDATE Rooms SET seed_status = 'idle' WHERE seed_status = 'generating'").run();
@@ -50,6 +71,63 @@ try {
 } catch (error) {
   console.error('Failed to initialize database schema:', error);
   process.exit(1);
+}
+
+/**
+ * Updates a room's updated_at timestamp to mark activity
+ */
+export function touchRoomActivity(roomCode: string): void {
+  try {
+    db.prepare("UPDATE Rooms SET updated_at = CURRENT_TIMESTAMP WHERE code = ?").run(roomCode);
+  } catch (err) {
+    console.warn(`Failed to touch room activity for ${roomCode}:`, err);
+  }
+}
+
+/**
+ * Deletes room artifacts from disk and removes the room record from the database.
+ * Cascades automatically to Users and Sessions.
+ */
+export function deleteRoomArtifactsAndRow(code: string, reason: string): void {
+  const tempSeedsDir = path.join(path.dirname(DB_PATH), 'temp_seeds', code);
+  if (fs.existsSync(tempSeedsDir)) {
+    try {
+      fs.rmSync(tempSeedsDir, { recursive: true, force: true });
+    } catch (e) {
+      console.warn(`[Housekeeping] Could not remove temp_seeds directory for room ${code}:`, e);
+    }
+  }
+  db.prepare('DELETE FROM Rooms WHERE code = ?').run(code);
+  console.log(`[Housekeeping] Purged room ${code} (${reason})`);
+}
+
+/**
+ * Housekeeping job:
+ * 1. Purges soft-deleted rooms past their 7-day recovery grace period
+ * 2. Purges inactive rooms with no activity for more than 3 months (90 days)
+ */
+export function purgeInactiveRooms(): void {
+  try {
+    // 1. Purge soft-deleted rooms past their 7-day recovery grace period
+    const expiredDeletedRooms = db.prepare(
+      "SELECT code FROM Rooms WHERE deleted_at IS NOT NULL AND deleted_at < datetime('now', '-7 days')"
+    ).all() as Array<{ code: string }>;
+
+    for (const { code } of expiredDeletedRooms) {
+      deleteRoomArtifactsAndRow(code, 'soft-deleted > 7 days ago');
+    }
+
+    // 2. Purge rooms with no activity for more than 3 months (90 days)
+    const inactiveRooms = db.prepare(
+      "SELECT code FROM Rooms WHERE COALESCE(updated_at, created_at) < datetime('now', '-90 days')"
+    ).all() as Array<{ code: string }>;
+
+    for (const { code } of inactiveRooms) {
+      deleteRoomArtifactsAndRow(code, 'inactive for > 3 months (90 days)');
+    }
+  } catch (err) {
+    console.warn('[Housekeeping] Error purging expired/inactive rooms:', err);
+  }
 }
 
 export default db;

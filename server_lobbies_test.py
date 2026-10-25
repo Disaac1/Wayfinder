@@ -18,12 +18,28 @@ async def run_test():
         user_id = res["userId"]
         print(f"[Test] Created test room: {room_code}")
 
-        # 2. Query GET /api/rooms
-        rooms_url = "http://localhost:8080/api/rooms"
+        # 2. Query GET /api/rooms without player name -> must return empty list (privacy protection)
+        anon_url = "http://localhost:8080/api/rooms"
+        with urllib.request.urlopen(anon_url) as resp:
+            data = json.loads(resp.read().decode())
+            rooms = data.get("rooms", [])
+            assert len(rooms) == 0, f"Expected 0 rooms for unauthenticated query, got {len(rooms)}"
+            print("[Test] Verified anonymous query to GET /api/rooms returns 0 rooms (Privacy enforced).")
+
+        # 2b. Query GET /api/rooms?playerName=SomeoneElse -> must return empty list
+        other_url = "http://localhost:8080/api/rooms?playerName=SomeoneElse"
+        with urllib.request.urlopen(other_url) as resp:
+            data = json.loads(resp.read().decode())
+            rooms = data.get("rooms", [])
+            assert len(rooms) == 0, f"Expected 0 rooms for unassociated player, got {len(rooms)}"
+            print("[Test] Verified query for unassociated player returns 0 rooms.")
+
+        # 2c. Query GET /api/rooms?playerName=LobbyTester -> must return room
+        rooms_url = "http://localhost:8080/api/rooms?playerName=LobbyTester"
         with urllib.request.urlopen(rooms_url) as resp:
             data = json.loads(resp.read().decode())
             rooms = data.get("rooms", [])
-            print(f"[Test] GET /api/rooms returned {len(rooms)} room(s).")
+            print(f"[Test] GET /api/rooms?playerName=LobbyTester returned {len(rooms)} room(s).")
             found = False
             for r in rooms:
                 if r["code"] == room_code:

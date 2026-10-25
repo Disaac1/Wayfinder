@@ -1,0 +1,17 @@
+{
+  "name": "Super Mario 64 EX",
+  "executable": "sm64.us.f3dex2e.exe",
+  "executable_aliases": [
+    "sm64.us.f3dex2e.exe",
+    "sm64.us.exe",
+    "sm64ex.exe",
+    "sm64_pc.exe"
+  ],
+  "sub_folders": [
+    "SM64EX",
+    "sm64ex",
+    "SM64",
+    "Super Mario 64"
+  ],
+  "download_url": "http://localhost:8080/tools/sm64ex.zip"
+}

@@ -1,0 +1,9 @@
+{
+  "name": "Snes9x Emulator",
+  "executable": "snes9x.exe",
+  "sub_folders": [
+    "Snes9x",
+    "snes9x"
+  ],
+  "download_url": ""
+}

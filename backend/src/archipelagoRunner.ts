@@ -21,6 +21,28 @@ if (!fs.existsSync(CUSTOM_WORLDS_DIR)) {
 }
 
 /**
+ * Ensures MultiServer.py has keepalive ping_interval set and ping_timeout relaxed
+ * so WebSocket connections through Cloudflare Tunnels do not drop due to client lag or inactivity.
+ */
+export function patchMultiServerKeepalive(): void {
+  try {
+    const multiServerPath = path.join(ARCHIPELAGO_PATH, 'MultiServer.py');
+    if (!fs.existsSync(multiServerPath)) return;
+    let content = fs.readFileSync(multiServerPath, 'utf-8');
+    if (content.includes('extensions=[server_per_message_deflate_factory]') && !content.includes('ping_timeout=None')) {
+      content = content.replace(
+        'extensions=[server_per_message_deflate_factory],',
+        'extensions=[server_per_message_deflate_factory],\n        ping_interval=20,\n        ping_timeout=None,'
+      );
+      fs.writeFileSync(multiServerPath, content, 'utf-8');
+      console.log('[Archipelago Core] Patched MultiServer.py with keepalive and ping_timeout=None');
+    }
+  } catch (err: any) {
+    console.warn('[Archipelago Core] Warning patching MultiServer keepalive:', err.message);
+  }
+}
+
+/**
  * Ensures the Archipelago core repository is cloned locally.
  * Clones a lightweight/shallow copy from GitHub if missing.
  */
@@ -28,6 +50,7 @@ export function ensureArchipelagoCore(): Promise<void> {
   return new Promise((resolve, reject) => {
     if (fs.existsSync(path.join(ARCHIPELAGO_PATH, 'worlds', '__init__.py'))) {
       console.log('Archipelago core package detected.');
+      patchMultiServerKeepalive();
       return resolve();
     }
 
@@ -43,9 +66,20 @@ export function ensureArchipelagoCore(): Promise<void> {
         return reject(error);
       }
       console.log('Archipelago core repository cloned successfully.');
+      patchMultiServerKeepalive();
       resolve();
     });
   });
+}
+
+/**
+ * Resolves the Python executable and any prefix arguments (e.g. ['-3.12'] on Windows).
+ */
+export function getPythonCommand(): { exe: string; prefixArgs: string[] } {
+  if (process.platform === 'win32') {
+    return { exe: 'py', prefixArgs: ['-3.12'] };
+  }
+  return { exe: 'python3', prefixArgs: [] };
 }
 
 /**
@@ -53,11 +87,9 @@ export function ensureArchipelagoCore(): Promise<void> {
  */
 function runParser(gameName: string): Promise<any> {
   return new Promise((resolve, reject) => {
-    // Resolve absolute path to Python executable
-    // In Windows, if python is in PATH, we call 'python'.
-    const pythonExe = 'python';
-
+    const { exe: pythonExe, prefixArgs } = getPythonCommand();
     const args = [
+      ...prefixArgs,
       PARSER_SCRIPT_PATH,
       ARCHIPELAGO_PATH,
       gameName,
@@ -227,23 +259,30 @@ export function generateSeed(
       fs.mkdirSync(outputsDir, { recursive: true });
 
       // Write player YAML files
-      console.log(`Writing player YAML files:`);
+      console.log(`[Generation] Writing player configuration files for ${players.length} players...`);
       for (const player of players) {
         if (!player.yaml) continue;
         const safeName = player.name.replace(/[^a-zA-Z0-9_-]/g, '_');
-        console.log(`--- ${safeName}.yaml ---`);
-        console.log(player.yaml);
-        console.log(`------------------------`);
-        fs.writeFileSync(path.join(inputsDir, `${safeName}.yaml`), player.yaml, 'utf8');
+        console.log(`[Generation] Wrote configuration for "${safeName}" (${player.yaml.length} bytes)`);
+        // If YAML contains multiple documents (---), split them into separate files so Archipelago Generate.py processes each slot cleanly
+        const rawDocs = player.yaml.split(/^---[ \t]*$/m).map(d => d.trim()).filter(Boolean);
+        if (rawDocs.length > 1) {
+          rawDocs.forEach((doc, idx) => {
+            fs.writeFileSync(path.join(inputsDir, `${safeName}_slot${idx + 1}.yaml`), doc, 'utf8');
+          });
+        } else {
+          fs.writeFileSync(path.join(inputsDir, `${safeName}.yaml`), player.yaml, 'utf8');
+        }
       }
     } catch (fsErr) {
       return reject(fsErr);
     }
 
-    const pythonExe = 'python';
+    const { exe: pythonExe, prefixArgs } = getPythonCommand();
     const generateScript = path.join(ARCHIPELAGO_PATH, 'Generate.py');
 
     const args = [
+      ...prefixArgs,
       generateScript,
       '--player_files_path',
       inputsDir,
@@ -268,14 +307,19 @@ export function generateSeed(
 
     let stdoutBuffer = '';
     let stderrBuffer = '';
+    let stdoutLineRemainder = '';
+    let stderrLineRemainder = '';
 
     child.stdout.on('data', (data) => {
       const text = data.toString();
       logStream.write(text);
       stdoutBuffer += text;
-      const lines = text.split('\n');
-      for (let i = 0; i < lines.length - 1; i++) {
-        const line = lines[i].trim();
+
+      stdoutLineRemainder += text;
+      const lines = stdoutLineRemainder.split('\n');
+      stdoutLineRemainder = lines.pop() || '';
+      for (const rawLine of lines) {
+        const line = rawLine.trim();
         if (line) onLog(line);
       }
     });
@@ -284,14 +328,23 @@ export function generateSeed(
       const text = data.toString();
       logStream.write(text);
       stderrBuffer += text;
-      const lines = text.split('\n');
-      for (let i = 0; i < lines.length - 1; i++) {
-        const line = lines[i].trim();
+
+      stderrLineRemainder += text;
+      const lines = stderrLineRemainder.split('\n');
+      stderrLineRemainder = lines.pop() || '';
+      for (const rawLine of lines) {
+        const line = rawLine.trim();
         if (line) onLog(line);
       }
     });
 
     child.on('close', (code) => {
+      if (stdoutLineRemainder.trim()) {
+        onLog(stdoutLineRemainder.trim());
+      }
+      if (stderrLineRemainder.trim()) {
+        onLog(stderrLineRemainder.trim());
+      }
       logStream.end();
       if (code !== 0) {
         console.error(`Archipelago generation exited with code ${code} for room ${roomCode}`);

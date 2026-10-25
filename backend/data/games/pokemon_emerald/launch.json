@@ -1,0 +1,27 @@
+{
+  "game_name": "Pokemon Emerald",
+  "support_tier": 1,
+  "launch_mode": "ap_client",
+  "patch_extension": ".apemerald",
+  "patch_extension_aliases": [
+    ".apemerald",
+    ".apgba"
+  ],
+  "client_tool": "archipelago_client",
+  "client_component": "BizHawk Client",
+  "emulator_tool": "bizhawk",
+  "required_rom": "Pokemon - Emerald Version (USA).gba",
+  "rom_aliases": [
+    "Pokemon - Emerald Version (USA, Europe).gba"
+  ],
+  "rom_hashes": {
+    "md5": "f3ae088681bfb26410d2255737503761",
+    "sha1": "f3ae088681bfb26410d2255737503761a298533b"
+  },
+  "host_yaml": {
+    "section": "pokemon_emerald_options",
+    "rom_file_key": "rom_file"
+  },
+  "auto_connect": true,
+  "install_instructions": "Tier 1 Full Support: Click Launch to automatically prepare the ROM, update client settings, and auto-start the game connected to the server. If Archipelago Client or BizHawk are missing, click Auto-Install below."
+}

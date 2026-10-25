@@ -1,0 +1,67 @@
+{
+  "game_name": "Symphony of the Night",
+  "aliases": [
+    "Castlevania: Symphony of the Night",
+    "Castlevania - Symphony of the Night",
+    "castlevania_sotn",
+    "sotn"
+  ],
+  "short_tag": "SotN",
+  "support_tier": 1,
+  "launch_mode": "ap_client",
+  "patch_extension": ".apsotn",
+  "patch_extension_aliases": [
+    ".apsotn"
+  ],
+  "client_tool": "archipelago_client",
+  "client_component": "BizHawk Client",
+  "emulator_tool": "bizhawk",
+  "required_rom": "Castlevania - Symphony of the Night (USA) (Track 1).bin",
+  "required_audio_rom": "Castlevania - Symphony of the Night (USA) (Track 2).bin",
+  "required_firmware": [
+    {
+      "name": "PlayStation BIOS",
+      "file_name": "ps-30a.bin",
+      "dest_subpath": "Firmware/ps-30a.bin",
+      "dest_aliases": [
+        "Firmware/PS-30A.BIN",
+        "Firmware/scph5501.bin",
+        "Firmware/PSX_3.0(A).bin"
+      ],
+      "download_url": "/tools/ps-30a.bin",
+      "emulator_config": {
+        "file": "config.ini",
+        "section": "FirmwareUserSpecifications",
+        "key": "PSX+U",
+        "value": "Firmware/ps-30a.bin"
+      }
+    }
+  ],
+  "rom_aliases": [
+    "Castlevania - Symphony of the Night (USA).bin",
+    "Castlevania - Symphony of the Night (USA) (Track 1).bin",
+    "slus-00067.bin",
+    "sotn.bin"
+  ],
+  "rom_hashes": {
+    "md5": "acbb3a2e4a8f865f363dc06df147afa2",
+    "audio_md5": "8f4b1df20c0173f7c2e6a30bd3109ac8",
+    "sha1": "9ec9e1d8cd3b98c56fa6c568f6bfb8e97f26ce5a"
+  },
+  "host_yaml": {
+    "section": "sotn_settings",
+    "extra_sections": [
+      "sotn_options"
+    ],
+    "rom_file_key": "rom_file",
+    "audio_file_key": "audio_file"
+  },
+  "patch_progress_tracking": {
+    "completion_extension": ".cue",
+    "progress_extension": ".bin",
+    "expected_bytes": 538655040,
+    "status_message": "Step 2 of 2: Modding CD-ROM image...\n\nApplying multiworld tokens & recalculating 270,000+ disc sectors (~15-20 seconds on first load).\n\nArchipelago & BizHawk are building your game. Please wait..."
+  },
+  "auto_connect": true,
+  "install_instructions": "Tier 1 Full Support: Select your vanilla Castlevania: Symphony of the Night Track 1 .bin file. Wayfinder will automatically detect Track 2 and configure BizHawk, sync host settings, open the .apsotn patch in the Archipelago Client, and launch the game."
+}

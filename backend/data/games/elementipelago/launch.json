@@ -1,0 +1,10 @@
+{
+  "game_name": "Elementipelago",
+  "support_tier": 2,
+  "launch_mode": "web_browser",
+  "web": {
+    "url_template": "https://elementipelago.github.io/?host={server_host}&port={server_port}&name={player_name}"
+  },
+  "clipboard_action": "copy_server_address",
+  "install_instructions": "Web Game: Click Launch to open Elementipelago in your browser with pre-configured connection parameters."
+}
