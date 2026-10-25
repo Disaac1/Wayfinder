@@ -67,3 +67,6 @@ tools/godot-src/
 tools/w64devkit/
 sandbox_userdata/
 temp_fresh_install_sandbox/
+
+# Compiled Godot export templates
+templates/**/custom_templates/*.exe

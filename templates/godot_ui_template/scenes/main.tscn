@@ -1,0 +1,378 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/main.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://scenes/components/modal_dialog.tscn" id="2_modal"]
+[ext_resource type="PackedScene" path="res://scenes/components/toast_notification.tscn" id="3_toast"]
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_main")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.08, 0.09, 0.12, 1)
+
+[node name="LayoutVBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 0
+
+[node name="HeaderPanel" type="PanelContainer" parent="LayoutVBox"]
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="LayoutVBox/HeaderPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 10
+
+[node name="HBox" type="HBoxContainer" parent="LayoutVBox/HeaderPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="LayoutVBox/HeaderPanel/Margin/HBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Godot Pure UI Application"
+
+[node name="Spacer" type="Control" parent="LayoutVBox/HeaderPanel/Margin/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Tag" type="Label" parent="LayoutVBox/HeaderPanel/Margin/HBox"]
+layout_mode = 2
+text = "v1.0.0 | Pure UI Mode"
+
+[node name="BodyHBox" type="HBoxContainer" parent="LayoutVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="SidebarPanel" type="PanelContainer" parent="LayoutVBox/BodyHBox"]
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="LayoutVBox/BodyHBox/SidebarPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 16
+
+[node name="SidebarVBox" type="VBoxContainer" parent="LayoutVBox/BodyHBox/SidebarPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="NavLabel" type="Label" parent="LayoutVBox/BodyHBox/SidebarPanel/Margin/SidebarVBox"]
+layout_mode = 2
+text = "NAVIGATION"
+
+[node name="NavDashboardBtn" type="Button" parent="LayoutVBox/BodyHBox/SidebarPanel/Margin/SidebarVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+toggle_mode = true
+text = "📊 Dashboard"
+alignment = 0
+
+[node name="NavInputsBtn" type="Button" parent="LayoutVBox/BodyHBox/SidebarPanel/Margin/SidebarVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+toggle_mode = true
+text = "🎛️ Controls & Inputs"
+alignment = 0
+
+[node name="NavDataBtn" type="Button" parent="LayoutVBox/BodyHBox/SidebarPanel/Margin/SidebarVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+toggle_mode = true
+text = "📑 Data Table"
+alignment = 0
+
+[node name="NavLogsBtn" type="Button" parent="LayoutVBox/BodyHBox/SidebarPanel/Margin/SidebarVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+toggle_mode = true
+text = "💻 System Logs"
+alignment = 0
+
+[node name="ContentPanel" type="PanelContainer" parent="LayoutVBox/BodyHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Margin" type="MarginContainer" parent="LayoutVBox/BodyHBox/ContentPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="ContentTabs" type="TabContainer" parent="LayoutVBox/BodyHBox/ContentPanel/Margin"]
+unique_name_in_owner = true
+layout_mode = 2
+tabs_visible = false
+
+[node name="DashboardTab" type="VBoxContainer" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="DashHeader" type="Label" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/DashboardTab"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Overview & System Health"
+
+[node name="CardsHBox" type="HBoxContainer" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/DashboardTab"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Card1" type="PanelContainer" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/DashboardTab/CardsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="M" type="MarginContainer" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/DashboardTab/CardsHBox/Card1"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="V" type="VBoxContainer" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/DashboardTab/CardsHBox/Card1/M"]
+layout_mode = 2
+
+[node name="L1" type="Label" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/DashboardTab/CardsHBox/Card1/M/V"]
+layout_mode = 2
+text = "3D Engine Modules"
+
+[node name="Val1" type="Label" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/DashboardTab/CardsHBox/Card1/M/V"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Disabled"
+
+[node name="Card2" type="PanelContainer" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/DashboardTab/CardsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="M" type="MarginContainer" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/DashboardTab/CardsHBox/Card2"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="V" type="VBoxContainer" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/DashboardTab/CardsHBox/Card2/M"]
+layout_mode = 2
+
+[node name="L2" type="Label" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/DashboardTab/CardsHBox/Card2/M/V"]
+layout_mode = 2
+text = "2D Game Entities"
+
+[node name="Val2" type="Label" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/DashboardTab/CardsHBox/Card2/M/V"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Stripped"
+
+[node name="Card3" type="PanelContainer" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/DashboardTab/CardsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="M" type="MarginContainer" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/DashboardTab/CardsHBox/Card3"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="V" type="VBoxContainer" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/DashboardTab/CardsHBox/Card3/M"]
+layout_mode = 2
+
+[node name="L3" type="Label" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/DashboardTab/CardsHBox/Card3/M/V"]
+layout_mode = 2
+text = "Idle CPU Usage"
+
+[node name="Val3" type="Label" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/DashboardTab/CardsHBox/Card3/M/V"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "< 0.1%"
+
+[node name="DescLabel" type="RichTextLabel" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/DashboardTab"]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+text = "[b]Features of this pure UI template:[/b]
+
+• [color=cornflowerblue]Low Processor Mode[/color] active: Godot sleeps when there are no events or animations, preventing battery drain and high GPU temps.
+• [color=cornflowerblue]Compatibility Renderer[/color] enabled: Lightweight, instant cold startup, runs on any hardware.
+• [color=cornflowerblue]ui_only.profile[/color]: Hides all 3D/2D game nodes from the editor's Create Node dialog so only UI Control nodes remain.
+• [color=cornflowerblue]ui_only.build[/color]: SCons build profile configuration to compile tiny export templates without 3D modules."
+
+[node name="InputsTab" type="VBoxContainer" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="InputsHeader" type="Label" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/InputsTab"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Controls & Form Inputs"
+
+[node name="SampleInput" type="LineEdit" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/InputsTab"]
+unique_name_in_owner = true
+layout_mode = 2
+placeholder_text = "Type some sample text here..."
+
+[node name="SliderHBox" type="HBoxContainer" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/InputsTab"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="SliderTitle" type="Label" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/InputsTab/SliderHBox"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+text = "Adjustment:"
+
+[node name="SampleSlider" type="HSlider" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/InputsTab/SliderHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+value = 50.0
+
+[node name="SliderValueLabel" type="Label" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/InputsTab/SliderHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+text = "50%"
+
+[node name="SampleCheck" type="CheckBox" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/InputsTab"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Enable background data polling"
+
+[node name="SampleOption" type="OptionButton" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/InputsTab"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ActionsHBox" type="HBoxContainer" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/InputsTab"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ShowToastBtn" type="Button" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/InputsTab/ActionsHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Show Toast Notification"
+
+[node name="ShowModalBtn" type="Button" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/InputsTab/ActionsHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Open Reset Modal"
+
+[node name="DataTab" type="VBoxContainer" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="DataHeader" type="Label" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/DataTab"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Data Grid (Tree Control)"
+
+[node name="ActionRow" type="HBoxContainer" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/DataTab"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ItemNameInput" type="LineEdit" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/DataTab/ActionRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "New item name..."
+
+[node name="AddItemBtn" type="Button" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/DataTab/ActionRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Add Item"
+
+[node name="DeleteItemBtn" type="Button" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/DataTab/ActionRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Delete Selected"
+
+[node name="ItemTree" type="Tree" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/DataTab"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="LogsTab" type="VBoxContainer" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="LogHeaderHBox" type="HBoxContainer" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/LogsTab"]
+layout_mode = 2
+
+[node name="LogsTitle" type="Label" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/LogsTab/LogHeaderHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Application Console Logs"
+
+[node name="Sp" type="Control" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/LogsTab/LogHeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ClearLogsBtn" type="Button" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/LogsTab/LogHeaderHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Clear Output"
+
+[node name="LogConsole" type="RichTextLabel" parent="LayoutVBox/BodyHBox/ContentPanel/Margin/ContentTabs/LogsTab"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+scroll_following = true
+
+[node name="FooterPanel" type="PanelContainer" parent="LayoutVBox"]
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="LayoutVBox/FooterPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 6
+
+[node name="HBox" type="HBoxContainer" parent="LayoutVBox/FooterPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="StatusLabel" type="Label" parent="LayoutVBox/FooterPanel/Margin/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Status: Idle"
+
+[node name="FPSLabel" type="Label" parent="LayoutVBox/FooterPanel/Margin/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "FPS: --"
+
+[node name="ModalDialog" parent="." instance=ExtResource("2_modal")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+
+[node name="ToastNotification" parent="." instance=ExtResource("3_toast")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1

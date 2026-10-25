@@ -1,0 +1,12 @@
+.git
+.github
+client
+dev
+scratch
+*.pyc
+__pycache__
+backend/node_modules
+backend/dist
+backend/temp_seeds
+backend/failed_generations
+*.log
