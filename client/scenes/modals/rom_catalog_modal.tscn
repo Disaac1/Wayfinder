@@ -1,0 +1,210 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Theme" path="res://themes/main_theme.tres" id="1_theme"]
+[ext_resource type="Script" path="res://scripts/ui/modals/rom_catalog_modal.gd" id="2_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_modal"]
+bg_color = Color(0.11, 0.12, 0.16, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.28, 0.38, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="RomCatalogModal" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_script")
+
+[node name="Dimmer" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.7)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PopupPanel" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(720, 560)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="Margin" type="MarginContainer" parent="Center/PopupPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="Center/PopupPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Header" type="HBoxContainer" parent="Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Center/PopupPanel/Margin/VBox/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 18
+text = "ROM Catalog Manager (rom.json)"
+
+[node name="Spacer" type="Control" parent="Center/PopupPanel/Margin/VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CloseBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+text = "✕"
+
+[node name="Subtitle" type="Label" parent="Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.6, 0.68, 1)
+theme_override_font_sizes/font_size = 12
+text = "Wayfinder uses rom.json to automatically download, verify, and launch clean base ROMs for supported games."
+autowrap_mode = 2
+
+[node name="PathRow" type="HBoxContainer" parent="Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="PathLabel" type="Label" parent="Center/PopupPanel/Margin/VBox/PathRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.7, 0.8, 1)
+theme_override_font_sizes/font_size = 11
+text = "Location: user://rom.json"
+text_overrun_behavior = 3
+
+[node name="OpenFolderBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/PathRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "📂 Open AppData Folder"
+
+[node name="HSeparator1" type="HSeparator" parent="Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="DownloadBox" type="VBoxContainer" parent="Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="DownloadLabel" type="Label" parent="Center/PopupPanel/Margin/VBox/DownloadBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "DOWNLOAD / UPDATE FROM URL"
+
+[node name="DownloadRow" type="HBoxContainer" parent="Center/PopupPanel/Margin/VBox/DownloadBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="UrlInput" type="LineEdit" parent="Center/PopupPanel/Margin/VBox/DownloadBox/DownloadRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "https://wayfinder.disaac1.com/rom.json"
+
+[node name="DownloadBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/DownloadBox/DownloadRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+text = "Download & Update"
+
+[node name="FeedbackLabel" type="Label" parent="Center/PopupPanel/Margin/VBox/DownloadBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.9, 0.5, 1)
+theme_override_font_sizes/font_size = 11
+
+[node name="LocalRow" type="HBoxContainer" parent="Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="LoadLocalBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/LocalRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "📁 Load rom.json from PC..."
+
+[node name="StatusBadge" type="Label" parent="Center/PopupPanel/Margin/VBox/LocalRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.3, 0.9, 0.5, 1)
+theme_override_font_sizes/font_size = 12
+horizontal_alignment = 2
+
+[node name="HSeparator2" type="HSeparator" parent="Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="FilterBox" type="HBoxContainer" parent="Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SearchInput" type="LineEdit" parent="Center/PopupPanel/Margin/VBox/FilterBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search loaded ROMs & games..."
+
+[node name="RefreshBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/FilterBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "🔄 Refresh"
+
+[node name="Scroll" type="ScrollContainer" parent="Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="EntriesContainer" type="VBoxContainer" parent="Center/PopupPanel/Margin/VBox/Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="BottomRow" type="HBoxContainer" parent="Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="SummaryLabel" type="Label" parent="Center/PopupPanel/Margin/VBox/BottomRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.5, 0.55, 0.6, 1)
+theme_override_font_sizes/font_size = 11
+
+[node name="DoneBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/BottomRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 36)
+layout_mode = 2
+text = "Done"
+
+[node name="LocalFileDialog" type="FileDialog" parent="."]
+unique_name_in_owner = true
+title = "Open a File"
+initial_position = 2
+size = Vector2i(650, 450)
+ok_button_text = "Open"
+file_mode = 0
+access = 2
+filters = PackedStringArray("*.json ; JSON Files")

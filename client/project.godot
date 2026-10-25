@@ -1,3 +1,11 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
 config_version=5
 
 [application]
@@ -5,15 +13,17 @@ config_version=5
 config/name="Wayfinder"
 run/main_scene="res://scenes/main_menu.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
+run/low_processor_mode=true
+config/icon="res://icon.png"
+config/windows_native_icon="res://icon.ico"
 
 [autoload]
 
-NetworkManager="*res://scripts/network_manager.gd"
+WayfinderLogger="*res://scripts/core/wayfinder_logger.gd"
+NetworkManager="*res://scripts/core/network_manager.gd"
 
 [display]
 
-window/size/viewport_width=1152
-window/size/viewport_height=648
+window/subwindows/embed_subwindows=false
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
-window/subwindows/embed_subwindows=false

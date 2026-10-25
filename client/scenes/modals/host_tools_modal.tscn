@@ -1,0 +1,432 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Theme" path="res://themes/main_theme.tres" id="1_theme"]
+[ext_resource type="Script" path="res://scripts/ui/modals/host_tools_modal.gd" id="2_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_modal"]
+bg_color = Color(0.11, 0.12, 0.16, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.28, 0.38, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_console"]
+bg_color = Color(0.06, 0.07, 0.1, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.18, 0.2, 0.28, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 10.0
+content_margin_top = 10.0
+content_margin_right = 10.0
+content_margin_bottom = 10.0
+
+[node name="HostToolsModal" type="Control"]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_script")
+
+[node name="Dimmer" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.65)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PopupPanel" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(840, 600)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="Margin" type="MarginContainer" parent="Center/PopupPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 16
+
+[node name="VBox" type="VBoxContainer" parent="Center/PopupPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="HeaderHBox" type="HBoxContainer" parent="Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TitleLabel" type="Label" parent="Center/PopupPanel/Margin/VBox/HeaderHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.8, 0.25, 1)
+theme_override_font_sizes/font_size = 18
+text = "👑 Host Controls & Server Console"
+
+[node name="Spacer" type="Control" parent="Center/PopupPanel/Margin/VBox/HeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RoomPillPanel" type="PanelContainer" parent="Center/PopupPanel/Margin/VBox/HeaderHBox"]
+layout_mode = 2
+
+[node name="RoomPillLabel" type="Label" parent="Center/PopupPanel/Margin/VBox/HeaderHBox/RoomPillPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.67, 0.44, 0.98, 1)
+text = "ROOM: ------"
+
+[node name="CloseBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/HeaderHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+text = "✕"
+
+[node name="HostTabContainer" type="TabContainer" parent="Center/PopupPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Quick Actions" type="MarginContainer" parent="Center/PopupPanel/Margin/VBox/HostTabContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox" type="VBoxContainer" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Quick Actions"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="GlobalActionsHBox" type="HBoxContainer" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Quick Actions/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="CountdownBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Quick Actions/VBox/GlobalActionsHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "⏱ Countdown 10s"
+
+[node name="StatusBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Quick Actions/VBox/GlobalActionsHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "📊 Status"
+
+[node name="PlayersBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Quick Actions/VBox/GlobalActionsHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "👥 Players"
+
+[node name="SaveBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Quick Actions/VBox/GlobalActionsHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "💾 Force Save"
+
+[node name="ConnectionPanel" type="PanelContainer" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Quick Actions/VBox"]
+layout_mode = 2
+
+[node name="ConnMargin" type="MarginContainer" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Quick Actions/VBox/ConnectionPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="ConnHBox" type="HBoxContainer" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Quick Actions/VBox/ConnectionPanel/ConnMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ConnTitle" type="Label" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Quick Actions/VBox/ConnectionPanel/ConnMargin/ConnHBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "CONNECTION:"
+
+[node name="ConnModeBadge" type="Label" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Quick Actions/VBox/ConnectionPanel/ConnMargin/ConnHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.9, 0.5, 1)
+theme_override_font_sizes/font_size = 12
+text = "🔒 Cloud Relay (15s Heartbeat Active)"
+
+[node name="ConnAddressLabel" type="Label" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Quick Actions/VBox/ConnectionPanel/ConnMargin/ConnHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.7, 0.8, 1)
+theme_override_font_sizes/font_size = 11
+text = "wss://wayfinder.disaac1.com/ap/------"
+text_overrun_behavior = 3
+
+[node name="CopyConnBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Quick Actions/VBox/ConnectionPanel/ConnMargin/ConnHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "📋 Copy Address"
+
+[node name="SlotsHeader" type="Label" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Quick Actions/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+text = "Player Slot Actions (Release Checks / Collect Items):"
+
+[node name="SlotsScroll" type="ScrollContainer" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Quick Actions/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="SlotsContainer" type="VBoxContainer" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Quick Actions/VBox/SlotsScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="QuickFeedbackLabel" type="Label" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Quick Actions/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.38, 0.82, 0.6, 1)
+
+[node name="Location & Item Dispatcher" type="MarginContainer" parent="Center/PopupPanel/Margin/VBox/HostTabContainer"]
+visible = false
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox" type="VBoxContainer" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Location & Item Dispatcher"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TargetSlotHBox" type="HBoxContainer" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Location & Item Dispatcher/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TargetLabel" type="Label" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Location & Item Dispatcher/VBox/TargetSlotHBox"]
+layout_mode = 2
+text = "Target Player Slot:"
+
+[node name="SlotOption" type="OptionButton" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Location & Item Dispatcher/VBox/TargetSlotHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 36)
+layout_mode = 2
+
+[node name="ModeHBox" type="HBoxContainer" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Location & Item Dispatcher/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ModeChecksBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Location & Item Dispatcher/VBox/ModeHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+toggle_mode = true
+button_pressed = true
+text = "✓ Complete Location Check"
+
+[node name="ModeItemsBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Location & Item Dispatcher/VBox/ModeHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+toggle_mode = true
+text = "🎁 Send Item"
+
+[node name="ModeHintsBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Location & Item Dispatcher/VBox/ModeHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+toggle_mode = true
+text = "💡 Request Hint"
+
+[node name="ChecksSection" type="VBoxContainer" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Location & Item Dispatcher/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="LocSearchInput" type="LineEdit" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Location & Item Dispatcher/VBox/ChecksSection"]
+unique_name_in_owner = true
+layout_mode = 2
+placeholder_text = "Filter location checks for selected slot..."
+
+[node name="LocItemList" type="ItemList" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Location & Item Dispatcher/VBox/ChecksSection"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ForceCheckBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Location & Item Dispatcher/VBox/ChecksSection"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.38, 0.82, 0.6, 1)
+text = "✓ Complete Selected Check (/send_location)"
+
+[node name="ItemsSection" type="VBoxContainer" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Location & Item Dispatcher/VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="ItemSearchInput" type="LineEdit" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Location & Item Dispatcher/VBox/ItemsSection"]
+unique_name_in_owner = true
+layout_mode = 2
+placeholder_text = "Filter items to dispatch..."
+
+[node name="ItemItemList" type="ItemList" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Location & Item Dispatcher/VBox/ItemsSection"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ItemActionHBox" type="HBoxContainer" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Location & Item Dispatcher/VBox/ItemsSection"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="QuantityLabel" type="Label" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Location & Item Dispatcher/VBox/ItemsSection/ItemActionHBox"]
+layout_mode = 2
+text = "Quantity:"
+
+[node name="ItemQuantitySpinBox" type="SpinBox" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Location & Item Dispatcher/VBox/ItemsSection/ItemActionHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = 1.0
+value = 1.0
+
+[node name="SendItemBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Location & Item Dispatcher/VBox/ItemsSection/ItemActionHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.4, 0.75, 1, 1)
+text = "🎁 Dispatch Item to Player (/send)"
+
+[node name="HintsSection" type="VBoxContainer" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Location & Item Dispatcher/VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="HintSearchInput" type="LineEdit" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Location & Item Dispatcher/VBox/HintsSection"]
+unique_name_in_owner = true
+layout_mode = 2
+placeholder_text = "Filter items/locations to hint..."
+
+[node name="HintItemList" type="ItemList" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Location & Item Dispatcher/VBox/HintsSection"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HintSendBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Location & Item Dispatcher/VBox/HintsSection"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.8, 0.25, 1)
+text = "💡 Send Hint Request (/hint)"
+
+[node name="DispatchFeedbackLabel" type="Label" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Location & Item Dispatcher/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.38, 0.82, 0.6, 1)
+
+[node name="Live Server Console" type="MarginContainer" parent="Center/PopupPanel/Margin/VBox/HostTabContainer"]
+visible = false
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox" type="VBoxContainer" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Live Server Console"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ConsoleTopHBox" type="HBoxContainer" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Live Server Console/VBox"]
+layout_mode = 2
+
+[node name="ConsoleDesc" type="Label" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Live Server Console/VBox/ConsoleTopHBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.7, 0.8, 1)
+text = "Live Archipelago MultiServer Terminal Log"
+
+[node name="Spacer" type="Control" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Live Server Console/VBox/ConsoleTopHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ConsoleClearBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Live Server Console/VBox/ConsoleTopHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Clear Output"
+
+[node name="ConsolePanel" type="PanelContainer" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Live Server Console/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_console")
+
+[node name="ConsoleOutput" type="RichTextLabel" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Live Server Console/VBox/ConsolePanel"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 2
+bbcode_enabled = true
+scroll_following = true
+selection_enabled = true
+
+[node name="ChipsHBox" type="HBoxContainer" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Live Server Console/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ChipStatusBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Live Server Console/VBox/ChipsHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "/status"
+
+[node name="ChipPlayersBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Live Server Console/VBox/ChipsHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "/players"
+
+[node name="ChipCountdownBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Live Server Console/VBox/ChipsHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "/countdown 10"
+
+[node name="ChipSaveBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Live Server Console/VBox/ChipsHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "/save"
+
+[node name="ChipHelpBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Live Server Console/VBox/ChipsHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "/help"
+
+[node name="InputHBox" type="HBoxContainer" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Live Server Console/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ConsoleInput" type="LineEdit" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Live Server Console/VBox/InputHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Enter server command e.g. /status, /release Player, /countdown 10..."
+
+[node name="ConsoleSendBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/HostTabContainer/Live Server Console/VBox/InputHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "Send"

@@ -1,0 +1,72 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Theme" path="res://themes/main_theme.tres" id="1_theme"]
+[ext_resource type="Script" path="res://scripts/ui/components/download_progress_card.gd" id="2_script"]
+
+[node name="DownloadProgressCard" type="PanelContainer"]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 85.0
+grow_horizontal = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_script")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="VBox" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="HeaderHBox" type="HBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+
+[node name="TaskTitleLabel" type="Label" parent="Margin/VBox/HeaderHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.88, 0.95, 1)
+theme_override_font_sizes/font_size = 14
+text = "Downloading Game Files..."
+
+[node name="Spacer" type="Control" parent="Margin/VBox/HeaderHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SpeedBadge" type="Label" parent="Margin/VBox/HeaderHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.85, 0.5, 1)
+theme_override_font_sizes/font_size = 12
+text = "⚡ 12.5 MB/s"
+
+[node name="ProgressBar" type="ProgressBar" parent="Margin/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+size_flags_horizontal = 3
+show_percentage = false
+
+[node name="DetailsHBox" type="HBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+
+[node name="StatusDetailLabel" type="Label" parent="Margin/VBox/DetailsHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.65, 0.72, 1)
+theme_override_font_sizes/font_size = 12
+text = "0.0 MB / 0.0 MB (0%)"
+
+[node name="Spacer2" type="Control" parent="Margin/VBox/DetailsHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="EtaBadge" type="Label" parent="Margin/VBox/DetailsHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.75, 0.25, 1)
+theme_override_font_sizes/font_size = 12
+text = "⏱ ~15s left"

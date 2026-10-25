@@ -1,0 +1,275 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Theme" path="res://themes/main_theme.tres" id="1_theme"]
+[ext_resource type="Script" path="res://scripts/ui/modals/launch_modal.gd" id="2_script"]
+[ext_resource type="PackedScene" path="res://scenes/components/download_progress_card.tscn" id="3_dlcard"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_modal"]
+bg_color = Color(0.11, 0.12, 0.16, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.28, 0.38, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="LaunchOverlay" type="Control"]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_script")
+
+[node name="Dimmer" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.65)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PopupPanel" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(740, 560)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="Margin" type="MarginContainer" parent="Center/PopupPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 26
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 26
+theme_override_constants/margin_bottom = 22
+
+[node name="VBox" type="VBoxContainer" parent="Center/PopupPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Header" type="HBoxContainer" parent="Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="LaunchTitle" type="Label" parent="Center/PopupPanel/Margin/VBox/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 19
+text = "Launch Game Setup"
+
+[node name="Spacer" type="Control" parent="Center/PopupPanel/Margin/VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LaunchCloseBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+text = "✕"
+
+[node name="Separator" type="HSeparator" parent="Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="Scroll" type="ScrollContainer" parent="Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ScrollVBox" type="VBoxContainer" parent="Center/PopupPanel/Margin/VBox/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 14
+
+[node name="DownloadProgressCard" parent="Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox" instance=ExtResource("3_dlcard")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="LaunchInstructions" type="RichTextLabel" parent="Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+bbcode_enabled = true
+fit_content = true
+autowrap_mode = 3
+text = "Instructions placeholder..."
+
+[node name="LaunchProgressBar" type="ProgressBar" parent="Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+value = 0.0
+
+[node name="GameSelectionSection" type="VBoxContainer" parent="Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="GameSelectionLabel" type="Label" parent="Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/GameSelectionSection"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.8, 1)
+text = "Select Game to Launch"
+autowrap_mode = 3
+
+[node name="GameSelectionButtons" type="VBoxContainer" parent="Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/GameSelectionSection"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PathSection" type="VBoxContainer" parent="Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PathLabel" type="Label" parent="Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/PathSection"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.8, 1)
+text = "Executable Path"
+autowrap_mode = 3
+
+[node name="PathHBox" type="HBoxContainer" parent="Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/PathSection"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LaunchPathInput" type="LineEdit" parent="Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/PathSection/PathHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Select path to game executable..."
+
+[node name="LaunchPathBrowseBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/PathSection/PathHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(90, 38)
+layout_mode = 2
+text = "Browse"
+
+[node name="LaunchDownloadBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/PathSection"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+text = "📥 Download Automatically (roms.json)"
+
+[node name="LaunchSteamBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/PathSection"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+text = "🎮 Open Steam Game Properties (Betas Tab)"
+
+[node name="LaunchRecheckBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/PathSection"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+text = "🔄 Re-check Downgrade Status"
+
+[node name="EmulatorPathSection" type="VBoxContainer" parent="Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="EmulatorPathLabel" type="Label" parent="Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/EmulatorPathSection"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.8, 1)
+text = "SNES Emulator Path"
+autowrap_mode = 3
+
+[node name="EmulatorPathHBox" type="HBoxContainer" parent="Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/EmulatorPathSection"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LaunchEmulatorPathInput" type="LineEdit" parent="Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/EmulatorPathSection/EmulatorPathHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Select path to emulator..."
+
+[node name="LaunchEmulatorPathBrowseBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/EmulatorPathSection/EmulatorPathHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(90, 38)
+layout_mode = 2
+text = "Browse"
+
+[node name="ErrorActionSection" type="VBoxContainer" parent="Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ErrorActionLabel" type="Label" parent="Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/ErrorActionSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.8, 1)
+text = "Troubleshooting & Error Reporting"
+
+[node name="ErrorActionHBox" type="HBoxContainer" parent="Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/ErrorActionSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SendLogsBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/ErrorActionSection/ErrorActionHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+size_flags_horizontal = 3
+text = "📤 Send Error Logs to Host"
+
+[node name="CopyDiagBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/ErrorActionSection/ErrorActionHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+size_flags_horizontal = 3
+text = "📋 Copy Diagnostic Info"
+
+[node name="ErrorStatusFeedback" type="Label" parent="Center/PopupPanel/Margin/VBox/Scroll/ScrollVBox/ErrorActionSection"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.9, 0.5, 1)
+text = "Logs sent successfully to server."
+
+[node name="Separator2" type="HSeparator" parent="Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="Footer" type="HBoxContainer" parent="Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="LaunchCancelBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/Footer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 38)
+layout_mode = 2
+text = "Cancel"
+
+[node name="Spacer2" type="Control" parent="Center/PopupPanel/Margin/VBox/Footer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LaunchConfirmBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/Footer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 38)
+layout_mode = 2
+text = "Confirm & Launch"
+
+[node name="LaunchFileDialog" type="FileDialog" parent="."]
+unique_name_in_owner = true
+title = "Open a File"
+size = Vector2i(600, 400)
+access = 2
+filters = PackedStringArray("*.exe ; Executables", "*.sfc ; SNES ROMs", "* ; All Files")

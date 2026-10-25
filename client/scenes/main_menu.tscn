@@ -1,17 +1,20 @@
-[gd_scene load_steps=2 format=3 uid="uid://c1v1r5y3m4n82"]
+[gd_scene load_steps=4 format=3]
 
-[ext_resource type="Script" path="res://scripts/main_menu.gd" id="1_xxxx"]
+[ext_resource type="Theme" path="res://themes/main_theme.tres" id="1_theme"]
+[ext_resource type="Script" path="res://scripts/ui/main_menu.gd" id="1_xxxx"]
+[ext_resource type="PackedScene" path="res://scenes/modals/rom_catalog_modal.tscn" id="3_rom_modal"]
 
-[node name="MainMenu" type="Control"]
+[node name="MainMenu" type="Control" unique_id=646118204]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("1_theme")
 script = ExtResource("1_xxxx")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=50081351]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -20,7 +23,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.08, 0.09, 0.12, 1)
 
-[node name="CenterContainer" type="CenterContainer" parent="."]
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=253348268]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -28,85 +31,148 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="HBox" type="HBoxContainer" parent="CenterContainer"]
+[node name="HBox" type="HBoxContainer" parent="CenterContainer" unique_id=1736937897]
 layout_mode = 2
 theme_override_constants/separation = 24
 
-[node name="CardPanel" type="PanelContainer" parent="CenterContainer/HBox"]
+[node name="CardPanel" type="PanelContainer" parent="CenterContainer/HBox" unique_id=234328417]
 custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
 
-[node name="Margin" type="MarginContainer" parent="CenterContainer/HBox/CardPanel"]
+[node name="Margin" type="MarginContainer" parent="CenterContainer/HBox/CardPanel" unique_id=1672820242]
 layout_mode = 2
 theme_override_constants/margin_left = 32
-theme_override_constants/margin_top = 32
+theme_override_constants/margin_top = 28
 theme_override_constants/margin_right = 32
-theme_override_constants/margin_bottom = 32
+theme_override_constants/margin_bottom = 28
 
-[node name="VBox" type="VBoxContainer" parent="CenterContainer/HBox/CardPanel/Margin"]
+[node name="VBox" type="VBoxContainer" parent="CenterContainer/HBox/CardPanel/Margin" unique_id=272058552]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 14
 
-[node name="Title" type="Label" parent="CenterContainer/HBox/CardPanel/Margin/VBox"]
+[node name="Title" type="Label" parent="CenterContainer/HBox/CardPanel/Margin/VBox" unique_id=861071869]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.67, 0.44, 0.98, 1)
 theme_override_font_sizes/font_size = 28
 text = "WAYFINDER"
 horizontal_alignment = 1
 
-[node name="Subtitle" type="Label" parent="CenterContainer/HBox/CardPanel/Margin/VBox"]
+[node name="Subtitle" type="Label" parent="CenterContainer/HBox/CardPanel/Margin/VBox" unique_id=643025644]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.55, 0.6, 1)
 theme_override_font_sizes/font_size = 14
 text = "Archipelago Lobby System"
 horizontal_alignment = 1
 
-[node name="Separator" type="HSeparator" parent="CenterContainer/HBox/CardPanel/Margin/VBox"]
+[node name="Separator" type="HSeparator" parent="CenterContainer/HBox/CardPanel/Margin/VBox" unique_id=286307991]
 layout_mode = 2
 
-[node name="Form" type="VBoxContainer" parent="CenterContainer/HBox/CardPanel/Margin/VBox"]
+[node name="Form" type="VBoxContainer" parent="CenterContainer/HBox/CardPanel/Margin/VBox" unique_id=1348878400]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="NameLabel" type="Label" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form"]
+[node name="NameLabel" type="Label" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form" unique_id=287699684]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "PLAYER NAME"
 
-[node name="NameInput" type="LineEdit" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form"]
+[node name="NameInput" type="LineEdit" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form" unique_id=305103929]
 unique_name_in_owner = true
 layout_mode = 2
 placeholder_text = "Enter name..."
 max_length = 20
 
-[node name="ServerLabel" type="Label" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form"]
+[node name="ServerLabel" type="Label" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form" unique_id=1056145576]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "SERVER ADDRESS"
 
-[node name="ServerInput" type="LineEdit" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form"]
+[node name="ServerInput" type="LineEdit" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form" unique_id=248123163]
 unique_name_in_owner = true
 layout_mode = 2
-text = "ws://localhost:8080"
+text = "wss://wayfinder.disaac1.com"
 placeholder_text = "ws://..."
 
-[node name="Separator2" type="HSeparator" parent="CenterContainer/HBox/CardPanel/Margin/VBox"]
+[node name="RomCatalogBox" type="VBoxContainer" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="RomHeader" type="HBoxContainer" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox"]
 layout_mode = 2
 
-[node name="CreateBtn" type="Button" parent="CenterContainer/HBox/CardPanel/Margin/VBox"]
+[node name="RomLabel" type="Label" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox/RomHeader"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "ROM CATALOG (rom.json)"
+
+[node name="RomStatusBadge" type="Label" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox/RomHeader"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.3, 0.9, 0.5, 1)
+theme_override_font_sizes/font_size = 11
+text = "⚪ Not Loaded"
+horizontal_alignment = 2
+
+[node name="RomUrlRow" type="HBoxContainer" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="RomUrlInput" type="LineEdit" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox/RomUrlRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "https://wayfinder.disaac1.com/rom.json"
+
+[node name="RomDownloadBtn" type="Button" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox/RomUrlRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "Download"
+
+[node name="RomActionsRow" type="HBoxContainer" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="RomLoadFileBtn" type="Button" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox/RomActionsRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+text = "📁 Load File..."
+
+[node name="RomManageBtn" type="Button" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox/RomActionsRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+text = "📋 View Catalog"
+
+[node name="RomFolderBtn" type="Button" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox/RomActionsRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(32, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+tooltip_text = "Open AppData folder"
+text = "📂"
+
+[node name="Separator2" type="HSeparator" parent="CenterContainer/HBox/CardPanel/Margin/VBox" unique_id=1305215139]
+layout_mode = 2
+
+[node name="CreateBtn" type="Button" parent="CenterContainer/HBox/CardPanel/Margin/VBox" unique_id=331308571]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 text = "Create Room"
 
-[node name="Separator3" type="HSeparator" parent="CenterContainer/HBox/CardPanel/Margin/VBox"]
+[node name="Separator3" type="HSeparator" parent="CenterContainer/HBox/CardPanel/Margin/VBox" unique_id=1786282695]
 layout_mode = 2
 
-[node name="JoinBox" type="HBoxContainer" parent="CenterContainer/HBox/CardPanel/Margin/VBox"]
+[node name="JoinBox" type="HBoxContainer" parent="CenterContainer/HBox/CardPanel/Margin/VBox" unique_id=1257281084]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="CodeInput" type="LineEdit" parent="CenterContainer/HBox/CardPanel/Margin/VBox/JoinBox"]
+[node name="CodeInput" type="LineEdit" parent="CenterContainer/HBox/CardPanel/Margin/VBox/JoinBox" unique_id=1035785778]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -114,13 +180,13 @@ placeholder_text = "ROOM CODE"
 alignment = 1
 max_length = 6
 
-[node name="JoinBtn" type="Button" parent="CenterContainer/HBox/CardPanel/Margin/VBox/JoinBox"]
+[node name="JoinBtn" type="Button" parent="CenterContainer/HBox/CardPanel/Margin/VBox/JoinBox" unique_id=1076279646]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(100, 40)
 layout_mode = 2
 text = "Join"
 
-[node name="ErrorLabel" type="Label" parent="CenterContainer/HBox/CardPanel/Margin/VBox"]
+[node name="ErrorLabel" type="Label" parent="CenterContainer/HBox/CardPanel/Margin/VBox" unique_id=388523428]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
@@ -128,34 +194,48 @@ theme_override_font_sizes/font_size = 12
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="RecentPanel" type="PanelContainer" parent="CenterContainer/HBox"]
+[node name="RecentPanel" type="PanelContainer" parent="CenterContainer/HBox" unique_id=331525777]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(300, 420)
 layout_mode = 2
 
-[node name="Margin" type="MarginContainer" parent="CenterContainer/HBox/RecentPanel"]
+[node name="Margin" type="MarginContainer" parent="CenterContainer/HBox/RecentPanel" unique_id=1242981756]
 layout_mode = 2
 theme_override_constants/margin_left = 20
 theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
-[node name="VBox" type="VBoxContainer" parent="CenterContainer/HBox/RecentPanel/Margin"]
+[node name="VBox" type="VBoxContainer" parent="CenterContainer/HBox/RecentPanel/Margin" unique_id=1201623835]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="Title" type="Label" parent="CenterContainer/HBox/RecentPanel/Margin/VBox"]
+[node name="Title" type="Label" parent="CenterContainer/HBox/RecentPanel/Margin/VBox" unique_id=275836104]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "RESUME RECENT LOBBIES"
 horizontal_alignment = 1
 
-[node name="Scroll" type="ScrollContainer" parent="CenterContainer/HBox/RecentPanel/Margin/VBox"]
+[node name="Scroll" type="ScrollContainer" parent="CenterContainer/HBox/RecentPanel/Margin/VBox" unique_id=1133781370]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="RecentLobbiesContainer" type="VBoxContainer" parent="CenterContainer/HBox/RecentPanel/Margin/VBox/Scroll"]
+[node name="RecentLobbiesContainer" type="VBoxContainer" parent="CenterContainer/HBox/RecentPanel/Margin/VBox/Scroll" unique_id=1637768719]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
+
+[node name="RomCatalogModal" parent="." instance=ExtResource("3_rom_modal")]
+unique_name_in_owner = true
+visible = false
+
+[node name="RomFileDialog" type="FileDialog" parent="."]
+unique_name_in_owner = true
+title = "Select rom.json"
+initial_position = 2
+size = Vector2i(650, 450)
+ok_button_text = "Open"
+file_mode = 0
+access = 2
+filters = PackedStringArray("*.json ; JSON Files")

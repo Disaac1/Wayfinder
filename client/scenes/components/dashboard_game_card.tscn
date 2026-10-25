@@ -1,0 +1,227 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Theme" path="res://themes/main_theme.tres" id="1_theme"]
+[ext_resource type="Script" path="res://scripts/ui/components/dashboard_game_card.gd" id="2_script"]
+[ext_resource type="Script" path="res://scripts/ui/components/circular_progress.gd" id="3_circ"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_banner_panel"]
+bg_color = Color(0.07, 0.08, 0.11, 1)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mode_tag"]
+content_margin_left = 6.0
+content_margin_top = 2.0
+content_margin_right = 6.0
+content_margin_bottom = 2.0
+bg_color = Color(0.15, 0.17, 0.24, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.28, 0.38, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_status_pill"]
+content_margin_left = 7.0
+content_margin_top = 2.0
+content_margin_right = 7.0
+content_margin_bottom = 2.0
+bg_color = Color(0.08, 0.18, 0.13, 0.8)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.16, 0.65, 0.38, 0.7)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="DashboardGameCard" type="PanelContainer"]
+custom_minimum_size = Vector2(260, 295)
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 295.0
+grow_horizontal = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_script")
+
+[node name="OuterVBox" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="BannerPanel" type="PanelContainer" parent="OuterVBox"]
+unique_name_in_owner = true
+clip_contents = true
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_banner_panel")
+
+[node name="BannerBackground" type="TextureRect" parent="OuterVBox/BannerPanel"]
+unique_name_in_owner = true
+modulate = Color(0.22, 0.24, 0.32, 0.8)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 6
+
+[node name="BannerTexture" type="TextureRect" parent="OuterVBox/BannerPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="FallbackBanner" type="CenterContainer" parent="OuterVBox/BannerPanel"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="FallbackLabel" type="Label" parent="OuterVBox/BannerPanel/FallbackBanner"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.55, 0.68, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "GAME"
+
+[node name="MiniProgressBar" type="ProgressBar" parent="OuterVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 4)
+layout_mode = 2
+show_percentage = false
+
+[node name="ContentMargin" type="MarginContainer" parent="OuterVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox" type="VBoxContainer" parent="OuterVBox/ContentMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="HeaderHBox" type="HBoxContainer" parent="OuterVBox/ContentMargin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="GameTitleLabel" type="Label" parent="OuterVBox/ContentMargin/VBox/HeaderHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.94, 0.96, 1, 1)
+theme_override_font_sizes/font_size = 15
+text = "Game Title"
+text_overrun_behavior = 3
+
+[node name="ModeTagPanel" type="PanelContainer" parent="OuterVBox/ContentMargin/VBox/HeaderHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_mode_tag")
+
+[node name="ModeTagLabel" type="Label" parent="OuterVBox/ContentMargin/VBox/HeaderHBox/ModeTagPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
+theme_override_font_sizes/font_size = 10
+text = "PC"
+
+[node name="SlotRowHBox" type="HBoxContainer" parent="OuterVBox/ContentMargin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="OwnerBadge" type="Label" parent="OuterVBox/ContentMargin/VBox/SlotRowHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.22, 0.74, 0.97, 1)
+theme_override_font_sizes/font_size = 11
+text = "(You)"
+
+[node name="SlotValLabel" type="Label" parent="OuterVBox/ContentMargin/VBox/SlotRowHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.55, 0.62, 0.75, 1)
+theme_override_font_sizes/font_size = 11
+text = "Slot: Player_Game"
+text_overrun_behavior = 3
+
+[node name="CopySlotBtn" type="Button" parent="OuterVBox/ContentMargin/VBox/SlotRowHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 20)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 10
+text = "Copy"
+
+[node name="ChecksContainer" type="HBoxContainer" parent="OuterVBox/ContentMargin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="StatusPillPanel" type="PanelContainer" parent="OuterVBox/ContentMargin/VBox/ChecksContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_status_pill")
+
+[node name="StatusLabel" type="Label" parent="OuterVBox/ContentMargin/VBox/ChecksContainer/StatusPillPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.85, 0.5, 1)
+theme_override_font_sizes/font_size = 10
+text = "Ready"
+
+[node name="ChecksSpacer" type="Control" parent="OuterVBox/ContentMargin/VBox/ChecksContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ChecksHBox" type="HBoxContainer" parent="OuterVBox/ContentMargin/VBox/ChecksContainer"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CircularProgressBar" type="Control" parent="OuterVBox/ContentMargin/VBox/ChecksContainer/ChecksHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+size_flags_vertical = 4
+script = ExtResource("3_circ")
+
+[node name="ChecksProgressLabel" type="Label" parent="OuterVBox/ContentMargin/VBox/ChecksContainer/ChecksHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.7, 0.8, 1)
+theme_override_font_sizes/font_size = 11
+text = "0 / 0 Checks"
+horizontal_alignment = 2
+
+[node name="Spacer" type="Control" parent="OuterVBox/ContentMargin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ActionHBox" type="HBoxContainer" parent="OuterVBox/ContentMargin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="MainActionBtn" type="Button" parent="OuterVBox/ContentMargin/VBox/ActionHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "Launch"
+
+[node name="ConfigGearBtn" type="Button" parent="OuterVBox/ContentMargin/VBox/ActionHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(36, 36)
+layout_mode = 2
+focus_mode = 0
+tooltip_text = "Options & Launch Configuration"
+text = "⚙"
+
+[node name="ChangePathBtn" type="Button" parent="OuterVBox/ContentMargin/VBox/ActionHBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2

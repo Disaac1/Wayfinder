@@ -1,0 +1,119 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Theme" path="res://themes/main_theme.tres" id="1_theme"]
+[ext_resource type="Script" path="res://scripts/ui/modals/add_game_modal.gd" id="2_script"]
+[ext_resource type="Script" path="res://scripts/ui/components/loading_spinner.gd" id="3_spinner"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_modal"]
+bg_color = Color(0.11, 0.12, 0.16, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.28, 0.38, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="AddGameModal" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_script")
+
+[node name="Dimmer" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.65)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PopupPanel" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(740, 540)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="Margin" type="MarginContainer" parent="Center/PopupPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 22
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 22
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="Center/PopupPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Header" type="HBoxContainer" parent="Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Center/PopupPanel/Margin/VBox/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.92, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 18
+text = "Add Game to Your List"
+
+[node name="Spacer" type="Control" parent="Center/PopupPanel/Margin/VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CountLabel" type="Label" parent="Center/PopupPanel/Margin/VBox/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.67, 0.44, 0.98, 1)
+theme_override_font_sizes/font_size = 13
+text = "0 Games"
+
+[node name="AddGameCloseBtn" type="Button" parent="Center/PopupPanel/Margin/VBox/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+text = "✕"
+
+[node name="SearchInput" type="LineEdit" parent="Center/PopupPanel/Margin/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+placeholder_text = "🔍 Search games..."
+clear_button_enabled = true
+
+[node name="FilterHBox" type="HBoxContainer" parent="Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+
+[node name="ShowAllWorldsCheckBox" type="CheckBox" parent="Center/PopupPanel/Margin/VBox/FilterHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Show All Archipelago Worlds (Experimental/Core)"
+
+[node name="AddGameSpinner" type="Control" parent="Center/PopupPanel/Margin/VBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+script = ExtResource("3_spinner")
+
+[node name="Scroll" type="ScrollContainer" parent="Center/PopupPanel/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="GamePopupGrid" type="GridContainer" parent="Center/PopupPanel/Margin/VBox/Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+columns = 3

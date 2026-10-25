@@ -1,0 +1,64 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Theme" path="res://themes/main_theme.tres" id="1_theme"]
+[ext_resource type="Script" path="res://scripts/ui/components/player_card.gd" id="2_script"]
+
+[node name="PlayerCard" type="PanelContainer"]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 54.0
+grow_horizontal = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_script")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 8
+
+[node name="HBox" type="HBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="NameHBox" type="HBoxContainer" parent="Margin/HBox"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="HostBadge" type="Label" parent="Margin/HBox/NameHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.75, 0.14, 1)
+theme_override_font_sizes/font_size = 13
+text = "👑"
+
+[node name="NameLabel" type="Label" parent="Margin/HBox/NameHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "PlayerName"
+
+[node name="StatusBadge" type="Label" parent="Margin/HBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.85, 0.5, 1)
+theme_override_font_sizes/font_size = 12
+text = "READY"
+
+[node name="GamesContainer" type="HBoxContainer" parent="Margin/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="KickBtn" type="Button" parent="Margin/HBox"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(65, 30)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.97, 0.44, 0.44, 1)
+text = "Kick"
