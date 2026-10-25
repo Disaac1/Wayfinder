@@ -61,3 +61,9 @@ backend/data_*/
 
 # Editor state
 client/.godot/
+
+# Local toolchains and test sandboxes
+tools/godot-src/
+tools/w64devkit/
+sandbox_userdata/
+temp_fresh_install_sandbox/
