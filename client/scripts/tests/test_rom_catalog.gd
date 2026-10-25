@@ -25,16 +25,16 @@ func _run_tests() -> void:
 func test_url_derivation() -> void:
 	print("[Test 1] Testing default catalog URL generation...")
 	var url1 = RomCatalogManager.get_default_catalog_url("wss://wayfinder.disaac1.com")
-	assert(url1 == "https://wayfinder.disaac1.com/rom.json", "Expected https://wayfinder.disaac1.com/rom.json, got " + url1)
+	assert(url1 == "https://wayfinder.disaac1.com/roms.json", "Expected https://wayfinder.disaac1.com/roms.json, got " + url1)
 	
 	var url2 = RomCatalogManager.get_default_catalog_url("ws://localhost:8080")
-	assert(url2 == "http://localhost:8080/rom.json", "Expected http://localhost:8080/rom.json, got " + url2)
+	assert(url2 == "http://localhost:8080/roms.json", "Expected http://localhost:8080/roms.json, got " + url2)
 	
 	var url3 = RomCatalogManager.get_default_catalog_url("")
-	assert(url3 == "https://wayfinder.disaac1.com/rom.json", "Expected default url, got " + url3)
+	assert(url3 == "https://wayfinder.disaac1.com/roms.json", "Expected default url, got " + url3)
 	
 	var url4 = RomCatalogManager.get_default_catalog_url("wss://custom-archipelago.org:8443/ws")
-	assert(url4 == "https://custom-archipelago.org:8443/rom.json", "Expected https://custom-archipelago.org:8443/rom.json, got " + url4)
+	assert(url4 == "https://custom-archipelago.org:8443/roms.json", "Expected https://custom-archipelago.org:8443/roms.json, got " + url4)
 	print("  -> Passed URL generation checks.")
 
 func test_save_and_load_catalog() -> void:
@@ -146,11 +146,11 @@ func test_main_menu_and_modal_ui() -> void:
 	# Test opening RomCatalogModal
 	var modal = menu.get_node("%RomCatalogModal")
 	assert(modal.visible == false, "Modal should initially be hidden")
-	modal.open("https://wayfinder.disaac1.com/rom.json")
+	modal.open("https://wayfinder.disaac1.com/roms.json")
 	assert(modal.visible == true, "Modal should be visible after open()")
 	
 	var url_in: LineEdit = modal.get_node("%UrlInput") as LineEdit
-	assert(url_in.text == "https://wayfinder.disaac1.com/rom.json", "UrlInput in modal mismatch")
+	assert(url_in.text == "https://wayfinder.disaac1.com/roms.json", "UrlInput in modal mismatch")
 	
 	modal.close()
 	assert(modal.visible == false, "Modal should be hidden after close()")

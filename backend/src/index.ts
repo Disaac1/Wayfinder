@@ -52,6 +52,12 @@ app.use((req, res, next) => {
 app.use('/tools', express.static(PUBLIC_TOOLS_DIR));
 app.use('/admin', localhostOnly, express.static(ADMIN_UI_DIR));
 app.use('/data', express.static(DATA_DIR));
+
+// Keep clients using the retired catalog URL on the current catalog.
+app.get('/rom.json', (_req, res) => {
+  res.redirect(308, '/roms.json');
+});
+
 app.use(express.static(LANDING_PAGE_DIR));
 
 // Landing page root
@@ -66,7 +72,7 @@ app.get('/roms.json', (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     return res.sendFile(path.resolve(path.join(DATA_DIR, 'roms.json')));
   }  
-  res.status(404).json({ error: 'rom.json not found on server' });
+  res.status(404).json({ error: 'roms.json not found on server' });
 });
 
 // Modular Feature Routers

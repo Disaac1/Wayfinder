@@ -165,6 +165,7 @@ func _connect_ui_signals() -> void:
 	
 	# Launch overlay modal signals
 	launch_overlay.closed.connect(func(): _render_play_dashboard())
+	launch_overlay.cancellation_requested.connect(launcher.cancel_tool_installation)
 	launch_overlay.confirmed.connect(func(g_name, g_path, emu_path):
 		_continue_launch_confirm(g_path)
 	)

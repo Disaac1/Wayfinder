@@ -1,7 +1,7 @@
 class_name Updater
 extends RefCounted
 
-const BASE_VERSION: String = "1.0.4"
+const BASE_VERSION: String = "1.0.5"
 static var active_version: String = BASE_VERSION
 
 const UPDATE_PCK_PATH: String = "user://update.pck"

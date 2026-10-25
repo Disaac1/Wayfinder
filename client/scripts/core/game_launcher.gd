@@ -5,13 +5,23 @@ const LauncherUtils = preload("res://scripts/core/launcher_utils.gd")
 const ArchipelagoConfig = preload("res://scripts/core/archipelago_config.gd")
 const LauncherConfigStoreScript = preload("res://scripts/core/launcher_config_store.gd")
 const GameIdentityResolverScript = preload("res://scripts/core/game_identity_resolver.gd")
+const RomCatalogServiceScript = preload("res://scripts/core/rom_catalog_service.gd")
+const ExecutableLocatorScript = preload("res://scripts/core/executable_locator.gd")
+const ToolManagerScript = preload("res://scripts/core/tool_manager.gd")
+const ToolInstallerScript = preload("res://scripts/core/tool_installer.gd")
+const FirmwareManagerScript = preload("res://scripts/core/firmware_manager.gd")
+const ConfigWriterServiceScript = preload("res://scripts/core/config_writer_service.gd")
+const ProcessLauncherScript = preload("res://scripts/core/process_launcher.gd")
+const PatchManagerScript = preload("res://scripts/core/patch_manager.gd")
+const RomArchiveServiceScript = preload("res://scripts/core/rom_archive_service.gd")
+const PackageInstallerScript = preload("res://scripts/core/package_installer.gd")
+const PcGameInstallerScript = preload("res://scripts/core/pc_game_installer.gd")
+const RomDownloadServiceScript = preload("res://scripts/core/rom_download_service.gd")
 
 # --- CONSTANTS ---
 const DEFAULT_ARCHIPELAGO_DOWNLOAD_URL: String = "https://github.com/ArchipelagoMW/Archipelago/releases/download/0.6.7/Setup.Archipelago.0.6.7.exe"
 const DEFAULT_BIZHAWK_PREREQS_URL: String = "https://github.com/TASEmulators/BizHawk-Prereqs/releases/download/2.4.8_1/bizhawk_prereqs_v2.4.8_1.zip"
 
-const ZIP_HEADER_BYTE_1: int = 0x50  # 'P'
-const ZIP_HEADER_BYTE_2: int = 0x4B  # 'K'
 const BYTES_PER_MB: float = 1024.0 * 1024.0
 
 const USER_TOOLS_DIR: String = "user://tools"
@@ -19,9 +29,6 @@ const USER_BASE_ROMS_DIR: String = "user://base_roms"
 const USER_GAMES_DIR: String = "user://games"
 const USER_SAVES_DIR: String = "user://saves"
 const USER_PATHS_CONFIG_PATH: String = "user://paths_config.json"
-const RomCatalogManager = preload("res://scripts/core/rom_catalog_manager.gd")
-const USER_ROM_CATALOG_PATH: String = "user://rom.json"
-const USER_ROM_CATALOG_FALLBACK_PATH: String = "user://roms.json"
 
 # --- LAUNCH PIPELINE ENUM & SIGNALS ---
 enum LaunchStage {
@@ -68,15 +75,47 @@ var launcher_tools: Dictionary = {}
 var launcher_presets: Dictionary = {}
 var paths_config: Dictionary = {}
 var roms_catalog: Dictionary = {}
-var _active_browse_field: String = ""
 var _config_store
 var _identity_resolver
+var _rom_catalog_service
+var _executable_locator
+var _tool_manager
+var _tool_installer
+var _firmware_manager
+var _config_writer_service
+var _process_launcher
+var _patch_manager
+var _rom_archive_service
+var _package_installer
+var _pc_game_installer
+var _rom_download_service
+var _tool_installation_generation: int = 0
 
 func _init() -> void:
 	_config_store = LauncherConfigStoreScript.new()
 	_config_store.tools = launcher_tools
 	_config_store.games = launcher_presets
 	_identity_resolver = GameIdentityResolverScript.new(launcher_presets)
+	_rom_catalog_service = RomCatalogServiceScript.new(launcher_presets, _identity_resolver)
+	_executable_locator = ExecutableLocatorScript.new(USER_GAMES_DIR, USER_TOOLS_DIR)
+	_tool_manager = ToolManagerScript.new(paths_config, _executable_locator, save_paths_config)
+	_tool_installer = ToolInstallerScript.new(
+		_tool_manager,
+		find_game_executable,
+		find_executable_recursive,
+		track_http_download_progress,
+		get_progress_bar_str,
+		USER_TOOLS_DIR,
+		func() -> int: return _tool_installation_generation
+	)
+	_firmware_manager = FirmwareManagerScript.new(get_game_slug, _inject_emulator_firmware_config, USER_GAMES_DIR)
+	_config_writer_service = ConfigWriterServiceScript.new(interpolate_template, _merge_and_interpolate_json)
+	_process_launcher = ProcessLauncherScript.new()
+	_patch_manager = PatchManagerScript.new(launcher_presets, get_preset, USER_SAVES_DIR)
+	_rom_archive_service = RomArchiveServiceScript.new(get_game_slug_for_rom, get_game_dir, get_supported_rom_extensions)
+	_package_installer = PackageInstallerScript.new(track_http_download_progress, get_progress_bar_str)
+	_pc_game_installer = PcGameInstallerScript.new(resolve_download_url, decrypt_file_aes256, _set_overlay_downloading_state, track_http_download_progress)
+	_rom_download_service = RomDownloadServiceScript.new(resolve_download_url, decrypt_file_aes256, unpack_rom_zip, _set_overlay_downloading_state, track_http_download_progress, get_progress_bar_str)
 	load_local_presets_sync()
 
 
@@ -97,48 +136,6 @@ func load_launcher_config() -> void:
 		return
 
 	print("[Launcher] Using cached launcher configuration because the backend was unavailable.")
-
-func _load_modular_tools(dir_path: String) -> Dictionary:
-	var result: Dictionary = {}
-	if not DirAccess.dir_exists_absolute(dir_path):
-		return result
-	var dir = DirAccess.open(dir_path)
-	if dir:
-		dir.list_dir_begin()
-		var file_name = dir.get_next()
-		while file_name != "":
-			if not dir.current_is_dir() and file_name.ends_with(".json"):
-				var tool_key = file_name.get_basename()
-				var fa = FileAccess.open(dir_path.path_join(file_name), FileAccess.READ)
-				if fa:
-					var parsed = JSON.parse_string(fa.get_as_text())
-					if parsed is Dictionary:
-						result[tool_key] = parsed
-					fa.close()
-			file_name = dir.get_next()
-	return result
-
-func _load_modular_games(dir_path: String) -> Dictionary:
-	var result: Dictionary = {}
-	if not DirAccess.dir_exists_absolute(dir_path):
-		return result
-	var dir = DirAccess.open(dir_path)
-	if dir:
-		dir.list_dir_begin()
-		var folder_name = dir.get_next()
-		while folder_name != "":
-			if dir.current_is_dir() and folder_name != "." and folder_name != "..":
-				var launch_path = dir_path.path_join(folder_name).path_join("launch.json")
-				if FileAccess.file_exists(launch_path):
-					var fa = FileAccess.open(launch_path, FileAccess.READ)
-					if fa:
-						var parsed = JSON.parse_string(fa.get_as_text())
-						if parsed is Dictionary:
-							var game_name = parsed.get("game_name", folder_name)
-							result[game_name] = parsed
-						fa.close()
-			folder_name = dir.get_next()
-	return result
 
 func normalize_game_slug(name: String) -> String:
 	return _identity_resolver.normalize(name)
@@ -188,105 +185,13 @@ func get_saved_path(game_name: String, preset: Dictionary = {}) -> String:
 	return ""
 
 func load_roms_catalog() -> void:
-	_ensure_rom_catalog_file_exists()
-	roms_catalog = RomCatalogManager.load_catalog()
+	_rom_catalog_service.load_catalog()
+	roms_catalog = _rom_catalog_service.catalog
 	print("[Launcher] Loaded ROMs catalog (", roms_catalog.size(), " entries)")
 
-func _ensure_rom_catalog_file_exists() -> void:
-	if FileAccess.file_exists(USER_ROM_CATALOG_PATH) or FileAccess.file_exists(USER_ROM_CATALOG_FALLBACK_PATH):
-		return
-		
-	var default_catalog: Dictionary = {}
-	for game_name in launcher_presets.keys():
-		var req_rom: String = launcher_presets[game_name].get("required_rom", "")
-		if req_rom != "":
-			default_catalog[req_rom] = ""
-	RomCatalogManager.save_catalog(default_catalog)
-
 func get_rom_download_entry(identifier: String) -> Dictionary:
-	var raw_val = null
-	
-	# 1. Direct match or case-insensitive match
-	if roms_catalog.has(identifier):
-		raw_val = roms_catalog[identifier]
-	else:
-		for k in roms_catalog.keys():
-			if str(k).nocasecmp_to(identifier) == 0:
-				raw_val = roms_catalog[k]
-				break
-
-	# 2. Flexible match: expand candidate identifiers (preset title, slug, required rom, aliases)
-	if raw_val == null:
-		var candidate_keys: Array[String] = []
-		var ident_norm: String = normalize_game_slug(identifier)
-		var ident_slug: String = get_game_slug(identifier)
-		candidate_keys.append(ident_slug)
-		
-		for g_name in launcher_presets.keys():
-			var preset: Dictionary = launcher_presets[g_name]
-			var p_game_name: String = preset.get("game_name", g_name)
-			var p_req_rom: String = preset.get("required_rom", "")
-			var p_exec: String = preset.get("client_executable", preset.get("executable_name", ""))
-			var p_slug: String = get_game_slug(p_game_name)
-			
-			var matches: bool = false
-			if identifier == p_req_rom or identifier == p_game_name or identifier == g_name or identifier == p_exec:
-				matches = true
-			elif ident_slug == p_slug or ident_norm == normalize_game_slug(p_game_name):
-				matches = true
-			else:
-				var all_aliases: Array = preset.get("rom_aliases", []) + preset.get("executable_aliases", []) + preset.get("aliases", [])
-				for alias in all_aliases:
-					if identifier == str(alias) or ident_norm == normalize_game_slug(str(alias)):
-						matches = true
-						break
-						
-			if matches:
-				candidate_keys.append(p_game_name)
-				candidate_keys.append(g_name)
-				candidate_keys.append(p_slug)
-				if p_req_rom != "":
-					candidate_keys.append(p_req_rom)
-				if p_exec != "":
-					candidate_keys.append(p_exec)
-				var all_aliases: Array = preset.get("rom_aliases", []) + preset.get("executable_aliases", []) + preset.get("aliases", [])
-				for alias in all_aliases:
-					candidate_keys.append(str(alias))
-				break
-				
-		for ck in candidate_keys:
-			if roms_catalog.has(ck):
-				raw_val = roms_catalog[ck]
-				break
-			var norm_ck: String = normalize_game_slug(ck)
-			for k in roms_catalog.keys():
-				if str(k).nocasecmp_to(ck) == 0 or normalize_game_slug(str(k)) == norm_ck:
-					raw_val = roms_catalog[k]
-					break
-			if raw_val != null:
-				break
-				
-	var default_key: String = str(roms_catalog.get("default_key", roms_catalog.get("key", ""))).strip_edges()
-	
-	if raw_val is String:
-		var url_str: String = raw_val.strip_edges()
-		if url_str != "":
-			var is_enc: bool = url_str.to_lower().contains(".enc") or default_key != ""
-			return {
-				"url": url_str,
-				"key": default_key,
-				"encrypted": is_enc
-			}
-	elif raw_val is Dictionary:
-		var url_str: String = str(raw_val.get("url", "")).strip_edges()
-		var key_str: String = str(raw_val.get("key", default_key)).strip_edges()
-		var is_enc: bool = raw_val.get("encrypted", false) or key_str != "" or url_str.to_lower().contains(".enc")
-		return {
-			"url": url_str,
-			"key": key_str,
-			"encrypted": is_enc
-		}
-	return {}
+	_rom_catalog_service.catalog = roms_catalog
+	return _rom_catalog_service.get_download_entry(identifier)
 
 func resolve_download_url(raw_url: String) -> String:
 	return LauncherUtils.resolve_download_url(raw_url)
@@ -344,81 +249,7 @@ func get_supported_rom_extensions() -> Array[String]:
 	return exts
 
 func unpack_rom_zip(zip_file_path: String, rom_name: String, callback: Callable) -> void:
-	var zip_reader: ZIPReader = ZIPReader.new()
-	var open_err: Error = zip_reader.open(zip_file_path)
-	if open_err != OK:
-		callback.call(false, "Failed to open ROM zip archive: " + zip_file_path)
-		return
-		
-	var archive_files: PackedStringArray = zip_reader.get_files()
-	var game_slug: String = get_game_slug_for_rom(rom_name)
-	var dest_game_dir: String = get_game_dir(game_slug)
-	var target_destination: String = dest_game_dir.path_join(rom_name)
-	
-	var extracted_target: bool = false
-	
-	# Extract all files into the game folder if multi-file archive (e.g. CD tracks, cues)
-	for file_entry in archive_files:
-		if file_entry.ends_with("/"):
-			continue
-		var f_data: PackedByteArray = zip_reader.read_file(file_entry)
-		if f_data.is_empty():
-			continue
-		var out_filename: String = file_entry.get_file()
-		var out_path: String = dest_game_dir.path_join(out_filename)
-		var out_file: FileAccess = FileAccess.open(out_path, FileAccess.WRITE)
-		if out_file:
-			out_file.store_buffer(f_data)
-			out_file.close()
-			print("[Launcher] Extracted zip entry: ", out_path)
-		if out_filename == rom_name:
-			extracted_target = true
-			
-	if not extracted_target:
-		var rom_data: PackedByteArray = PackedByteArray()
-		var target_extension: String = rom_name.get_extension().to_lower()
-		var supported_extensions: Array[String] = get_supported_rom_extensions()
-		var extracted_filename: String = ""
-		
-		for file_entry in archive_files:
-			var file_ext: String = file_entry.get_extension().to_lower()
-			if (target_extension != "" and file_ext == target_extension) or (target_extension == "" and supported_extensions.has(file_ext)):
-				rom_data = zip_reader.read_file(file_entry)
-				extracted_filename = file_entry
-				break
-				
-		if rom_data.is_empty():
-			for file_entry in archive_files:
-				var file_ext: String = file_entry.get_extension().to_lower()
-				if supported_extensions.has(file_ext):
-					rom_data = zip_reader.read_file(file_entry)
-					extracted_filename = file_entry
-					break
-
-		if rom_data.is_empty() and not archive_files.is_empty():
-			for file_entry in archive_files:
-				if not file_entry.ends_with("/"):
-					rom_data = zip_reader.read_file(file_entry)
-					extracted_filename = file_entry
-					break
-					
-		if not rom_data.is_empty():
-			var out_file: FileAccess = FileAccess.open(target_destination, FileAccess.WRITE)
-			if out_file:
-				out_file.store_buffer(rom_data)
-				out_file.close()
-				extracted_target = true
-				print("[Launcher] Extracted base ROM (", rom_data.size(), " bytes) from ", extracted_filename, " to: ", target_destination)
-				
-	zip_reader.close()
-	if zip_file_path != target_destination and FileAccess.file_exists(zip_file_path):
-		DirAccess.remove_absolute(zip_file_path)
-		
-	if extracted_target or FileAccess.file_exists(target_destination):
-		callback.call(true, target_destination)
-	else:
-		callback.call(false, "No valid ROM file found inside downloaded ZIP archive.")
-
+	_rom_archive_service.unpack(zip_file_path, rom_name, callback)
 func find_existing_base_rom(rom_name: String) -> String:
 	var game_slug: String = get_game_slug_for_rom(rom_name)
 	var game_folder: String = USER_GAMES_DIR.path_join(game_slug)
@@ -634,93 +465,13 @@ func ensure_rom_exists_or_download(node: Node, rom_name: String, callback: Calla
 	_download_base_rom_http(node, catalog_url, target_game_dir, rom_name, target_rom_path, callback, dec_key)
 
 func _handle_existing_base_rom(node: Node, found_rom: String, target_rom_path: String, rom_name: String, callback: Callable) -> void:
-	var verified_path: String = found_rom
-	if found_rom != target_rom_path and not FileAccess.file_exists(target_rom_path):
-		var target_parent: String = target_rom_path.get_base_dir()
-		DirAccess.make_dir_recursive_absolute(target_parent)
-		var copy_err: Error = DirAccess.copy_absolute(found_rom, target_rom_path)
-		if copy_err == OK:
-			print("[Launcher] Cached ROM copy from ", found_rom, " to ", target_rom_path)
-			verified_path = target_rom_path
-		else:
-			print("[Launcher Warning] Could not copy ROM to unified game path, using existing: ", found_rom)
-	
-	var test_file: FileAccess = FileAccess.open(verified_path, FileAccess.READ)
-	if test_file:
-		var header_bytes: PackedByteArray = test_file.get_buffer(2)
-		test_file.close()
-		if header_bytes.size() >= 2 and header_bytes[0] == ZIP_HEADER_BYTE_1 and header_bytes[1] == ZIP_HEADER_BYTE_2:
-			print("[Launcher] Found ZIP header in existing ROM file. Unpacking...")
-			unpack_rom_zip(verified_path, rom_name, callback)
-			return
-			
-	print("[Launcher] Base ROM verified and ready: ", verified_path)
-	callback.call(true, verified_path)
+	_rom_download_service.process_existing(node, found_rom, target_rom_path, rom_name, callback)
 
 func _handle_local_file_url(node: Node, catalog_url: String, target_rom_path: String, rom_name: String, callback: Callable) -> void:
-	var source_path: String = catalog_url.replace("file://", "")
-	if OS.get_name() == "Windows" and (source_path.begins_with("/") or source_path.begins_with("\\")):
-		source_path = source_path.substr(1)
-	var copy_err: Error = DirAccess.copy_absolute(source_path, target_rom_path)
-	if copy_err == OK:
-		print("[Launcher] Local ROM copy succeeded: ", target_rom_path)
-		ensure_rom_exists_or_download(node, rom_name, callback)
-	else:
-		callback.call(false, "Failed to copy local ROM file from: " + source_path + " (Error: " + str(copy_err) + ")")
+	_rom_download_service.copy_local_file(node, catalog_url, target_rom_path, rom_name, callback)
 
 func _download_base_rom_http(node: Node, download_url: String, base_roms_dir: String, rom_name: String, target_rom_path: String, callback: Callable, decryption_key: String = "", redirect_depth: int = 0) -> void:
-	if redirect_depth > 5:
-		callback.call(false, "Exceeded maximum HTTP redirect depth (5).")
-		return
-		
-	var resolved_url: String = resolve_download_url(download_url)
-	print("[Launcher] Downloading base ROM from: ", resolved_url)
-	_set_overlay_downloading_state(node)
-		
-	var is_enc: bool = resolved_url.to_lower().contains(".enc") or decryption_key != ""
-	var is_zip_url: bool = resolved_url.to_lower().contains(".zip") or is_enc
-	var temp_download_path: String = base_roms_dir.path_join("temp_download_" + rom_name.validate_filename() + (".enc" if is_enc else (".zip" if is_zip_url else ".rom")))
-	
-	var http_request: HTTPRequest = HTTPRequest.new()
-	http_request.use_threads = true
-	http_request.download_chunk_size = 1048576 # 1 MB buffer for maximum download throughput
-	node.add_child(http_request)
-	http_request.download_file = temp_download_path
-	
-	var is_downloading_flag: Array = [true]
-	http_request.request_completed.connect(func(result: int, response_code: int, headers: PackedStringArray, _body: PackedByteArray):
-		is_downloading_flag[0] = false
-		http_request.queue_free()
-		
-		# Check for HTTP Redirect (301, 302, 303, 307, 308)
-		if response_code in [301, 302, 303, 307, 308]:
-			var redirect_location: String = ""
-			for h in headers:
-				if h.to_lower().begins_with("location:"):
-					redirect_location = h.substr(9).strip_edges()
-					break
-			if redirect_location != "":
-				print("[Launcher] Following HTTP redirect (", response_code, ") to: ", redirect_location)
-				if FileAccess.file_exists(temp_download_path):
-					DirAccess.remove_absolute(temp_download_path)
-				_download_base_rom_http(node, redirect_location, base_roms_dir, rom_name, target_rom_path, callback, decryption_key, redirect_depth + 1)
-				return
-				
-		if result == HTTPRequest.RESULT_SUCCESS and (response_code == 200 or response_code == 0):
-			_process_downloaded_rom_file(node, temp_download_path, target_rom_path, rom_name, is_zip_url, callback, decryption_key)
-		else:
-			print("[Launcher Error] Failed to download base ROM. HTTP Status: ", response_code)
-			if FileAccess.file_exists(temp_download_path):
-				DirAccess.remove_absolute(temp_download_path)
-			callback.call(false, "Failed to download ROM from configured URL. Response code: " + str(response_code))
-	)
-	
-	track_http_download_progress(node, http_request, "Base ROM (" + rom_name + ")", is_downloading_flag)
-	var request_err: Error = http_request.request(resolved_url)
-	if request_err != OK:
-		is_downloading_flag[0] = false
-		http_request.queue_free()
-		callback.call(false, "Failed to start ROM download HTTP request.")
+	_rom_download_service.download(node, download_url, base_roms_dir, rom_name, target_rom_path, callback, decryption_key, redirect_depth)
 
 func _set_overlay_downloading_state(node: Node) -> void:
 	if is_instance_valid(node):
@@ -734,57 +485,6 @@ func _set_overlay_downloading_state(node: Node) -> void:
 			node.get_node("%GameSelectionSection").visible = false
 		if node.has_node("%LaunchConfirmBtn"):
 			node.get_node("%LaunchConfirmBtn").visible = false
-
-func _process_downloaded_rom_file(node: Node, temp_download_path: String, target_rom_path: String, rom_name: String, is_zip_url: bool, callback: Callable, decryption_key: String = "") -> void:
-	print("[Launcher] Base ROM download completed. Checking format...")
-	
-	var working_path: String = temp_download_path
-	if decryption_key != "" or working_path.ends_with(".enc"):
-		var dec_path: String = working_path.get_basename() + "_decrypted.tmp"
-		var dec_ok: bool = decrypt_file_aes256(working_path, dec_path, decryption_key)
-		if FileAccess.file_exists(working_path):
-			DirAccess.remove_absolute(working_path)
-		if not dec_ok:
-			callback.call(false, "Failed to decrypt game archive with provided key.")
-			return
-		working_path = dec_path
-
-	var finish_rom_callback: Callable = func(final_path: String):
-		for countdown_idx in range(5, 0, -1):
-			if is_instance_valid(node) and "launch_instructions" in node and is_instance_valid(node.launch_instructions):
-				node.launch_instructions.text = "Base ROM Ready: " + rom_name + "!\n" + get_progress_bar_str(100) + "\n\nContinuing automatically in " + str(countdown_idx) + " seconds..."
-			if is_instance_valid(node) and node.get_tree():
-				await node.get_tree().create_timer(1.0).timeout
-		callback.call(true, final_path)
-		
-	if is_zip_url:
-		unpack_rom_zip(working_path, rom_name, func(unpack_success: bool, unpack_result: String):
-			if unpack_success:
-				finish_rom_callback.call(unpack_result)
-			else:
-				callback.call(false, unpack_result)
-		)
-	else:
-		var check_file: FileAccess = FileAccess.open(working_path, FileAccess.READ)
-		var is_zip_bytes: bool = false
-		if check_file:
-			var header_bytes: PackedByteArray = check_file.get_buffer(2)
-			check_file.close()
-			if header_bytes.size() >= 2 and header_bytes[0] == ZIP_HEADER_BYTE_1 and header_bytes[1] == ZIP_HEADER_BYTE_2:
-				is_zip_bytes = true
-				
-		if is_zip_bytes:
-			unpack_rom_zip(working_path, rom_name, func(unpack_success: bool, unpack_result: String):
-				if unpack_success:
-					finish_rom_callback.call(unpack_result)
-				else:
-					callback.call(false, unpack_result)
-			)
-		else:
-			DirAccess.copy_absolute(working_path, target_rom_path)
-			DirAccess.remove_absolute(working_path)
-			print("[Launcher] Base ROM stored successfully at: ", target_rom_path)
-			finish_rom_callback.call(target_rom_path)
 
 func ensure_pc_game_installed(node: Node, game_name: String, preset_config: Dictionary, callback: Callable) -> void:
 	var exec_name: String = preset_config.get("client_executable", preset_config.get("executable_name", ""))
@@ -814,7 +514,7 @@ func ensure_pc_game_installed(node: Node, game_name: String, preset_config: Dict
 			return
 			
 		# Scan extracted directory for executable
-		var found_exe: String = _find_executable_in_dir(game_dest_dir, exec_name, aliases)
+		var found_exe: String = _executable_locator.find_in_directory(game_dest_dir, exec_name, aliases)
 		if found_exe != "":
 			paths_config[game_name] = found_exe
 			save_paths_config()
@@ -825,119 +525,7 @@ func ensure_pc_game_installed(node: Node, game_name: String, preset_config: Dict
 	)
 
 func _download_and_unpack_game_archive(node: Node, download_url: String, extract_dir: String, game_name: String, decryption_key: String, callback: Callable, redirect_depth: int = 0) -> void:
-	if redirect_depth > 5:
-		callback.call(false, "Exceeded maximum HTTP redirect depth (5).")
-		return
-		
-	var resolved_url: String = resolve_download_url(download_url)
-	_set_overlay_downloading_state(node)
-	
-	DirAccess.make_dir_recursive_absolute(extract_dir)
-	var is_enc: bool = resolved_url.to_lower().contains(".enc") or decryption_key != ""
-	var temp_download_path: String = extract_dir.path_join("temp_game_download" + (".enc" if is_enc else ".zip"))
-	
-	var http_request: HTTPRequest = HTTPRequest.new()
-	http_request.use_threads = true
-	http_request.download_chunk_size = 1048576 # 1 MB buffer for maximum download throughput
-	node.add_child(http_request)
-	http_request.download_file = temp_download_path
-	
-	var is_downloading_flag: Array = [true]
-	http_request.request_completed.connect(func(result: int, response_code: int, headers: PackedStringArray, _body: PackedByteArray):
-		is_downloading_flag[0] = false
-		http_request.queue_free()
-		
-		if response_code in [301, 302, 303, 307, 308]:
-			var redirect_location: String = ""
-			for h in headers:
-				if h.to_lower().begins_with("location:"):
-					redirect_location = h.substr(9).strip_edges()
-					break
-			if redirect_location != "":
-				print("[Launcher] Following HTTP redirect (", response_code, ") to: ", redirect_location)
-				if FileAccess.file_exists(temp_download_path):
-					DirAccess.remove_absolute(temp_download_path)
-				_download_and_unpack_game_archive(node, redirect_location, extract_dir, game_name, decryption_key, callback, redirect_depth + 1)
-				return
-				
-		if result == HTTPRequest.RESULT_SUCCESS and (response_code == 200 or response_code == 0):
-			var working_zip: String = temp_download_path
-			if decryption_key != "" or working_zip.ends_with(".enc"):
-				var dec_path: String = extract_dir.path_join("decrypted_game.zip")
-				var dec_ok: bool = decrypt_file_aes256(working_zip, dec_path, decryption_key)
-				if FileAccess.file_exists(working_zip):
-					DirAccess.remove_absolute(working_zip)
-				if not dec_ok:
-					callback.call(false, "Failed to decrypt game archive.")
-					return
-				working_zip = dec_path
-				
-			# Unpack ZIP directly into extract_dir
-			var zip_reader: ZIPReader = ZIPReader.new()
-			var open_err: Error = zip_reader.open(working_zip)
-			if open_err != OK:
-				if FileAccess.file_exists(working_zip):
-					DirAccess.remove_absolute(working_zip)
-				callback.call(false, "Downloaded file is not a valid ZIP archive (Error: " + str(open_err) + ").")
-				return
-				
-			var files: PackedStringArray = zip_reader.get_files()
-			for f_path in files:
-				if f_path.ends_with("/"):
-					DirAccess.make_dir_recursive_absolute(extract_dir.path_join(f_path))
-				else:
-					var out_file_path: String = extract_dir.path_join(f_path)
-					DirAccess.make_dir_recursive_absolute(out_file_path.get_base_dir())
-					var file_data: PackedByteArray = zip_reader.read_file(f_path)
-					var out_file: FileAccess = FileAccess.open(out_file_path, FileAccess.WRITE)
-					if out_file:
-						out_file.store_buffer(file_data)
-						out_file.close()
-			zip_reader.close()
-			if FileAccess.file_exists(working_zip):
-				DirAccess.remove_absolute(working_zip)
-			print("[Launcher] Successfully unpacked game files for ", game_name, " to: ", extract_dir)
-			callback.call(true, "Unpacked successfully")
-		else:
-			if FileAccess.file_exists(temp_download_path):
-				DirAccess.remove_absolute(temp_download_path)
-			callback.call(false, "Failed to download game archive. Response code: " + str(response_code))
-	)
-	
-	track_http_download_progress(node, http_request, game_name + " Game Files", is_downloading_flag)
-	var request_err: Error = http_request.request(resolved_url)
-	if request_err != OK:
-		is_downloading_flag[0] = false
-		http_request.queue_free()
-		callback.call(false, "Failed to start game download HTTP request.")
-
-func _find_executable_in_dir(search_dir: String, primary_exe: String, aliases: Array) -> String:
-	var dir: DirAccess = DirAccess.open(search_dir)
-	if not dir:
-		return ""
-	dir.list_dir_begin()
-	var item: String = dir.get_next()
-	var sub_dirs: Array[String] = []
-	while item != "":
-		if not item.begins_with("."):
-			var full_path: String = search_dir.path_join(item)
-			if dir.current_is_dir():
-				sub_dirs.append(full_path)
-			else:
-				if primary_exe != "" and item.nocasecmp_to(primary_exe) == 0:
-					return full_path
-				for a in aliases:
-					if item.nocasecmp_to(str(a)) == 0:
-						return full_path
-		item = dir.get_next()
-	dir.list_dir_end()
-	
-	for s in sub_dirs:
-		var found = _find_executable_in_dir(s, primary_exe, aliases)
-		if found != "":
-			return found
-	return ""
-
+	_pc_game_installer.install(node, download_url, extract_dir, game_name, decryption_key, callback, redirect_depth)
 
 # =====================================================================
 #                    PROGRESS TRACKING & UI UTILITIES
@@ -1032,466 +620,21 @@ func track_http_download_progress(node: Node, http_request: HTTPRequest, task_ti
 		else:
 			break
 
-func ensure_tool_installed_or_download(node: Node, tool_name: String, download_url: String, subfolder: String, target_exe: String, callback: Callable, fallback_url: String = "") -> void:
-	WayfinderLogger.log_message("INSTALL", "Checking tool installation: " + tool_name + " (exe: " + target_exe + ", folder: " + subfolder + ")")
-	var tools_dir: String = USER_TOOLS_DIR.path_join(subfolder)
-	DirAccess.make_dir_recursive_absolute(tools_dir)
-	var discovered_path: String = find_game_executable(target_exe, [subfolder])
-	if discovered_path != "":
-		WayfinderLogger.log_message("INSTALL", "Tool already installed and verified at: " + discovered_path)
-		callback.call(true, discovered_path)
-		return
+func cancel_tool_installation() -> void:
+	_tool_installation_generation += 1
+	WayfinderLogger.log_message("INSTALL", "Tool installation cancelled by user.")
 
-	var resolved_url: String = download_url
-	if resolved_url.contains("{backend_url}"):
-		resolved_url = resolved_url.replace("{backend_url}", NetworkManager.get_http_url())
-	elif not resolved_url.begins_with("http://") and not resolved_url.begins_with("https://"):
-		resolved_url = NetworkManager.get_http_url() + (resolved_url if resolved_url.begins_with("/") else "/" + resolved_url)
-
-	if resolved_url.contains("releases/latest"):
-		resolved_url = DEFAULT_ARCHIPELAGO_DOWNLOAD_URL
-
-	WayfinderLogger.log_message("INSTALL", "Tool " + tool_name + " missing. Initiating download from: " + resolved_url)
-
-	var http: HTTPRequest = HTTPRequest.new()
-	http.use_threads = true
-	http.download_chunk_size = 1048576 # 1 MB buffer for maximum download throughput
-	node.add_child(http)
-	var is_exe_file: bool = resolved_url.get_file().strip_edges().to_lower().ends_with(".exe") or resolved_url.to_lower().contains(".exe")
-	var temp_filename: String = USER_TOOLS_DIR.path_join("temp_" + tool_name.validate_filename() + (".exe" if is_exe_file else ".zip"))
-	http.download_file = temp_filename
-	
-	var is_downloading_flag: Array = [true]
-	http.request_completed.connect(func(result: int, response_code: int, _headers: PackedStringArray, _body: PackedByteArray):
-		is_downloading_flag[0] = false
-		http.queue_free()
-		
-		WayfinderLogger.log_message("INSTALL", "Download completed for " + tool_name + " (Result: " + str(result) + ", HTTP: " + str(response_code) + ")")
-		
-		if result != HTTPRequest.RESULT_SUCCESS or (response_code != 200 and response_code != 0):
-			if FileAccess.file_exists(temp_filename):
-				DirAccess.remove_absolute(temp_filename)
-			if fallback_url != "" and fallback_url != download_url:
-				WayfinderLogger.log_message("INSTALL", "Primary download returned HTTP " + str(response_code) + ". Retrying with fallback: " + fallback_url)
-				ensure_tool_installed_or_download(node, tool_name, fallback_url, subfolder, target_exe, callback, "")
-				return
-			var err_desc: String = "Download failed for " + tool_name + " (HTTP " + str(response_code) + ", Result: " + str(result) + ")"
-			WayfinderLogger.log_message("ERROR", err_desc)
-			callback.call(false, err_desc)
-			return
-			
-		# Header & format validation
-		if not FileAccess.file_exists(temp_filename):
-			var no_file_err: String = "Downloaded file does not exist on disk: " + temp_filename
-			WayfinderLogger.log_message("ERROR", no_file_err)
-			callback.call(false, no_file_err)
-			return
-			
-		var val_fa: FileAccess = FileAccess.open(temp_filename, FileAccess.READ)
-		if not val_fa:
-			var open_err: String = "Cannot open downloaded file for verification: " + temp_filename
-			WayfinderLogger.log_message("ERROR", open_err)
-			callback.call(false, open_err)
-			return
-			
-		var dl_size: int = val_fa.get_length()
-		var header_bytes: PackedByteArray = val_fa.get_buffer(4)
-		val_fa.close()
-		
-		if dl_size < 1024:
-			if FileAccess.file_exists(temp_filename):
-				DirAccess.remove_absolute(temp_filename)
-			var size_err: String = "Downloaded file is too small (" + str(dl_size) + " bytes). Expected archive or installer; got error page."
-			WayfinderLogger.log_message("ERROR", size_err)
-			callback.call(false, size_err)
-			return
-			
-		var has_zip_header: bool = (header_bytes.size() >= 2 and header_bytes[0] == 0x50 and header_bytes[1] == 0x4B)
-		var has_mz_header: bool = (header_bytes.size() >= 2 and header_bytes[0] == 0x4D and header_bytes[1] == 0x5A)
-		
-		if is_exe_file and not has_mz_header:
-			if has_zip_header:
-				# It was actually a zip despite URL
-				is_exe_file = false
-			else:
-				if FileAccess.file_exists(temp_filename):
-					DirAccess.remove_absolute(temp_filename)
-				var header_err: String = "Downloaded installer has invalid format (no MZ/PE header). Content is corrupted or redirected."
-				WayfinderLogger.log_message("ERROR", header_err)
-				callback.call(false, header_err)
-				return
-		elif not is_exe_file and not has_zip_header:
-			if FileAccess.file_exists(temp_filename):
-				DirAccess.remove_absolute(temp_filename)
-			var zip_err: String = "Downloaded archive has invalid ZIP signature. File may be an HTML error page."
-			WayfinderLogger.log_message("ERROR", zip_err)
-			callback.call(false, zip_err)
-			return
-
-		if is_exe_file:
-			WayfinderLogger.log_message("INSTALL", "Executing Inno Setup installer for " + tool_name)
-			if is_instance_valid(node) and "launch_instructions" in node and is_instance_valid(node.launch_instructions):
-				node.launch_instructions.text = "Installing " + tool_name + "...\n\nRunning setup installer...\n" + get_progress_bar_str(90)
-			var abs_installer: String = ProjectSettings.globalize_path(temp_filename).replace("/", "\\")
-			var abs_dest: String = ProjectSettings.globalize_path(tools_dir).replace("/", "\\")
-			WayfinderLogger.log_message("INSTALL", "Running silent installer: " + abs_installer + " /DIR=" + abs_dest)
-			var process_id: int = OS.create_process(abs_installer, ["/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/DIR=" + abs_dest])
-			WayfinderLogger.log_message("INSTALL", "Silent installer process spawned with PID: " + str(process_id))
-			if process_id <= 0:
-				WayfinderLogger.log_message("INSTALL", "Silent installer invocation failed (PID <= 0). Attempting standard invocation...")
-				process_id = OS.create_process(abs_installer, [])
-				WayfinderLogger.log_message("INSTALL", "Standard installer process spawned with PID: " + str(process_id))
-				
-			var attempts_left: int = 60 # Extended to 60s for slow HDDs/antivirus scanning
-			while attempts_left > 0:
-				if is_instance_valid(node) and node.get_tree():
-					await node.get_tree().create_timer(1.0).timeout
-				var check_exe: String = find_executable_recursive(USER_TOOLS_DIR, target_exe)
-				if check_exe == "":
-					check_exe = find_game_executable(target_exe, [subfolder])
-				if check_exe != "":
-					DirAccess.remove_absolute(temp_filename)
-					WayfinderLogger.log_message("INSTALL", "Tool executable confirmed ready: " + check_exe)
-					for countdown_idx in range(5, 0, -1):
-						if is_instance_valid(node) and "launch_instructions" in node and is_instance_valid(node.launch_instructions):
-							node.launch_instructions.text = "Installation Complete for " + tool_name + "!\n" + get_progress_bar_str(100) + "\n\nContinuing automatically in " + str(countdown_idx) + " seconds..."
-						if is_instance_valid(node) and node.get_tree():
-							await node.get_tree().create_timer(1.0).timeout
-					callback.call(true, check_exe)
-					return
-				attempts_left -= 1
-				if attempts_left % 10 == 0:
-					WayfinderLogger.log_message("INSTALL", "Waiting for installer to extract files... (" + str(attempts_left) + "s remaining)")
-			
-			var timeout_err: String = "Installer ran (PID " + str(process_id) + ") but " + target_exe + " was not detected after 60s. Windows SmartScreen or UAC may have blocked the installation."
-			WayfinderLogger.log_message("ERROR", timeout_err)
-			callback.call(false, timeout_err)
-		else:
-			WayfinderLogger.log_message("INSTALL", "Unpacking ZIP archive for " + tool_name + " to " + tools_dir)
-			if is_instance_valid(node) and "launch_instructions" in node and is_instance_valid(node.launch_instructions):
-				node.launch_instructions.text = "Installing " + tool_name + "...\n\nPreparing archive extraction...\n" + get_progress_bar_str(95)
-			if is_instance_valid(node) and node.get_tree():
-				await node.get_tree().process_frame
-			
-			var zip_reader: ZIPReader = ZIPReader.new()
-			var open_err: Error = zip_reader.open(temp_filename)
-			if open_err != OK:
-				DirAccess.remove_absolute(temp_filename)
-				var zip_open_msg: String = "Failed to open ZIP archive for " + tool_name + " (Error: " + str(open_err) + ")"
-				WayfinderLogger.log_message("ERROR", zip_open_msg)
-				callback.call(false, zip_open_msg)
-				return
-				
-			var archive_files: PackedStringArray = zip_reader.get_files()
-			var total_files: int = archive_files.size()
-			var processed_files: int = 0
-			
-			# Check if all files in archive share a common single root folder (e.g. "Archipelago/...")
-			var common_root_prefix: String = ""
-			if total_files > 0:
-				var first_slash: int = archive_files[0].find("/")
-				if first_slash != -1:
-					var candidate_prefix: String = archive_files[0].substr(0, first_slash + 1)
-					var all_share: bool = true
-					for f in archive_files:
-						if not f.begins_with(candidate_prefix):
-							all_share = false
-							break
-					if all_share:
-						common_root_prefix = candidate_prefix
-						WayfinderLogger.log_message("INSTALL", "Detected common root prefix in archive: " + common_root_prefix + " (stripping to avoid nested folders)")
-
-			for file_path_entry in archive_files:
-				processed_files += 1
-				var rel_path: String = file_path_entry
-				if common_root_prefix != "" and rel_path.begins_with(common_root_prefix):
-					rel_path = rel_path.substr(common_root_prefix.length())
-				if rel_path == "":
-					continue
-					
-				if file_path_entry.ends_with("/"):
-					DirAccess.make_dir_recursive_absolute(tools_dir.path_join(rel_path))
-				else:
-					var file_dir: String = tools_dir.path_join(rel_path).get_base_dir()
-					DirAccess.make_dir_recursive_absolute(file_dir)
-					var file_data: PackedByteArray = zip_reader.read_file(file_path_entry)
-					var out_file: FileAccess = FileAccess.open(tools_dir.path_join(rel_path), FileAccess.WRITE)
-					if out_file:
-						out_file.store_buffer(file_data)
-						out_file.close()
-						
-				if processed_files % 15 == 0 or processed_files == total_files:
-					var ext_pct: int = int((float(processed_files) / float(max(total_files, 1))) * 100.0)
-					if is_instance_valid(node) and "launch_instructions" in node and is_instance_valid(node.launch_instructions):
-						node.launch_instructions.text = "Installing " + tool_name + "...\n\nExtracting files (" + str(processed_files) + " / " + str(total_files) + ")...\n" + get_progress_bar_str(ext_pct)
-					if is_instance_valid(node) and node.get_tree():
-						await node.get_tree().process_frame
-					
-			zip_reader.close()
-			DirAccess.remove_absolute(temp_filename)
-			
-			var final_exe_path: String = find_executable_recursive(USER_TOOLS_DIR, target_exe)
-			if final_exe_path == "":
-				final_exe_path = find_game_executable(target_exe, [subfolder])
-			if final_exe_path != "":
-				WayfinderLogger.log_message("INSTALL", "Tool archive successfully extracted and verified: " + final_exe_path)
-				for countdown_idx in range(5, 0, -1):
-					if is_instance_valid(node) and "launch_instructions" in node and is_instance_valid(node.launch_instructions):
-						node.launch_instructions.text = "Installation Complete for " + tool_name + "!\n" + get_progress_bar_str(100) + "\n\nContinuing automatically in " + str(countdown_idx) + " seconds..."
-					if is_instance_valid(node) and node.get_tree():
-						await node.get_tree().create_timer(1.0).timeout
-				callback.call(true, final_exe_path)
-			else:
-				var missing_err: String = "Extracted " + str(total_files) + " files for " + tool_name + ", but could not find executable: " + target_exe
-				WayfinderLogger.log_message("ERROR", missing_err)
-				callback.call(false, missing_err)
-	)
-	
-	track_http_download_progress(node, http, tool_name, is_downloading_flag)
-	var request_err: Error = http.request(resolved_url)
-	if request_err != OK:
-		is_downloading_flag[0] = false
-		http.queue_free()
-		var init_err: String = "Failed to initiate download HTTP request for " + tool_name + " (Error: " + str(request_err) + ")"
-		WayfinderLogger.log_message("ERROR", init_err)
-		callback.call(false, init_err)
+func ensure_tool_installed_or_download(node: Node, tool_name: String, download_url: String, subfolder: String, target_exe: String, callback: Callable, fallback_url: String = "", installation_generation: int = -1) -> void:
+	if installation_generation < 0:
+		_tool_installation_generation += 1
+		installation_generation = _tool_installation_generation
+	_tool_installer.install(node, tool_name, download_url, subfolder, target_exe, callback, fallback_url, installation_generation)
 
 func download_and_extract_zip_to_dir(node: Node, download_url: String, target_dir: String, display_name: String, callback: Callable, backup_files: Array = []) -> void:
-	if not DirAccess.dir_exists_absolute(target_dir):
-		DirAccess.make_dir_recursive_absolute(target_dir)
-		
-	var temp_filename: String = "user://temp_" + display_name.validate_filename() + ".zip"
-	if FileAccess.file_exists(temp_filename):
-		DirAccess.remove_absolute(temp_filename)
-		
-	var http: HTTPRequest = HTTPRequest.new()
-	http.use_threads = true
-	http.download_chunk_size = 1048576 # 1 MB buffer for maximum download throughput
-	http.download_file = temp_filename
-	node.add_child(http)
-	
-	var is_downloading_flag: Array = [true]
-	http.request_completed.connect(func(result: int, response_code: int, _headers: PackedStringArray, _body: PackedByteArray):
-		is_downloading_flag[0] = false
-		http.queue_free()
-		if result != HTTPRequest.RESULT_SUCCESS or (response_code != 200 and response_code != 0):
-			if FileAccess.file_exists(temp_filename):
-				DirAccess.remove_absolute(temp_filename)
-			callback.call(false, "Failed to download " + display_name + " (HTTP " + str(response_code) + ")")
-			return
-			
-		if is_instance_valid(node) and "launch_instructions" in node and is_instance_valid(node.launch_instructions):
-			node.launch_instructions.text = "Installing " + display_name + "...\n\nExtracting files into game folder...\n" + get_progress_bar_str(95)
-		if is_instance_valid(node) and node.get_tree():
-			await node.get_tree().process_frame
-			
-		var zip_reader: ZIPReader = ZIPReader.new()
-		var open_err: Error = zip_reader.open(temp_filename)
-		if open_err != OK:
-			DirAccess.remove_absolute(temp_filename)
-			callback.call(false, "Failed to open ZIP archive for " + display_name)
-			return
-			
-		var archive_files: PackedStringArray = zip_reader.get_files()
-		var total_files: int = archive_files.size()
-		var processed_files: int = 0
-		
-		# Backup declared vanilla files before extraction if not yet backed up
-		for backup_item in backup_files:
-			var item_str: String = str(backup_item).strip_edges()
-			if item_str != "":
-				var orig_file: String = target_dir.path_join(item_str)
-				var bak_file: String = target_dir.path_join(item_str + ".vanilla.bak")
-				if FileAccess.file_exists(orig_file) and not FileAccess.file_exists(bak_file):
-					DirAccess.copy_absolute(orig_file, bak_file)
-					print("[Launcher] Backed up vanilla ", item_str, " to: ", bak_file)
-			
-		for file_path_entry in archive_files:
-			processed_files += 1
-			if file_path_entry.ends_with("/"):
-				DirAccess.make_dir_recursive_absolute(target_dir.path_join(file_path_entry))
-			else:
-				var file_dir: String = target_dir.path_join(file_path_entry).get_base_dir()
-				DirAccess.make_dir_recursive_absolute(file_dir)
-				var file_data: PackedByteArray = zip_reader.read_file(file_path_entry)
-				var out_file: FileAccess = FileAccess.open(target_dir.path_join(file_path_entry), FileAccess.WRITE)
-				if out_file:
-					out_file.store_buffer(file_data)
-					out_file.close()
-					
-			if processed_files % 10 == 0 or processed_files == total_files:
-				var ext_pct: int = int((float(processed_files) / float(max(total_files, 1))) * 100.0)
-				if is_instance_valid(node) and "launch_instructions" in node and is_instance_valid(node.launch_instructions):
-					node.launch_instructions.text = "Installing " + display_name + "...\n\nExtracting (" + str(processed_files) + " / " + str(total_files) + ")...\n" + get_progress_bar_str(ext_pct)
-				if is_instance_valid(node) and node.get_tree():
-					await node.get_tree().process_frame
-					
-		zip_reader.close()
-		DirAccess.remove_absolute(temp_filename)
-		callback.call(true, target_dir)
-	)
-	
-	track_http_download_progress(node, http, display_name, is_downloading_flag)
-	var req_err: Error = http.request(download_url)
-	if req_err != OK:
-		is_downloading_flag[0] = false
-		http.queue_free()
-		callback.call(false, "Failed to start HTTP request for " + display_name)
+	_package_installer.install(node, download_url, target_dir, display_name, callback, backup_files)
 
 func ensure_emulator_firmware(node: Node, preset_config: Dictionary, emulator_exe_path: String, rom_path: String, callback: Callable) -> void:
-	var emu_dir: String = ""
-	if emulator_exe_path != "":
-		emu_dir = ProjectSettings.globalize_path(emulator_exe_path).get_base_dir()
-	else:
-		emu_dir = ProjectSettings.globalize_path(USER_TOOLS_DIR.path_join("BizHawk"))
-
-	var fw_list: Array = []
-	if preset_config.has("required_firmware"):
-		var raw_fw = preset_config["required_firmware"]
-		if raw_fw is Array:
-			fw_list = raw_fw
-		elif raw_fw is Dictionary and not raw_fw.is_empty():
-			fw_list = [raw_fw]
-
-	if fw_list.is_empty():
-		callback.call(true, "")
-		return
-
-	var game_name: String = preset_config.get("game_name", "")
-	var game_slug: String = get_game_slug(game_name) if game_name != "" else ""
-
-	_process_firmware_queue(node, fw_list, 0, emu_dir, game_slug, rom_path, callback)
-
-func _process_firmware_queue(node: Node, fw_list: Array, index: int, emu_dir: String, game_slug: String, rom_path: String, callback: Callable) -> void:
-	if index >= fw_list.size():
-		callback.call(true, emu_dir)
-		return
-
-	var fw_item = fw_list[index]
-	if not fw_item is Dictionary:
-		_process_firmware_queue(node, fw_list, index + 1, emu_dir, game_slug, rom_path, callback)
-		return
-
-	var file_name: String = fw_item.get("file_name", fw_item.get("filename", ""))
-	if file_name == "":
-		_process_firmware_queue(node, fw_list, index + 1, emu_dir, game_slug, rom_path, callback)
-		return
-
-	var dest_subpath: String = fw_item.get("dest_subpath", "Firmware/" + file_name)
-	var dest_aliases: Array = fw_item.get("dest_aliases", fw_item.get("aliases", []))
-	var display_name: String = fw_item.get("name", fw_item.get("display_name", file_name))
-	var dl_url: String = fw_item.get("download_url", "")
-	var emu_cfg: Dictionary = fw_item.get("emulator_config", {})
-
-	var target_fw_path: String = emu_dir.path_join(dest_subpath)
-	var fw_folder: String = target_fw_path.get_base_dir()
-	DirAccess.make_dir_recursive_absolute(fw_folder)
-
-	# 1. Check if target firmware or any dest_alias already exists in emulator directory
-	var existing_fw_source: String = ""
-	if FileAccess.file_exists(target_fw_path):
-		existing_fw_source = target_fw_path
-	else:
-		for alias in dest_aliases:
-			var alias_path = emu_dir.path_join(str(alias))
-			if FileAccess.file_exists(alias_path):
-				existing_fw_source = alias_path
-				break
-
-	if existing_fw_source != "":
-		print("[Launcher] Emulator firmware already present: ", existing_fw_source)
-		if not FileAccess.file_exists(target_fw_path):
-			DirAccess.copy_absolute(existing_fw_source, target_fw_path)
-		for alias in dest_aliases:
-			var alias_path = emu_dir.path_join(str(alias))
-			if not FileAccess.file_exists(alias_path):
-				DirAccess.make_dir_recursive_absolute(alias_path.get_base_dir())
-				DirAccess.copy_absolute(existing_fw_source, alias_path)
-		_inject_emulator_firmware_config(emu_dir, emu_cfg)
-		_process_firmware_queue(node, fw_list, index + 1, emu_dir, game_slug, rom_path, callback)
-		return
-
-	# 2. Search local candidate discovery paths
-	var candidate_paths: Array[String] = []
-	if game_slug != "":
-		candidate_paths.append(ProjectSettings.globalize_path(USER_GAMES_DIR.path_join(game_slug).path_join(file_name)))
-		for alias in dest_aliases:
-			candidate_paths.append(ProjectSettings.globalize_path(USER_GAMES_DIR.path_join(game_slug).path_join(str(alias).get_file())))
-	if rom_path != "":
-		var r_dir: String = rom_path.get_base_dir()
-		candidate_paths.append(r_dir.path_join(file_name))
-		for alias in dest_aliases:
-			candidate_paths.append(r_dir.path_join(str(alias).get_file()))
-
-	for candidate in candidate_paths:
-		if FileAccess.file_exists(candidate):
-			print("[Launcher] Discovered local firmware at: ", candidate)
-			DirAccess.copy_absolute(candidate, target_fw_path)
-			for alias in dest_aliases:
-				var alias_path = emu_dir.path_join(str(alias))
-				DirAccess.make_dir_recursive_absolute(alias_path.get_base_dir())
-				DirAccess.copy_absolute(candidate, alias_path)
-			if game_slug != "":
-				var game_fw_dest = ProjectSettings.globalize_path(USER_GAMES_DIR.path_join(game_slug).path_join(file_name))
-				if not FileAccess.file_exists(game_fw_dest):
-					DirAccess.make_dir_recursive_absolute(game_fw_dest.get_base_dir())
-					DirAccess.copy_absolute(candidate, game_fw_dest)
-			_inject_emulator_firmware_config(emu_dir, emu_cfg)
-			_process_firmware_queue(node, fw_list, index + 1, emu_dir, game_slug, rom_path, callback)
-			return
-
-	# 3. If not found locally, download from download_url
-	var download_url: String = dl_url
-	if download_url != "" and not download_url.begins_with("http"):
-		download_url = NetworkManager.get_http_url() + (download_url if download_url.begins_with("/") else "/" + download_url)
-
-	if download_url == "":
-		callback.call(false, "No download URL configured for required firmware: " + file_name)
-		return
-
-	print("[Launcher] Downloading firmware (", file_name, ") from: ", download_url)
-	if is_instance_valid(node) and "launch_instructions" in node and is_instance_valid(node.launch_instructions):
-		node.launch_instructions.text = "Installing required firmware (" + file_name + ")...\n\nDownloading " + display_name + " from server..."
-
-	var http: HTTPRequest = HTTPRequest.new()
-	http.use_threads = true
-	var temp_fw_path: String = ProjectSettings.globalize_path("user://temp_fw_" + file_name)
-	http.download_file = temp_fw_path
-	if is_instance_valid(node):
-		node.add_child(http)
-	else:
-		callback.call(false, "Invalid node context for firmware download")
-		return
-
-	http.request_completed.connect(func(result: int, response_code: int, _headers: PackedStringArray, _body: PackedByteArray):
-		http.queue_free()
-		if result == HTTPRequest.RESULT_SUCCESS and (response_code == 200 or response_code == 0):
-			DirAccess.copy_absolute(temp_fw_path, target_fw_path)
-			for alias in dest_aliases:
-				var alias_path = emu_dir.path_join(str(alias))
-				DirAccess.make_dir_recursive_absolute(alias_path.get_base_dir())
-				DirAccess.copy_absolute(temp_fw_path, alias_path)
-			if game_slug != "":
-				var game_fw_dest = ProjectSettings.globalize_path(USER_GAMES_DIR.path_join(game_slug).path_join(file_name))
-				DirAccess.make_dir_recursive_absolute(game_fw_dest.get_base_dir())
-				DirAccess.copy_absolute(temp_fw_path, game_fw_dest)
-			if FileAccess.file_exists(temp_fw_path):
-				DirAccess.remove_absolute(temp_fw_path)
-			_inject_emulator_firmware_config(emu_dir, emu_cfg)
-			print("[Launcher] Successfully installed firmware to: ", target_fw_path)
-			_process_firmware_queue(node, fw_list, index + 1, emu_dir, game_slug, rom_path, callback)
-		else:
-			print("[Launcher Warn] Could not download firmware from: ", download_url, " Response: ", response_code)
-			if FileAccess.file_exists(temp_fw_path):
-				DirAccess.remove_absolute(temp_fw_path)
-			callback.call(false, "Could not obtain required firmware: " + file_name)
-	)
-
-	var req_err: Error = http.request(download_url)
-	if req_err != OK:
-		http.queue_free()
-		callback.call(false, "Failed to start firmware download request for " + file_name)
-
+	_firmware_manager.ensure(node, preset_config, emulator_exe_path, rom_path, callback)
 func _inject_emulator_firmware_config(emulator_dir: String, emu_cfg: Dictionary) -> void:
 	ArchipelagoConfig.inject_emulator_firmware_config(emulator_dir, emu_cfg)
 
@@ -1875,10 +1018,10 @@ func _download_next_custom_world(node: Node, worlds: Array, index: int, finish_c
 # =====================================================================
 
 func find_executable_recursive(dir_path: String, executable_name: String, current_depth: int = 0, max_depth: int = 4) -> String:
-	return LauncherUtils.find_executable_recursive(dir_path, executable_name, current_depth, max_depth)
+	return _executable_locator.find_recursive(dir_path, executable_name, current_depth, max_depth)
 
 func find_game_executable(executable_name: String, sub_folders: Array, executable_aliases: Array = [], allow_deep_search: bool = true) -> String:
-	return LauncherUtils.find_game_executable(executable_name, sub_folders, executable_aliases, USER_GAMES_DIR, USER_TOOLS_DIR, allow_deep_search)
+	return _executable_locator.find(executable_name, sub_folders, executable_aliases, allow_deep_search)
 
 func check_hollow_knight_modding_status(exe_or_game_dir: String) -> Dictionary:
 	return LauncherUtils.check_hollow_knight_modding_status(exe_or_game_dir)
@@ -1952,101 +1095,16 @@ func build_launch_context(game_path: String, patch_path: String = "", rom_path: 
 	return context
 
 func apply_config_writer(preset_config: Dictionary, context: Dictionary) -> bool:
-	if not preset_config.has("config_writer") or not (preset_config["config_writer"] is Dictionary):
-		return true
-	var writer_cfg: Dictionary = preset_config["config_writer"]
-	var target_file_template: String = writer_cfg.get("file_path", "")
-	if target_file_template == "":
-		return false
-	var target_file_path: String = interpolate_template(target_file_template, context)
-	var file_dir: String = target_file_path.get_base_dir()
-	DirAccess.make_dir_recursive_absolute(file_dir)
-	
-	var backup_path: String = target_file_path + ".wayfinder.bak"
-	if FileAccess.file_exists(target_file_path) and not FileAccess.file_exists(backup_path):
-		DirAccess.copy_absolute(target_file_path, backup_path)
-		print("[Launcher] Created config backup at: ", backup_path)
-
-	var format: String = writer_cfg.get("format", "template")
-	var content_to_write: String = ""
-	if format == "json":
-		var json_obj: Dictionary = {}
-		if FileAccess.file_exists(target_file_path):
-			var existing_fa: FileAccess = FileAccess.open(target_file_path, FileAccess.READ)
-			if existing_fa:
-				var parsed = JSON.parse_string(existing_fa.get_as_text())
-				if parsed is Dictionary:
-					json_obj = parsed
-				existing_fa.close()
-		var updates: Dictionary = writer_cfg.get("json_template", {})
-		json_obj = _merge_and_interpolate_json(json_obj, updates, context)
-		content_to_write = JSON.stringify(json_obj, "  ")
-	else:
-		var raw_template: String = writer_cfg.get("template", "")
-		content_to_write = interpolate_template(raw_template, context)
-
-	var fa: FileAccess = FileAccess.open(target_file_path, FileAccess.WRITE)
-	if fa:
-		fa.store_string(content_to_write)
-		fa.close()
-		print("[Launcher] Wrote dynamic mod configuration to: ", target_file_path)
-		return true
-	else:
-		print("[Launcher Error] Failed to write config file to: ", target_file_path)
-		return false
+	return _config_writer_service.apply(preset_config, context)
 
 func _merge_and_interpolate_json(base: Dictionary, updates: Dictionary, context: Dictionary) -> Dictionary:
 	return LauncherUtils.merge_and_interpolate_json(base, updates, context)
 
 func launch_process_with_logging(node: Node, executable_path: String, args: Array, tag: String = "Client") -> int:
-	print("[Launcher] Spawning process: ", executable_path, " with args: ", args)
-	var pipe_dict: Dictionary = OS.execute_with_pipe(executable_path, args)
-	if not pipe_dict.has("pid") or pipe_dict["pid"] <= 0:
-		print("[Launcher Error] Failed to spawn process: ", executable_path)
-		return -1
-
-	var process_id: int = pipe_dict["pid"]
-	print("[Launcher] Spawned ", tag, " process with PID: ", process_id)
-
-	var stdout_pipe: FileAccess = pipe_dict.get("stdout")
-	var stderr_pipe: FileAccess = pipe_dict.get("stderr")
-
-	if stdout_pipe or stderr_pipe:
-		WorkerThreadPool.add_task(func():
-			_read_pipe_logs(stdout_pipe, stderr_pipe, tag)
-		)
-
-	return process_id
+	return _process_launcher.launch(node, executable_path, args, tag)
 
 func _read_pipe_logs(stdout_pipe: FileAccess, stderr_pipe: FileAccess, tag: String) -> void:
-	while (stdout_pipe and stdout_pipe.is_open()) or (stderr_pipe and stderr_pipe.is_open()):
-		var read_anything: bool = false
-		if stdout_pipe and stdout_pipe.is_open():
-			if stdout_pipe.eof_reached() or stdout_pipe.get_error() != OK:
-				stdout_pipe.close()
-				stdout_pipe = null
-			else:
-				var log_line: String = stdout_pipe.get_line()
-				if log_line != "":
-					print("[" + tag + " Output] " + log_line)
-					read_anything = true
-				if stdout_pipe.eof_reached() or stdout_pipe.get_error() != OK:
-					stdout_pipe.close()
-					stdout_pipe = null
-		if stderr_pipe and stderr_pipe.is_open():
-			if stderr_pipe.eof_reached() or stderr_pipe.get_error() != OK:
-				stderr_pipe.close()
-				stderr_pipe = null
-			else:
-				var log_line: String = stderr_pipe.get_line()
-				if log_line != "":
-					print("[" + tag + " Error Log] " + log_line)
-					read_anything = true
-				if stderr_pipe.eof_reached() or stderr_pipe.get_error() != OK:
-					stderr_pipe.close()
-					stderr_pipe = null
-		if not read_anything and (stdout_pipe != null or stderr_pipe != null):
-			OS.delay_msec(100)
+	_process_launcher._read_pipe_logs(stdout_pipe, stderr_pipe, tag)
 
 func inject_server_into_ap_patch(patch_path: String, clean_url: String) -> void:
 	ArchipelagoConfig.inject_server_into_ap_patch(patch_path, clean_url)
@@ -2528,17 +1586,30 @@ func _async_ensure_pc_game(node: Node, game_name: String, preset_config: Diction
 	return {"success": state["ok"], "path": state["val"] if state["ok"] else "", "error": state["val"] if not state["ok"] else ""}
 
 func _async_ensure_tool(node: Node, tool_name: String, download_url: String, subfolder: String, target_file: String, fallback_url: String = "") -> Dictionary:
+	_tool_installation_generation += 1
+	var request = _tool_manager.create_install_request(
+		node,
+		tool_name,
+		download_url,
+		subfolder,
+		target_file,
+		fallback_url,
+		_tool_installation_generation
+	)
 	var state: Dictionary = {"done": false, "ok": false, "val": ""}
 	ensure_tool_installed_or_download(node, tool_name, download_url, subfolder, target_file, func(ok: bool, val: String):
 		state["ok"] = ok
 		state["val"] = val
 		state["done"] = true
-	, fallback_url)
+	, request.fallback_url, request.generation)
 	while not state["done"]:
 		if not is_instance_valid(node) or not node.get_tree():
-			return {"success": false, "error": "Context destroyed"}
+			cancel_tool_installation()
+			return _tool_manager.install_failure("Context destroyed")
 		await node.get_tree().create_timer(0.05).timeout
-	return {"success": state["ok"], "path": state["val"] if state["ok"] else "", "error": state["val"] if not state["ok"] else ""}
+	if state["ok"]:
+		return _tool_manager.install_success(state["val"])
+	return _tool_manager.install_failure(state["val"])
 
 func _async_ensure_firmware(node: Node, preset: Dictionary, emu_path: String, rom_path: String) -> bool:
 	var state: Dictionary = {"done": false, "ok": false}
@@ -2579,47 +1650,10 @@ func _async_download_package(node: Node, url: String, target_dir: String, label:
 	return {"success": state["ok"], "error": state["err"]}
 
 func _get_preset_packages(preset_config: Dictionary) -> Array:
-	if preset_config.has("packages") and preset_config["packages"] is Array:
-		return preset_config["packages"]
-	var synthesized: Array = []
-	if preset_config.has("modding_api_url") and str(preset_config["modding_api_url"]) != "":
-		synthesized.append({
-			"name": "Modding API",
-			"download_url": preset_config.get("modding_api_url", ""),
-			"check_file": preset_config.get("modding_api_check_file", ""),
-			"extract_target": preset_config.get("modding_api_extract_target", ""),
-			"backup_files": preset_config.get("modding_api_backup_files", ["Assembly-CSharp.dll"])
-		})
-	if preset_config.has("mods_url") and str(preset_config["mods_url"]) != "":
-		synthesized.append({
-			"name": "Archipelago Mods",
-			"download_url": preset_config.get("mods_url", ""),
-			"check_file": preset_config.get("mods_check_file", ""),
-			"extract_target": preset_config.get("mods_extract_target", ""),
-			"backup_files": preset_config.get("mods_backup_files", [])
-		})
-	return synthesized
+	return _tool_manager.get_preset_packages(preset_config)
 
 func _resolve_tool_path(tool_key: String, tool_def: Dictionary, fallback_cfg_key: String = "") -> String:
-	var cfg_key: String = tool_key if fallback_cfg_key == "" else fallback_cfg_key
-	var stored: String = paths_config.get(cfg_key, "")
-	if stored != "" and FileAccess.file_exists(stored):
-		return stored
-	var exe_name: String = tool_def.get("executable", "")
-	var subs: Array = tool_def.get("sub_folders", [])
-	var aliases: Array = tool_def.get("executable_aliases", [])
-	if exe_name != "" and not aliases.has(exe_name):
-		aliases.push_front(exe_name)
-	
-	# Try fast direct candidate check first without recursive deep searching
-	var found: String = find_game_executable(exe_name, subs, aliases, false)
-	if found == "":
-		found = find_game_executable(exe_name, subs, aliases, true)
-	if found != "" and FileAccess.file_exists(found):
-		paths_config[cfg_key] = found
-		save_paths_config()
-		return found
-	return ""
+	return _tool_manager.resolve_path(tool_key, tool_def, fallback_cfg_key)
 
 func execute_preset_launch(node: Node, game_name: String, preset_config: Dictionary, game_path: String, active_launch_game: String) -> void:
 	var effective_game: String = game_name if game_name != "" else active_launch_game
@@ -2743,156 +1777,13 @@ func is_game_configured(game_name: String) -> bool:
 # =====================================================================
 
 func is_matching_patch_file(filename: String, patch_extension: String, game_name: String = "") -> bool:
-	var filename_lower: String = filename.to_lower()
-	var ext_lower: String = patch_extension.to_lower()
-	if ext_lower != "" and filename_lower.ends_with(ext_lower):
-		return true
-
-	if game_name != "":
-		var preset: Dictionary = get_preset(game_name)
-		var main_patch_ext: String = preset.get("patch_extension", "").to_lower()
-		var aliases: Array = preset.get("patch_extension_aliases", [])
-		if main_patch_ext != "" and filename_lower.ends_with(main_patch_ext):
-			return true
-		for a in aliases:
-			var s: String = str(a).to_lower()
-			if s != "" and filename_lower.ends_with(s):
-				return true
-		return false
-
-	for game_key in launcher_presets.keys():
-		var preset: Dictionary = launcher_presets[game_key]
-		var main_patch_ext: String = preset.get("patch_extension", "").to_lower()
-		var aliases: Array = preset.get("patch_extension_aliases", [])
-		var all_exts: Array[String] = []
-		if main_patch_ext != "":
-			all_exts.append(main_patch_ext)
-		for a in aliases:
-			var s: String = str(a).to_lower()
-			if not all_exts.has(s):
-				all_exts.append(s)
-
-		if all_exts.has(ext_lower):
-			for ext_candidate in all_exts:
-				if filename_lower.ends_with(ext_candidate):
-					return true
-
-	return false
+	return _patch_manager.is_matching_file(filename, patch_extension, game_name)
 
 func ensure_patch_file_exists_or_download(node: Node, active_launch_game: String, patch_extension: String, callback: Callable) -> void:
-	var download_dir: String = USER_SAVES_DIR.path_join(NetworkManager.room_code)
-	DirAccess.make_dir_recursive_absolute(download_dir)
-	
-	var current_player_name: String = ""
-	for player_info in NetworkManager.players:
-		if player_info.get("userId") == NetworkManager.user_id:
-			current_player_name = player_info.get("name", "")
-			break
-
-	var dir_access: DirAccess = DirAccess.open(download_dir)
-	if dir_access:
-		dir_access.list_dir_begin()
-		var file_item: String = dir_access.get_next()
-		while file_item != "":
-			if is_matching_patch_file(file_item, patch_extension, active_launch_game):
-				if current_player_name == "" or file_item.to_lower().contains(current_player_name.to_lower()):
-					print("[Launcher] Located local player seed patch file: ", file_item)
-					callback.call(true, download_dir.path_join(file_item))
-					return
-			file_item = dir_access.get_next()
-			
-	print("[Launcher] Requesting player-specific seed patch from server for player '", current_player_name, "' for game '", active_launch_game, "'...")
-	var http_request: HTTPRequest = HTTPRequest.new()
-	node.add_child(http_request)
-	
-	var patch_request_url: String = NetworkManager.get_http_url() + "/api/seeds/" + NetworkManager.room_code + "/player-patch?playerName=" + current_player_name.uri_encode() + "&gameName=" + active_launch_game.uri_encode() + "&patchExtension=" + patch_extension.uri_encode() + "&userId=" + NetworkManager.user_id.uri_encode()
-	
-	http_request.request_completed.connect(func(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray):
-		http_request.queue_free()
-		if result == HTTPRequest.RESULT_SUCCESS and (response_code == 200 or response_code == 0):
-			var content_disposition_header: String = ""
-			for header_line in headers:
-				if header_line.to_lower().begins_with("content-disposition:"):
-					content_disposition_header = header_line
-					break
-					
-			var patch_filename: String = "player_seed" + patch_extension
-			if content_disposition_header != "" and content_disposition_header.contains("filename="):
-				var header_parts: PackedStringArray = content_disposition_header.split("filename=")
-				if header_parts.size() > 1:
-					patch_filename = header_parts[1].replace("\"", "").replace("'", "").strip_edges()
-			else:
-				patch_filename = "AP_" + NetworkManager.room_code + "_" + (current_player_name if current_player_name != "" else "Player") + patch_extension
-
-			var saved_patch_path: String = download_dir.path_join(patch_filename)
-			var file_writer: FileAccess = FileAccess.open(saved_patch_path, FileAccess.WRITE)
-			if file_writer:
-				file_writer.store_buffer(body)
-				file_writer.close()
-				print("[Launcher] Saved targeted player patch file (", body.size(), " bytes) to: ", saved_patch_path)
-				callback.call(true, saved_patch_path)
-				return
-				
-		print("[Launcher Warning] Targeted player patch endpoint unavailable or failed. Falling back to seed ZIP download...")
-		fallback_download_seed_zip(node, active_launch_game, patch_extension, callback)
-	)
-	
-	var request_err: Error = http_request.request(patch_request_url)
-	if request_err != OK:
-		http_request.queue_free()
-		fallback_download_seed_zip(node, active_launch_game, patch_extension, callback)
+	_patch_manager.ensure(node, active_launch_game, patch_extension, callback)
 
 func fallback_download_seed_zip(node: Node, active_launch_game: String, patch_extension: String, callback: Callable) -> void:
-	var download_dir: String = USER_SAVES_DIR.path_join(NetworkManager.room_code)
-	var http_request: HTTPRequest = HTTPRequest.new()
-	node.add_child(http_request)
-	
-	var temp_zip_path: String = download_dir.path_join("seed_temp.zip")
-	http_request.download_file = temp_zip_path
-	
-	http_request.request_completed.connect(func(result: int, response_code: int, _headers: PackedStringArray, _body: PackedByteArray):
-		http_request.queue_free()
-		if result != HTTPRequest.RESULT_SUCCESS or response_code != 200:
-			if FileAccess.file_exists(temp_zip_path):
-				DirAccess.remove_absolute(temp_zip_path)
-			callback.call(false, "Failed to download seed ZIP from server. Status: " + str(response_code))
-			return
-			
-		var zip_reader: ZIPReader = ZIPReader.new()
-		var open_err: Error = zip_reader.open(temp_zip_path)
-		if open_err != OK:
-			DirAccess.remove_absolute(temp_zip_path)
-			callback.call(false, "Failed to open downloaded seed ZIP.")
-			return
-			
-		var archive_files: PackedStringArray = zip_reader.get_files()
-		for file_entry in archive_files:
-			var file_data: PackedByteArray = zip_reader.read_file(file_entry)
-			var file_writer: FileAccess = FileAccess.open(download_dir.path_join(file_entry), FileAccess.WRITE)
-			if file_writer:
-				file_writer.store_buffer(file_data)
-				file_writer.close()
-		zip_reader.close()
-		DirAccess.remove_absolute(temp_zip_path)
-		
-		var dir_access: DirAccess = DirAccess.open(download_dir)
-		if dir_access:
-			dir_access.list_dir_begin()
-			var file_item: String = dir_access.get_next()
-			while file_item != "":
-				if is_matching_patch_file(file_item, patch_extension, active_launch_game):
-					print("[Launcher] Located extracted player seed patch file: ", file_item)
-					callback.call(true, download_dir.path_join(file_item))
-					return
-				file_item = dir_access.get_next()
-				
-		callback.call(false, "Downloaded ZIP successfully but could not find a patch file matching " + patch_extension)
-	)
-	
-	var download_url: String = NetworkManager.get_http_url() + "/api/seeds/" + NetworkManager.room_code + "/outputs/" + NetworkManager.seed_zip_name.uri_encode()
-	http_request.request(download_url)
-
-
+	_patch_manager.fallback(node, active_launch_game, patch_extension, callback)
 # =====================================================================
 #             MODDING STATUS & PROGRESS TRACKING
 # =====================================================================

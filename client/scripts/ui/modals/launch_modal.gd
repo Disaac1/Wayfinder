@@ -6,6 +6,7 @@ signal download_auto_pressed()
 signal game_selected(game_name: String)
 signal steam_btn_pressed()
 signal recheck_btn_pressed()
+signal cancellation_requested()
 
 @onready var launch_title: Label = %LaunchTitle
 @onready var launch_close_btn: Button = %LaunchCloseBtn
@@ -59,6 +60,7 @@ func open() -> void:
 	visible = true
 
 func close() -> void:
+	cancellation_requested.emit()
 	visible = false
 	if is_instance_valid(download_progress_card):
 		download_progress_card.visible = false
