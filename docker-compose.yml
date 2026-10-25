@@ -1,0 +1,36 @@
+services:
+  wayfinder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wayfinder-server
+    restart: unless-stopped
+    ports:
+      # Lobby HTTP API and WebSocket
+      - "${PORT:-8080}:8080"
+      # Archipelago MultiServer instance port range (up to 11 concurrent multiworld rooms)
+      - "${AP_START_PORT:-38000}-${AP_MAX_PORT:-38010}:${AP_START_PORT:-38000}-${AP_MAX_PORT:-38010}"
+    environment:
+      - PORT=8080
+      - PUBLIC_HOST=${PUBLIC_HOST:-localhost}
+      - PUBLIC_DOMAIN=${PUBLIC_DOMAIN:-}
+      - HOSTING_MODE=${HOSTING_MODE:-tunnel}
+      - CLOUDFLARE_TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:-}
+      - AP_START_PORT=${AP_START_PORT:-38000}
+      - AP_MAX_PORT=${AP_MAX_PORT:-38010}
+      - NODE_ENV=production
+      - DATABASE_URL=/app/backend/runtime/database.db
+    volumes:
+      # Persistent SQLite database
+      - wayfinder-database:/app/backend/runtime
+      # Persistent seed generations, patches, and save files
+      - ./backend/temp_seeds:/app/backend/temp_seeds
+      # Custom .apworld worlds directory
+      - ./backend/archipelago_core/custom_worlds:/app/backend/archipelago_core/custom_worlds
+      # Generation debug logs
+      - ./backend/failed_generations:/app/backend/failed_generations
+      # Client dynamic .pck auto-update artifacts
+      - ./backend/updates:/app/backend/updates
+
+volumes:
+  wayfinder-database:

@@ -16,14 +16,48 @@ data_*/
 mono_crash.*.json
 
 
-# Typescript
+# TypeScript and Node
 backend/dist/
+node_modules/
 
-#NPM
-node_modules
-
-temp_seeds
-
+# Local development
 dev/
+scratch/
+*.log
+*.pyc
+__pycache__/
+backend/.env
+backend/database.db*
+backend/failed_generations/
+backend/logs/
+backend/temp_seeds/
+temp_seeds/
+
+# Downloaded game/runtime dependencies (store these in release or artifact storage)
+backend/archipelago_core/
+backend/bin/
+backend/public/tools/
+backend/public/downloads/
+backend/public/updates/
 client/godot.exe
 client/godot_console.exe
+client/Archipelago/custom_worlds/
+client/custom_worlds/
+client/custom_templates/
+client/profiles/*.profile
+client/user/
+
+# Keys and certificates
+*.pem
+backend/certs/
+
+# Godot exports and installer output
+client/.export/
+installer/Output/
+dist/
+
+# Local-only generated data
+backend/data_*/
+
+# Editor state
+client/.godot/

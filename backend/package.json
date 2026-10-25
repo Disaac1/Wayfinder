@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
+    "setup": "tsx src/setup.ts",
     "start": "node dist/index.js"
   },
   "keywords": [],
