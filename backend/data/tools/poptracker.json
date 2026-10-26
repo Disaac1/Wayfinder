@@ -1,0 +1,12 @@
+{
+  "name": "PopTracker",
+  "version": "0.36.0",
+  "executable": "PopTracker.exe",
+  "subfolder": "PopTracker",
+  "sub_folders": [
+    "PopTracker"
+  ],
+  "download_url": "https://github.com/black-sliver/PopTracker/releases/download/v0.36.0/poptracker_0-36-0_win64.zip",
+  "sha256": "18113909ac6008386b477b7bead6d9b8cf6809aa679667e6c0fd23efb63db127",
+  "archive_root": "PopTracker"
+}

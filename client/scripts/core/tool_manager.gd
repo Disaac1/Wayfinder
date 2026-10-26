@@ -116,9 +116,17 @@ func get_temp_download_path(tool_name: String, download_url: String) -> String:
 	var extension: String = ".exe" if is_executable else ".zip"
 	return "user://tools".path_join("temp_" + tool_name.validate_filename() + extension)
 
-func validate_download_file(file_path: String) -> Dictionary:
+func validate_download_file(file_path: String, expected_sha256: String = "") -> Dictionary:
 	if not FileAccess.file_exists(file_path):
 		return {"valid": false, "error": "Downloaded file does not exist on disk: " + file_path}
+
+	if expected_sha256 != "":
+		var actual_sha256 := FileAccess.get_sha256(file_path).to_lower()
+		if actual_sha256 != expected_sha256.to_lower():
+			return {
+				"valid": false,
+				"error": "Downloaded file checksum mismatch. Expected: " + expected_sha256 + " Computed: " + actual_sha256
+			}
 
 	var file_access: FileAccess = FileAccess.open(file_path, FileAccess.READ)
 	if not file_access:

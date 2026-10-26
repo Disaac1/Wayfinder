@@ -1,7 +1,7 @@
 class_name Updater
 extends RefCounted
 
-const BASE_VERSION: String = "1.1.0"
+const BASE_VERSION: String = "1.1.1"
 static var active_version: String = BASE_VERSION
 static var pending_base_pck_path: String = ""
 static var pending_base_pck_target: String = ""

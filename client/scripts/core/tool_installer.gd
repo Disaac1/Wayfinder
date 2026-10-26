@@ -54,7 +54,9 @@ func install(
 	target_exe: String,
 	callback: Callable,
 	fallback_url: String,
-	generation: int
+	generation: int,
+	expected_sha256: String = "",
+	managed_only: bool = false
 ) -> void:
 	if not _is_current(generation):
 		return
@@ -62,7 +64,12 @@ func install(
 	Updater.log_message("INSTALL", "Checking tool installation: " + tool_name + " (exe: " + target_exe + ", folder: " + subfolder + ")")
 	var tools_dir: String = user_tools_dir.path_join(subfolder)
 	DirAccess.make_dir_recursive_absolute(tools_dir)
-	var discovered_path: String = _find_game_executable(target_exe, [subfolder])
+	var discovered_path := ""
+	var managed_path := tools_dir.path_join(target_exe)
+	if FileAccess.file_exists(managed_path):
+		discovered_path = ProjectSettings.globalize_path(managed_path)
+	elif not managed_only:
+		discovered_path = _find_game_executable(target_exe, [subfolder])
 	if discovered_path != "":
 		if _is_current(generation):
 			Updater.log_message("INSTALL", "Tool already installed and verified at: " + discovered_path)
@@ -94,7 +101,7 @@ func install(
 			callback.call(false, error_message)
 			return
 
-		var validation: Dictionary = tool_manager.validate_download_file(temp_filename)
+		var validation: Dictionary = tool_manager.validate_download_file(temp_filename, expected_sha256)
 		if not validation.get("valid", false):
 			_cleanup(temp_filename)
 			var validation_error: String = str(validation.get("error", "Downloaded tool failed validation."))
@@ -103,9 +110,9 @@ func install(
 			return
 
 		if validation.get("format", "zip") == "exe":
-			await _install_executable(node, tool_name, subfolder, target_exe, tools_dir, temp_filename, callback, generation)
+			await _install_executable(node, tool_name, subfolder, target_exe, tools_dir, temp_filename, callback, generation, managed_only)
 		else:
-			await _extract_archive(node, tool_name, subfolder, target_exe, tools_dir, temp_filename, callback, generation)
+			await _extract_archive(node, tool_name, subfolder, target_exe, tools_dir, temp_filename, callback, generation, managed_only)
 	)
 	track_progress_callback.call(node, http, tool_name, downloading)
 	var request_error: Error = http.request(resolved_url)
@@ -124,7 +131,8 @@ func _install_executable(
 	tools_dir: String,
 	temp_filename: String,
 	callback: Callable,
-	generation: int
+	generation: int,
+	managed_only: bool
 ) -> void:
 	_set_progress(node, "Installing " + tool_name + "...\n\nRunning setup installer...\n" + _progress_bar(90))
 	var installer_path: String = ProjectSettings.globalize_path(temp_filename).replace("/", "\\")
@@ -140,7 +148,7 @@ func _install_executable(
 		if is_instance_valid(node) and node.get_tree():
 			await node.get_tree().create_timer(1.0).timeout
 		var executable_path: String = _find_recursive(target_exe)
-		if executable_path == "":
+		if executable_path == "" and not managed_only:
 			executable_path = _find_game_executable(target_exe, [subfolder])
 		if executable_path != "":
 			_cleanup(temp_filename)
@@ -159,7 +167,8 @@ func _extract_archive(
 	tools_dir: String,
 	temp_filename: String,
 	callback: Callable,
-	generation: int
+	generation: int,
+	managed_only: bool
 ) -> void:
 	_set_progress(node, "Installing " + tool_name + "...\n\nPreparing archive extraction...\n" + _progress_bar(95))
 	if is_instance_valid(node) and node.get_tree():
@@ -205,7 +214,7 @@ func _extract_archive(
 	if not _is_current(generation):
 		return
 	var executable_path: String = _find_recursive(target_exe)
-	if executable_path == "":
+	if executable_path == "" and not managed_only:
 		executable_path = _find_game_executable(target_exe, [subfolder])
 	if executable_path != "":
 		await _show_completion(node, tool_name, executable_path, callback, generation)

@@ -221,6 +221,15 @@ focus_mode = 0
 tooltip_text = "Options & Launch Configuration"
 text = "⚙"
 
+[node name="TrackerBtn" type="Button" parent="OuterVBox/ContentMargin/VBox/ActionHBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(36, 36)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.45, 0.8, 1, 1)
+text = "🗺️"
+tooltip_text = "Open PopTracker"
+
 [node name="ChangePathBtn" type="Button" parent="OuterVBox/ContentMargin/VBox/ActionHBox"]
 unique_name_in_owner = true
 visible = false

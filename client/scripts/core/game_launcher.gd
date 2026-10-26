@@ -17,6 +17,7 @@ const RomArchiveServiceScript = preload("res://scripts/core/rom_archive_service.
 const PackageInstallerScript = preload("res://scripts/core/package_installer.gd")
 const PcGameInstallerScript = preload("res://scripts/core/pc_game_installer.gd")
 const RomDownloadServiceScript = preload("res://scripts/core/rom_download_service.gd")
+const TrackerManagerScript = preload("res://scripts/core/tracker_manager.gd")
 
 # --- CONSTANTS ---
 const DEFAULT_ARCHIPELAGO_DOWNLOAD_URL: String = "https://github.com/ArchipelagoMW/Archipelago/releases/download/0.6.7/Setup.Archipelago.0.6.7.exe"
@@ -89,6 +90,7 @@ var _rom_archive_service
 var _package_installer
 var _pc_game_installer
 var _rom_download_service
+var _tracker_manager
 var _tool_installation_generation: int = 0
 
 func _init() -> void:
@@ -116,6 +118,7 @@ func _init() -> void:
 	_package_installer = PackageInstallerScript.new(track_http_download_progress, get_progress_bar_str)
 	_pc_game_installer = PcGameInstallerScript.new(resolve_download_url, decrypt_file_aes256, _set_overlay_downloading_state, track_http_download_progress)
 	_rom_download_service = RomDownloadServiceScript.new(resolve_download_url, decrypt_file_aes256, unpack_rom_zip, _set_overlay_downloading_state, track_http_download_progress, get_progress_bar_str)
+	_tracker_manager = TrackerManagerScript.new()
 	load_local_presets_sync()
 
 
@@ -167,6 +170,15 @@ func has_curated_preset(game_name: String) -> bool:
 
 func get_preset(game_name: String) -> Dictionary:
 	return _identity_resolver.get_preset(game_name)
+
+func get_tracker_config(game_name: String) -> Dictionary:
+	return _tracker_manager.get_tracker_config(get_preset(game_name))
+
+func ensure_poptracker(node: Node, callback: Callable) -> void:
+	_tracker_manager.ensure_poptracker(node, launcher_tools, self, callback)
+
+func open_poptracker(node: Node, game_name: String, server_url: String, slot_name: String, callback: Callable) -> void:
+	_tracker_manager.open_tracker(node, get_preset(game_name), get_game_slug(game_name), launcher_tools, self, server_url, slot_name, callback)
 
 func get_saved_path(game_name: String, preset: Dictionary = {}) -> String:
 	var candidate_keys: Array[String] = [game_name, get_game_slug(game_name)]
@@ -624,11 +636,11 @@ func cancel_tool_installation() -> void:
 	_tool_installation_generation += 1
 	Updater.log_message("INSTALL", "Tool installation cancelled by user.")
 
-func ensure_tool_installed_or_download(node: Node, tool_name: String, download_url: String, subfolder: String, target_exe: String, callback: Callable, fallback_url: String = "", installation_generation: int = -1) -> void:
+func ensure_tool_installed_or_download(node: Node, tool_name: String, download_url: String, subfolder: String, target_exe: String, callback: Callable, fallback_url: String = "", installation_generation: int = -1, expected_sha256: String = "", managed_only: bool = false) -> void:
 	if installation_generation < 0:
 		_tool_installation_generation += 1
 		installation_generation = _tool_installation_generation
-	_tool_installer.install(node, tool_name, download_url, subfolder, target_exe, callback, fallback_url, installation_generation)
+	_tool_installer.install(node, tool_name, download_url, subfolder, target_exe, callback, fallback_url, installation_generation, expected_sha256, managed_only)
 
 func download_and_extract_zip_to_dir(node: Node, download_url: String, target_dir: String, display_name: String, callback: Callable, backup_files: Array = []) -> void:
 	_package_installer.install(node, download_url, target_dir, display_name, callback, backup_files)

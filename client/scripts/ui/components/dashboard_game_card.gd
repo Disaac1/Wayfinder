@@ -2,6 +2,7 @@ extends PanelContainer
 
 signal launch_pressed(game_name: String)
 signal change_path_pressed(game_name: String)
+signal tracker_pressed(game_name: String)
 
 @onready var banner_panel: PanelContainer = %BannerPanel
 @onready var banner_background: TextureRect = %BannerBackground
@@ -23,12 +24,14 @@ signal change_path_pressed(game_name: String)
 @onready var main_action_btn: Button = %MainActionBtn
 @onready var config_gear_btn: Button = %ConfigGearBtn
 @onready var change_path_btn: Button = %ChangePathBtn
+@onready var tracker_btn: Button = %TrackerBtn
 
 var current_game_name: String = ""
 var slot_name_str: String = ""
 var current_owner_name: String = ""
 var is_local_player: bool = true
 var _is_currently_configured: bool = false
+var _tracker_supported: bool = false
 
 static var _memory_texture_cache: Dictionary = {}
 static var _pending_requests: Dictionary = {}
@@ -43,6 +46,8 @@ func _ready() -> void:
 		config_gear_btn.pressed.connect(_on_config_gear_pressed)
 	if is_instance_valid(change_path_btn) and not change_path_btn.pressed.is_connected(_on_config_gear_pressed):
 		change_path_btn.pressed.connect(_on_config_gear_pressed)
+	if is_instance_valid(tracker_btn) and not tracker_btn.pressed.is_connected(_on_tracker_pressed):
+		tracker_btn.pressed.connect(_on_tracker_pressed)
 
 func _ensure_nodes() -> void:
 	if banner_panel == null:
@@ -85,6 +90,8 @@ func _ensure_nodes() -> void:
 		config_gear_btn = get_node_or_null("%ConfigGearBtn")
 	if change_path_btn == null:
 		change_path_btn = get_node_or_null("%ChangePathBtn")
+	if tracker_btn == null:
+		tracker_btn = get_node_or_null("%TrackerBtn")
 
 func setup(game_name: String, slot_name: String, preset: Dictionary, status_info: Dictionary, checks_info: Dictionary, owner_name: String = "", is_local: bool = true) -> void:
 	_ensure_nodes()
@@ -92,6 +99,10 @@ func setup(game_name: String, slot_name: String, preset: Dictionary, status_info
 	slot_name_str = slot_name
 	current_owner_name = owner_name
 	is_local_player = is_local
+	_tracker_supported = is_local and bool(preset.get("tracker", {}).get("supported", false))
+	if is_instance_valid(tracker_btn):
+		tracker_btn.visible = _tracker_supported
+		tracker_btn.tooltip_text = "Open PopTracker for " + game_name
 
 	print("[DashboardCard] Initializing card for: '%s' (Slot: '%s', Owner: '%s', Local: %s)" % [game_name, slot_name, owner_name, str(is_local)])
 
@@ -128,6 +139,12 @@ func update_launch_status(status_info: Dictionary) -> void:
 	_ensure_nodes()
 	var is_configured: bool = status_info.get("is_configured", false)
 	_update_status_and_actions(is_configured, is_local_player, current_owner_name, status_info)
+
+func update_tracker_support(preset: Dictionary) -> void:
+	_ensure_nodes()
+	_tracker_supported = is_local_player and bool(preset.get("tracker", {}).get("supported", false))
+	if is_instance_valid(tracker_btn):
+		tracker_btn.visible = _tracker_supported
 
 func update_checks_progress(checks_info: Dictionary) -> void:
 	_ensure_nodes()
@@ -403,6 +420,10 @@ func _on_config_gear_pressed() -> void:
 	if is_local_player:
 		print("[DashboardCard] Config gear button pressed for '%s'" % current_game_name)
 		change_path_pressed.emit(current_game_name)
+
+func _on_tracker_pressed() -> void:
+	if is_local_player and _tracker_supported:
+		tracker_pressed.emit(current_game_name)
 
 func _on_copy_slot_pressed() -> void:
 	if slot_name_str != "":

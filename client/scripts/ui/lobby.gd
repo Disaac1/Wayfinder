@@ -132,6 +132,7 @@ var launcher: GameLauncher = GameLauncher.new()
 var _active_launch_game: String = ""
 var _active_launch_preset: Dictionary = {}
 var _active_prompt_callback: Callable = Callable()
+var _tracker_operation_active: bool = false
 
 # =====================================================================
 #                      INITIALIZATION & SIGNALS
@@ -169,7 +170,7 @@ func _connect_ui_signals() -> void:
 	
 	# Launch overlay modal signals
 	launch_overlay.closed.connect(func(): _render_play_dashboard())
-	launch_overlay.cancellation_requested.connect(launcher.cancel_tool_installation)
+	launch_overlay.cancellation_requested.connect(_on_launch_overlay_cancellation_requested)
 	launch_overlay.confirmed.connect(func(g_name, g_path, emu_path):
 		_continue_launch_confirm(g_path)
 	)
@@ -221,6 +222,11 @@ func _on_launcher_config_loaded() -> void:
 			var g_name: String = child.current_game_name
 			var status_info: Dictionary = launcher.get_game_launch_status(g_name)
 			child.update_launch_status(status_info)
+			child.update_tracker_support(launcher.get_preset(g_name))
+
+func _on_launch_overlay_cancellation_requested() -> void:
+	if not _tracker_operation_active:
+		launcher.cancel_tool_installation()
 
 func _load_launcher_catalogs() -> void:
 	launcher.load_paths_config()
@@ -563,6 +569,7 @@ func _create_game_grid_card(game_name: String, owner_name: String = "", is_local
 			print("[Lobby] Grid card change_path_pressed received for: '", g_name, "'")
 			_show_launch_overlay_direct(g_name)
 		)
+		card.tracker_pressed.connect(_on_poptracker_pressed)
 	return card
 
 
@@ -905,6 +912,44 @@ func _on_view_spoiler_pressed() -> void:
 	if NetworkManager.seed_spoiler_name != "":
 		var spoiler_download_url: String = NetworkManager.get_http_url() + "/api/seeds/" + NetworkManager.room_code + "/outputs/" + NetworkManager.seed_spoiler_name.uri_encode()
 		OS.shell_open(spoiler_download_url)
+
+func _on_poptracker_pressed(game_name: String) -> void:
+	if game_name == "":
+		return
+	var server_url := NetworkManager.get_ap_server_url()
+	if server_url == "":
+		status_label.text = "The Archipelago server address is not ready yet."
+		return
+	var total_games: int = maxi(local_selected_games.size(), 1)
+	var preset := launcher.get_preset(game_name)
+	var slot_name := YamlBuilder.get_slot_name(
+		NetworkManager.player_name,
+		game_name,
+		total_games,
+		str(preset.get("short_tag", ""))
+	)
+	launch_title.text = "Opening PopTracker"
+	launch_instructions.text = "Installing and preparing the Metroid Fusion tracker pack..."
+	_tracker_operation_active = true
+	path_section.visible = false
+	emulator_path_section.visible = false
+	game_selection_section.visible = false
+	launch_confirm_btn.visible = false
+	launch_download_btn.visible = false
+	launch_cancel_btn.visible = true
+	launch_overlay.show_download_card("Preparing PopTracker")
+	launch_overlay.open()
+	launcher.open_poptracker(self, game_name, server_url, slot_name, func(ok: bool, value: String):
+		if ok:
+			launch_overlay.close()
+			_tracker_operation_active = false
+			status_label.text = "PopTracker opened for " + game_name + "."
+		else:
+			_tracker_operation_active = false
+			launch_title.text = "PopTracker unavailable"
+			launch_instructions.text = "[color=#f87171]" + value + "[/color]"
+			launch_overlay.open()
+	)
 
 func _on_generation_log_received(line: String) -> void:
 	generating_overlay.add_log(line)
