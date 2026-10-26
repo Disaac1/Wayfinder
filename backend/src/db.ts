@@ -27,7 +27,7 @@ try {
   
   // Dynamic migrations for Rooms seed generation columns
   const tableInfo = db.prepare("PRAGMA table_info(Rooms)").all() as Array<{ name: string }>;
-  const columns = tableInfo.map(c => c.name);
+  let columns = tableInfo.map(c => c.name);
   if (!columns.includes('seed_status')) {
     db.prepare("ALTER TABLE Rooms ADD COLUMN seed_status TEXT DEFAULT 'idle'").run();
     console.log("Migration: Added seed_status to Rooms table");
@@ -55,6 +55,98 @@ try {
   if (!columns.includes('server_port')) {
     db.prepare("ALTER TABLE Rooms ADD COLUMN server_port INTEGER DEFAULT NULL").run();
     console.log("Migration: Added server_port to Rooms table");
+  }
+  const legacyHostingColumns: Array<[string, string]> = [
+    ['remote_seed_id', 'hosting_seed_id'],
+    ['remote_room_id', 'hosting_room_id'],
+    ['remote_room_url', 'hosting_room_url'],
+    ['remote_server_url', 'hosting_server_url'],
+    ['remote_status', 'hosting_status'],
+    ['remote_last_activity', 'hosting_last_activity'],
+    ['remote_timeout', 'hosting_timeout'],
+    ['remote_last_error', 'hosting_last_error'],
+    ['remote_updated_at', 'hosting_updated_at']
+  ];
+  if (columns.includes('remote_seed_id')) {
+    db.pragma('foreign_keys = OFF');
+    db.exec(`
+      CREATE TABLE Rooms_new (
+        code TEXT PRIMARY KEY,
+        host_id TEXT,
+        status TEXT DEFAULT 'active',
+        seed_status TEXT DEFAULT 'idle',
+        seed_zip_name TEXT DEFAULT NULL,
+        seed_spoiler_name TEXT DEFAULT NULL,
+        tunnel_url TEXT DEFAULT NULL,
+        server_ip TEXT DEFAULT NULL,
+        server_port INTEGER DEFAULT NULL,
+        hosting_mode TEXT DEFAULT 'wayfinder_backend',
+        hosting_seed_id TEXT DEFAULT NULL,
+        hosting_room_id TEXT DEFAULT NULL,
+        hosting_room_url TEXT DEFAULT NULL,
+        hosting_server_url TEXT DEFAULT NULL,
+        hosting_status TEXT DEFAULT NULL,
+        hosting_last_activity TEXT DEFAULT NULL,
+        hosting_timeout INTEGER DEFAULT NULL,
+        hosting_last_error TEXT DEFAULT NULL,
+        hosting_updated_at DATETIME DEFAULT NULL,
+        deleted_at DATETIME DEFAULT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+      INSERT INTO Rooms (
+        code, host_id, status, seed_status, seed_zip_name, seed_spoiler_name,
+        tunnel_url, server_ip, server_port, hosting_mode, hosting_seed_id,
+        hosting_room_id, hosting_room_url, hosting_server_url, hosting_status,
+        hosting_last_activity, hosting_timeout, hosting_last_error, hosting_updated_at,
+        deleted_at, created_at, updated_at
+      )
+      SELECT
+        code, host_id, status, seed_status, seed_zip_name, seed_spoiler_name,
+        tunnel_url, server_ip, server_port,
+        CASE WHEN hosting_mode = 'local' THEN 'wayfinder_backend'
+             WHEN hosting_mode IS NULL THEN 'wayfinder_backend'
+             ELSE hosting_mode END,
+        remote_seed_id, remote_room_id, remote_room_url, remote_server_url,
+        remote_status, remote_last_activity, remote_timeout, remote_last_error,
+        remote_updated_at, deleted_at, created_at, updated_at
+      FROM Rooms;
+      DROP TABLE Rooms;
+      ALTER TABLE Rooms_new RENAME TO Rooms;
+    `);
+    db.pragma('foreign_keys = ON');
+    columns = (db.prepare("PRAGMA table_info(Rooms)").all() as Array<{ name: string }>).map(c => c.name);
+    console.log('Migration: Rebuilt Rooms table with generic hosting fields');
+  }
+  for (const [legacyColumn, hostingColumn] of legacyHostingColumns) {
+    if (columns.includes(legacyColumn) && !columns.includes(hostingColumn)) {
+      db.prepare(`ALTER TABLE Rooms RENAME COLUMN ${legacyColumn} TO ${hostingColumn}`).run();
+      console.log(`Migration: Renamed ${legacyColumn} to ${hostingColumn}`);
+    }
+  }
+  if (columns.includes('hosting_mode')) {
+    db.prepare("UPDATE Rooms SET hosting_mode = 'wayfinder_backend' WHERE hosting_mode = 'local' OR hosting_mode IS NULL").run();
+  } else {
+    db.prepare("ALTER TABLE Rooms ADD COLUMN hosting_mode TEXT DEFAULT 'wayfinder_backend'").run();
+    console.log('Migration: Added hosting_mode to Rooms table');
+  }
+  const hostingColumns: Array<[string, string]> = [
+    ['hosting_seed_id', 'TEXT DEFAULT NULL'],
+    ['hosting_room_id', 'TEXT DEFAULT NULL'],
+    ['hosting_room_url', 'TEXT DEFAULT NULL'],
+    ['hosting_server_url', 'TEXT DEFAULT NULL'],
+    ['hosting_status', 'TEXT DEFAULT NULL'],
+    ['hosting_last_activity', 'TEXT DEFAULT NULL'],
+    ['hosting_timeout', 'INTEGER DEFAULT NULL'],
+    ['hosting_last_error', 'TEXT DEFAULT NULL'],
+    ['hosting_updated_at', 'DATETIME DEFAULT NULL']
+  ];
+  columns = (db.prepare("PRAGMA table_info(Rooms)").all() as Array<{ name: string }>).map(c => c.name);
+  for (const [column, definition] of hostingColumns) {
+    if (!columns.includes(column)) {
+      db.prepare(`ALTER TABLE Rooms ADD COLUMN ${column} ${definition}`).run();
+      console.log(`Migration: Added ${column} to Rooms table`);
+    }
   }
   
   // Purge expired rooms and inactive rooms (3+ months)

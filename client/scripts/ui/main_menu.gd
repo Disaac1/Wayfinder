@@ -16,6 +16,7 @@ extends Control
 @onready var rom_folder_btn: Button = %RomFolderBtn
 @onready var rom_catalog_modal: Control = %RomCatalogModal
 @onready var rom_file_dialog: FileDialog = %RomFileDialog
+@onready var subtitle_label: Label = get_node("CenterContainer/HBox/CardPanel/Margin/VBox/Subtitle")
 
 const SETTINGS_PATH = "user://settings.json"
 const Updater = preload("res://scripts/core/updater.gd")
@@ -28,6 +29,8 @@ var _cached_server_rooms_map: Dictionary = {}
 var update_banner_btn: Button = null
 
 func _ready() -> void:
+	subtitle_label.text = "Archipelago Lobby System  •  v" + Updater.active_version
+	Updater.log_message("UPDATER", "Main menu ready: updater_base=" + Updater.BASE_VERSION + " active=" + Updater.active_version + " bridge=" + str(Updater.is_bridge_version()))
 	# Clear error label
 	if ResourceLoader.exists("res://icon.png"):
 		var icon_tex = load("res://icon.png") as Texture2D
@@ -78,13 +81,29 @@ func _ready() -> void:
 	_check_for_updates()
 
 func _check_for_updates() -> void:
+	Updater.log_message("UPDATER", "Main menu starting update check.")
 	Updater.check_for_update(self, func(has_update: bool, update_info: Dictionary):
-		if has_update and is_instance_valid(error_label):
+		var bridge_requires_finalization := Updater.is_bridge_version()
+		Updater.log_message("UPDATER", "Main menu update callback: has_update=" + str(has_update) + " bridge=" + str(bridge_requires_finalization) + " info=" + str(update_info))
+		var manual_update_required: bool = update_info.get("update_mode", "") == "manual"
+		if (has_update or bridge_requires_finalization or manual_update_required) and is_instance_valid(error_label):
 			var remote_ver = update_info.get("version", "")
-			var download_url = update_info.get("download_url", "/api/client/download-pck")
+			var update_mode = update_info.get("update_mode", "normal")
+			if update_mode == "manual":
+				_start_manual_update(update_info)
+				return
+			var update_label = "Repair required" if update_mode == "bridge" else "Update available"
+			var force_update = bridge_requires_finalization or update_mode in ["bridge", "finalize"]
+			if force_update:
+				Updater.log_message("UPDATER", "Entering forced update: mode=" + str(update_mode) + " target=" + str(update_info.get("version", "")))
+				if not update_info.has("version") or str(update_info.get("version", "")).is_empty():
+					_start_forced_update_failure("The update server did not provide a target version.")
+					return
+				_start_forced_update(update_info)
+				return
 			if update_banner_btn == null:
 				update_banner_btn = Button.new()
-				update_banner_btn.text = "⚡ Update Available (v" + remote_ver + ") - Click to Install"
+				update_banner_btn.text = "⚡ " + update_label + " (v" + remote_ver + ") - Click to Install"
 				update_banner_btn.add_theme_color_override("font_color", Color(0.2, 0.9, 0.5))
 				update_banner_btn.custom_minimum_size = Vector2(0, 32)
 				var parent_vbox = error_label.get_parent()
@@ -97,14 +116,98 @@ func _check_for_updates() -> void:
 					update_banner_btn.text = "Downloading update..."
 					Updater.apply_update(self, update_info, Callable(), func(success: bool, msg: String):
 						if success:
-							update_banner_btn.text = "✅ Updated! Reloading scene..."
-							await get_tree().create_timer(1.0).timeout
-							get_tree().reload_current_scene()
+							update_banner_btn.text = "✅ Update installed. Restarting..."
+							if not Updater.restart_application(self):
+								update_banner_btn.disabled = false
+								update_banner_btn.text = "Update installed. Please restart the application."
 						else:
 							update_banner_btn.disabled = false
 							update_banner_btn.text = "Update Failed: " + msg
 					)
 				)
+	)
+
+func _start_manual_update(update_info: Dictionary) -> void:
+	var overlay := ColorRect.new()
+	overlay.name = "ManualUpdateOverlay"
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.color = Color(0.035, 0.04, 0.06, 1.0)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.z_index = 100
+	add_child(overlay)
+
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(center)
+
+	var panel := VBoxContainer.new()
+	panel.custom_minimum_size = Vector2(560, 0)
+	panel.add_theme_constant_override("separation", 14)
+	center.add_child(panel)
+
+	var message := Label.new()
+	message.text = "Update required\n\nThis version of Wayfinder must be updated manually.\nInstall v" + str(update_info.get("version", "")) + " to continue."
+	message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	message.add_theme_font_size_override("font_size", 22)
+	panel.add_child(message)
+
+	var download_button := Button.new()
+	download_button.text = "Download latest version"
+	download_button.custom_minimum_size = Vector2(0, 44)
+	panel.add_child(download_button)
+	download_button.pressed.connect(func():
+		var url := Updater.get_server_base_url(self) + str(update_info.get("download_url", "/api/client/download-client"))
+		OS.shell_open(url)
+	)
+
+func _start_forced_update_failure(message: String) -> void:
+	var overlay := ColorRect.new()
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.color = Color(0.035, 0.04, 0.06, 1.0)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.z_index = 100
+	add_child(overlay)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(center)
+	var label := Label.new()
+	label.text = "Update required\n" + message + "\nPlease restart Wayfinder and try again."
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 22)
+	center.add_child(label)
+
+func _start_forced_update(update_info: Dictionary) -> void:
+	Updater.log_message("UPDATER", "Forced update download started: " + str(update_info))
+	var overlay := ColorRect.new()
+	overlay.name = "ForcedUpdateOverlay"
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.color = Color(0.035, 0.04, 0.06, 1.0)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.z_index = 100
+	add_child(overlay)
+
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(center)
+
+	var message := Label.new()
+	message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	message.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	message.add_theme_font_size_override("font_size", 22)
+	center.add_child(message)
+	message.text = "Updating Wayfinder...\nDownloading required update..."
+
+	Updater.apply_update(self, update_info, Callable(), func(success: bool, error_message: String):
+		Updater.log_message("UPDATER", "Forced update download completed: success=" + str(success) + " message=" + error_message)
+		if not success:
+			message.text = "Update failed:\n" + error_message
+			return
+		for seconds in range(5, 0, -1):
+			message.text = "Updating Wayfinder...\nRestarting in " + str(seconds) + "..."
+			await get_tree().create_timer(1.0).timeout
+		if not Updater.restart_application(self):
+			message.text = "Update staged, but automatic restart failed.\nPlease close and reopen Wayfinder."
 	)
 
 func _on_name_text_changed(new_text: String) -> void:

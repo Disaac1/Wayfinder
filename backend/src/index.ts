@@ -160,6 +160,7 @@ server.on('upgrade', (req, clientSocket, head) => {
       // Start 15-second active WebSocket Ping heartbeat to prevent Cloudflare Tunnel idle timeouts (100s limit)
       // RFC 6455 unmasked Ping frame: 0x89 (FIN + Opcode 0x9), 0x00 (Payload length 0)
       const PING_FRAME = Buffer.from([0x89, 0x00]);
+      let proxyCleanedUp = false;
       const heartbeatInterval = setInterval(() => {
         if (!clientSocket.destroyed && clientSocket.writable) {
           try {
@@ -173,7 +174,12 @@ server.on('upgrade', (req, clientSocket, head) => {
       }, 15000);
 
       const cleanup = () => {
+        if (proxyCleanedUp) {
+          return;
+        }
+        proxyCleanedUp = true;
         clearInterval(heartbeatInterval);
+        console.log(`[ARCHIPELAGO_GAME_PROXY] Closing proxied game connection for ${roomIdentifier} (local port ${targetPort})`);
         if (!targetSocket.destroyed) {
           targetSocket.destroy();
         }
@@ -183,20 +189,22 @@ server.on('upgrade', (req, clientSocket, head) => {
       };
 
       targetSocket.on('error', (err) => {
-        console.warn(`[AP Proxy] Error connecting to local AP server on port ${targetPort}:`, err.message);
+        console.warn(`[ARCHIPELAGO_GAME_PROXY] Error connecting to local AP server on port ${targetPort}:`, err.message);
         cleanup();
       });
 
       clientSocket.on('error', (err: any) => {
-        console.warn(`[AP Proxy] Client socket error on port ${targetPort}:`, err.message);
+        console.warn(`[ARCHIPELAGO_GAME_PROXY] Client socket error on port ${targetPort}:`, err.message);
         cleanup();
       });
 
+      console.log(`[ARCHIPELAGO_GAME_PROXY] Game connection established for ${roomIdentifier} (local port ${targetPort})`);
       clientSocket.on('close', cleanup);
       targetSocket.on('close', cleanup);
     });
   } else {
     // Normal Wayfinder Lobby WebSocket upgrade
+    console.log(`[WAYFINDER_LOBBY] WebSocket upgrade requested for ${reqUrl}`);
     wss.handleUpgrade(req, clientSocket, head, (ws) => {
       wss.emit('connection', ws, req);
     });

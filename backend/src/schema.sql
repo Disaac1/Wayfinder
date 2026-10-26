@@ -12,6 +12,16 @@ CREATE TABLE IF NOT EXISTS Rooms (
     tunnel_url TEXT DEFAULT NULL,
     server_ip TEXT DEFAULT NULL,
     server_port INTEGER DEFAULT NULL,
+    hosting_mode TEXT DEFAULT 'wayfinder_backend',
+    hosting_seed_id TEXT DEFAULT NULL,
+    hosting_room_id TEXT DEFAULT NULL,
+    hosting_room_url TEXT DEFAULT NULL,
+    hosting_server_url TEXT DEFAULT NULL,
+    hosting_status TEXT DEFAULT NULL,
+    hosting_last_activity TEXT DEFAULT NULL,
+    hosting_timeout INTEGER DEFAULT NULL,
+    hosting_last_error TEXT DEFAULT NULL,
+    hosting_updated_at DATETIME DEFAULT NULL,
     deleted_at DATETIME DEFAULT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -52,4 +62,3 @@ CREATE INDEX IF NOT EXISTS idx_users_room_code ON Users(room_code);
 
 -- Unique index to prevent duplicate names in the same room
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_room_name ON Users(room_code, name COLLATE NOCASE) WHERE room_code IS NOT NULL;
-

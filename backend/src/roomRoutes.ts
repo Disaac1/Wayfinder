@@ -5,14 +5,77 @@ import { fileURLToPath } from 'url';
 import db from './db.js';
 import { getValidatedRoomCode } from './utils.js';
 import { killRoomServer } from './serverManager.js';
-import { closeRoom, executeHostCommand } from './roomManager.js';
+import { broadcastRoomState, closeRoom, executeHostCommand } from './roomManager.js';
 import { fetchRoomSeedData } from './checksService.js';
 import { localhostOnly } from './adminRoutes.js';
+import { getHostingProvider } from './hostingProvider.js';
+
+const router = Router();
+
+function isRoomHost(roomCode: string, userId: unknown): boolean {
+  if (typeof userId !== 'string' || !userId) return false;
+  const room = db.prepare('SELECT host_id FROM Rooms WHERE code = ?').get(roomCode) as { host_id: string } | undefined;
+  return Boolean(room && room.host_id === userId);
+}
+
+router.get('/:code/hosting', async (req: Request, res: Response) => {
+  const roomCode = getValidatedRoomCode(req.params.code);
+  if (!roomCode) return res.status(400).json({ error: 'Valid 6-character roomCode is required' });
+  const room = db.prepare('SELECT hosting_mode, hosting_seed_id, hosting_room_id, hosting_room_url, hosting_server_url, hosting_status, hosting_last_activity, hosting_timeout, hosting_last_error FROM Rooms WHERE code = ?').get(roomCode) as any;
+  if (!room) return res.status(404).json({ error: `Room ${roomCode} not found` });
+  if (!room.hosting_room_id) return res.json(room);
+
+  try {
+    const hosting = await getHostingProvider(room.hosting_mode).refresh({ roomCode, seedId: room.hosting_seed_id, roomId: room.hosting_room_id });
+    db.prepare('UPDATE Rooms SET hosting_server_url = ?, hosting_status = ?, hosting_last_activity = ?, hosting_timeout = ?, hosting_last_error = NULL, hosting_updated_at = CURRENT_TIMESTAMP, tunnel_url = COALESCE(?, tunnel_url) WHERE code = ?').run(
+      hosting.serverUrl,
+      hosting.status,
+      hosting.lastActivity,
+      hosting.timeout,
+      hosting.serverUrl,
+      roomCode
+    );
+    return res.json({ ...room, hosting_server_url: hosting.serverUrl, hosting_status: hosting.status, hosting_last_activity: hosting.lastActivity, hosting_timeout: hosting.timeout, hosting_last_error: null });
+  } catch (error: any) {
+    console.error(`Failed to refresh Archipelago.gg status for room ${roomCode}:`, error);
+    return res.status(502).json({ ...room, error: error.message || 'Failed to refresh remote hosting status' });
+  }
+});
+
+router.post('/:code/hosting/mode', async (req: Request, res: Response) => {
+  const roomCode = getValidatedRoomCode(req.params.code);
+  if (!roomCode) return res.status(400).json({ error: 'Valid 6-character roomCode is required' });
+  const userId = req.body?.userId || req.query?.userId;
+  if (!isRoomHost(roomCode, userId)) return res.status(403).json({ error: 'Only the room host can change hosting mode' });
+  const mode = req.body?.hostingMode;
+  if (mode !== 'wayfinder_backend' && mode !== 'archipelago_gg') return res.status(400).json({ error: 'hostingMode must be wayfinder_backend or archipelago_gg' });
+  const room = db.prepare('SELECT seed_status FROM Rooms WHERE code = ?').get(roomCode) as { seed_status: string } | undefined;
+  if (!room) return res.status(404).json({ error: `Room ${roomCode} not found` });
+  if (room.seed_status !== 'idle') return res.status(409).json({ error: 'Hosting mode can only be changed before seed generation' });
+  db.prepare('UPDATE Rooms SET hosting_mode = ?, hosting_last_error = NULL, updated_at = CURRENT_TIMESTAMP WHERE code = ?').run(mode, roomCode);
+  broadcastRoomState(roomCode);
+  res.json({ success: true, hostingMode: mode });
+});
+
+router.post('/:code/hosting/wake', async (req: Request, res: Response) => {
+  const roomCode = getValidatedRoomCode(req.params.code);
+  if (!roomCode) return res.status(400).json({ error: 'Valid 6-character roomCode is required' });
+  const userId = req.body?.userId || req.query?.userId;
+  if (!isRoomHost(roomCode, userId)) return res.status(403).json({ error: 'Only the room host can wake hosting' });
+  const room = db.prepare('SELECT hosting_mode, hosting_seed_id, hosting_room_id FROM Rooms WHERE code = ?').get(roomCode) as { hosting_mode: string; hosting_seed_id: string | null; hosting_room_id: string | null } | undefined;
+  if (!room || !room.hosting_room_id) return res.status(409).json({ error: 'Room is not configured for external hosting' });
+  try {
+    const hosting = await getHostingProvider(room.hosting_mode).wake({ roomCode, seedId: room.hosting_seed_id, roomId: room.hosting_room_id });
+    db.prepare('UPDATE Rooms SET hosting_server_url = ?, hosting_status = ?, hosting_last_activity = ?, hosting_timeout = ?, hosting_last_error = NULL, hosting_updated_at = CURRENT_TIMESTAMP, tunnel_url = COALESCE(?, tunnel_url) WHERE code = ?').run(hosting.serverUrl, hosting.status, hosting.lastActivity, hosting.timeout, hosting.serverUrl, roomCode);
+    res.json({ success: true, serverUrl: hosting.serverUrl, status: hosting.status });
+  } catch (error: any) {
+    db.prepare('UPDATE Rooms SET hosting_status = ?, hosting_last_error = ?, hosting_updated_at = CURRENT_TIMESTAMP WHERE code = ?').run('error', error.message || 'Failed to wake remote room', roomCode);
+    res.status(502).json({ error: error.message || 'Failed to wake remote room' });
+  }
+});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-const router = Router();
 
 // 1. Direct REST HTTP API for querying active rooms list
 router.get('/', (req: Request, res: Response) => {
@@ -77,7 +140,7 @@ router.get('/', (req: Request, res: Response) => {
 });
 
 // 2. Delete room endpoint (Supports host deletion or localhost, soft-deletes with 7-day recovery grace period)
-const handleDeleteRoom = (req: Request, res: Response) => {
+const handleDeleteRoom = async (req: Request, res: Response) => {
   const roomCode = getValidatedRoomCode(req.params.code);
   if (!roomCode) {
     return res.status(400).json({ error: 'Invalid room code format' });
@@ -96,7 +159,7 @@ const handleDeleteRoom = (req: Request, res: Response) => {
     }
 
     // Close room server, notify players with room_deleted, and disconnect sockets
-    closeRoom(roomCode);
+    await closeRoom(roomCode);
 
     // Soft delete with 7-day grace period
     db.prepare("UPDATE Rooms SET status = 'abandoned', deleted_at = CURRENT_TIMESTAMP WHERE code = ?").run(roomCode);

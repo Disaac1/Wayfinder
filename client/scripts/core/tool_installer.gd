@@ -59,13 +59,13 @@ func install(
 	if not _is_current(generation):
 		return
 
-	WayfinderLogger.log_message("INSTALL", "Checking tool installation: " + tool_name + " (exe: " + target_exe + ", folder: " + subfolder + ")")
+	Updater.log_message("INSTALL", "Checking tool installation: " + tool_name + " (exe: " + target_exe + ", folder: " + subfolder + ")")
 	var tools_dir: String = user_tools_dir.path_join(subfolder)
 	DirAccess.make_dir_recursive_absolute(tools_dir)
 	var discovered_path: String = _find_game_executable(target_exe, [subfolder])
 	if discovered_path != "":
 		if _is_current(generation):
-			WayfinderLogger.log_message("INSTALL", "Tool already installed and verified at: " + discovered_path)
+			Updater.log_message("INSTALL", "Tool already installed and verified at: " + discovered_path)
 			callback.call(true, discovered_path)
 		return
 
@@ -83,14 +83,14 @@ func install(
 		if not _is_current(generation):
 			_cleanup(temp_filename)
 			return
-		WayfinderLogger.log_message("INSTALL", "Download completed for " + tool_name + " (Result: " + str(result) + ", HTTP: " + str(response_code) + ")")
+		Updater.log_message("INSTALL", "Download completed for " + tool_name + " (Result: " + str(result) + ", HTTP: " + str(response_code) + ")")
 		if result != HTTPRequest.RESULT_SUCCESS or (response_code != 200 and response_code != 0):
 			_cleanup(temp_filename)
 			if fallback_url != "" and fallback_url != download_url:
 				install(node, tool_name, fallback_url, subfolder, target_exe, callback, "", generation)
 				return
 			var error_message: String = "Download failed for " + tool_name + " (HTTP " + str(response_code) + ", Result: " + str(result) + ")"
-			WayfinderLogger.log_message("ERROR", error_message)
+			Updater.log_message("ERROR", error_message)
 			callback.call(false, error_message)
 			return
 
@@ -98,7 +98,7 @@ func install(
 		if not validation.get("valid", false):
 			_cleanup(temp_filename)
 			var validation_error: String = str(validation.get("error", "Downloaded tool failed validation."))
-			WayfinderLogger.log_message("ERROR", validation_error)
+			Updater.log_message("ERROR", validation_error)
 			callback.call(false, validation_error)
 			return
 
@@ -113,7 +113,7 @@ func install(
 		downloading[0] = false
 		http.queue_free()
 		var init_error: String = "Failed to initiate download HTTP request for " + tool_name + " (Error: " + str(request_error) + ")"
-		WayfinderLogger.log_message("ERROR", init_error)
+		Updater.log_message("ERROR", init_error)
 		callback.call(false, init_error)
 
 func _install_executable(
@@ -148,7 +148,7 @@ func _install_executable(
 			return
 		attempts_left -= 1
 	var error_message: String = "Installer ran (PID " + str(process_id) + ") but " + target_exe + " was not detected after 60s. Windows SmartScreen or UAC may have blocked the installation."
-	WayfinderLogger.log_message("ERROR", error_message)
+	Updater.log_message("ERROR", error_message)
 	callback.call(false, error_message)
 
 func _extract_archive(
@@ -169,7 +169,7 @@ func _extract_archive(
 	if open_error != OK:
 		_cleanup(temp_filename)
 		var error_message: String = "Failed to open ZIP archive for " + tool_name + " (Error: " + str(open_error) + ")"
-		WayfinderLogger.log_message("ERROR", error_message)
+		Updater.log_message("ERROR", error_message)
 		callback.call(false, error_message)
 		return
 	var archive_files: PackedStringArray = zip_reader.get_files()
@@ -211,7 +211,7 @@ func _extract_archive(
 		await _show_completion(node, tool_name, executable_path, callback, generation)
 		return
 	var missing_error: String = "Extracted " + str(total_files) + " files for " + tool_name + ", but could not find executable: " + target_exe
-	WayfinderLogger.log_message("ERROR", missing_error)
+	Updater.log_message("ERROR", missing_error)
 	callback.call(false, missing_error)
 
 func _get_common_root(files: PackedStringArray) -> String:

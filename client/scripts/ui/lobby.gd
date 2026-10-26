@@ -65,6 +65,7 @@ const COLOR_GUIDED_GREEN: Color = Color(0.3, 0.9, 0.5)
 @onready var close_room_btn: Button = %CloseRoomBtn
 @onready var refresh_btn: Button = get_node_or_null("%RefreshBtn")
 @onready var start_game_btn: Button = %StartGameBtn
+@onready var hosting_mode_option: OptionButton = %HostingModeOption
 @onready var download_seed_btn: Button = %DownloadSeedBtn
 @onready var view_spoiler_btn: Button = %ViewSpoilerBtn
 @onready var checkout_save_btn: Button = %CheckoutSaveBtn
@@ -141,6 +142,9 @@ func _ready() -> void:
 	_connect_ui_signals()
 	_load_launcher_catalogs()
 	_connect_network_signals()
+	hosting_mode_option.item_selected.connect(_on_hosting_mode_selected)
+	_load_hosting_mode()
+	_update_hosting_mode_ui()
 	_load_cached_games_list()
 	_update_room_header()
 	_update_players_ui()
@@ -583,6 +587,7 @@ func _update_players_ui(players: Array = []) -> void:
 	_update_seed_actions_ui(players)
 	_update_server_address_display()
 	_update_lock_status_display(players)
+	_update_hosting_mode_ui()
 	
 	if NetworkManager.seed_status == "done":
 		if is_instance_valid(status_label):
@@ -634,6 +639,42 @@ func _update_lock_status_display(players: Array) -> void:
 
 func _on_host_tools_pressed() -> void:
 	host_tools_modal.open()
+
+func _update_hosting_mode_ui() -> void:
+	if not is_instance_valid(hosting_mode_option):
+		return
+	var is_host := _is_local_player_host()
+	hosting_mode_option.visible = is_host and NetworkManager.seed_status != "done"
+	hosting_mode_option.disabled = not is_host or NetworkManager.seed_status != "idle"
+	if NetworkManager.hosting_mode == "archipelago_gg":
+		hosting_mode_option.select(1)
+	else:
+		hosting_mode_option.select(0)
+
+func _load_hosting_mode() -> void:
+	if NetworkManager.room_code == "":
+		return
+	var response: Dictionary = await NetworkManager.fetch_http("/api/rooms/" + NetworkManager.room_code.uri_encode() + "/hosting")
+	var data = response.get("data")
+	if data is Dictionary:
+		var hosting_mode_value = data.get("hosting_mode")
+		NetworkManager.hosting_mode = hosting_mode_value if hosting_mode_value is String else "wayfinder_backend"
+		var hosting_status_value = data.get("hosting_status")
+		NetworkManager.hosting_status = hosting_status_value if hosting_status_value is String else ""
+		var hosting_room_url_value = data.get("hosting_room_url")
+		NetworkManager.hosting_room_url = hosting_room_url_value if hosting_room_url_value is String else ""
+		_update_hosting_mode_ui()
+
+func _on_hosting_mode_selected(index: int) -> void:
+	var mode := "archipelago_gg" if index == 1 else "wayfinder_backend"
+	hosting_mode_option.disabled = true
+	var result: Dictionary = await NetworkManager.set_hosting_mode(mode)
+	if result.has("error"):
+		_update_hosting_mode_ui()
+		status_label.text = "Hosting selection failed: " + str(result.error)
+		return
+	NetworkManager.hosting_mode = mode
+	_update_hosting_mode_ui()
 
 func _get_sorted_players(players: Array) -> Array:
 	var sorted_players: Array = []
@@ -867,6 +908,12 @@ func _on_view_spoiler_pressed() -> void:
 
 func _on_generation_log_received(line: String) -> void:
 	generating_overlay.add_log(line)
+	if line.to_lower().contains("uploading"):
+		generating_overlay.set_status("Uploading seed to Archipelago.gg...")
+	elif line.to_lower().contains("room ready"):
+		generating_overlay.set_status("Archipelago.gg room ready. Finalizing lobby...")
+	elif line.to_lower().contains("room created"):
+		generating_overlay.set_status("Archipelago.gg room created. Starting hosted server...")
 
 
 # =====================================================================
@@ -942,7 +989,7 @@ func _on_launcher_completed(game_name: String, pid: int) -> void:
 
 func _on_launcher_failed(game_name: String, error_msg: String) -> void:
 	print("[Lobby Error] Launch failed for ", game_name, ": ", error_msg)
-	WayfinderLogger.log_message("ERROR", "Launch failed for " + game_name + ": " + error_msg)
+	Updater.log_message("ERROR", "Launch failed for " + game_name + ": " + error_msg)
 	launch_title.text = "Launch Failed: " + game_name
 	launch_instructions.text = "[color=#f87171]" + error_msg + "[/color]\n\nPlease check your game files or settings."
 	path_section.visible = false

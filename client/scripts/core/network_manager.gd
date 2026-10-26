@@ -29,6 +29,10 @@ var seed_spoiler_name: String = ""
 var tunnel_url: String = ""
 var locked_by: String = ""
 var checks: Dictionary = {}
+var hosting_mode: String = "wayfinder_backend"
+var hosting_status: String = ""
+var hosting_room_url: String = ""
+var hosting_server_url: String = ""
 
 func _enter_tree() -> void:
 	# Mount verified self-updating patches before the root scene loads
@@ -170,6 +174,14 @@ func _handle_message(data: Dictionary) -> void:
 			seed_spoiler_name = ss if ss != null else ""
 			var tu = data.get("tunnelUrl")
 			tunnel_url = tu if tu != null else ""
+			var hosting_mode_joined = data.get("hostingMode")
+			hosting_mode = hosting_mode_joined if hosting_mode_joined is String else "wayfinder_backend"
+			var hosting_status_joined = data.get("hostingStatus")
+			hosting_status = hosting_status_joined if hosting_status_joined is String else ""
+			var hosting_room_url_joined = data.get("hostingRoomUrl")
+			hosting_room_url = hosting_room_url_joined if hosting_room_url_joined is String else ""
+			var hosting_server_url_joined = data.get("hostingServerUrl")
+			hosting_server_url = hosting_server_url_joined if hosting_server_url_joined is String else ""
 			var lb = data.get("lockedBy")
 			locked_by = lb if lb != null else ""
 			var ch = data.get("checks")
@@ -191,6 +203,14 @@ func _handle_message(data: Dictionary) -> void:
 			seed_spoiler_name = ss2 if ss2 != null else ""
 			var tu2 = data.get("tunnelUrl")
 			tunnel_url = tu2 if tu2 != null else ""
+			var hosting_mode_value = data.get("hostingMode")
+			hosting_mode = hosting_mode_value if hosting_mode_value is String else "wayfinder_backend"
+			var hosting_status_value = data.get("hostingStatus")
+			hosting_status = hosting_status_value if hosting_status_value is String else ""
+			var hosting_room_url_value = data.get("hostingRoomUrl")
+			hosting_room_url = hosting_room_url_value if hosting_room_url_value is String else ""
+			var hosting_server_url_value = data.get("hostingServerUrl")
+			hosting_server_url = hosting_server_url_value if hosting_server_url_value is String else ""
 			var lb2 = data.get("lockedBy")
 			locked_by = lb2 if lb2 != null else ""
 			var ch2 = data.get("checks")
@@ -291,6 +311,7 @@ func leave_room() -> void:
 	user_id = ""
 	players = []
 	checks = {}
+	hosting_server_url = ""
 
 func close_room() -> void:
 	print("[NetworkManager] Closing room: ", room_code)
@@ -307,6 +328,8 @@ func get_http_url() -> String:
 	return "https://wayfinder.disaac1.com"
 
 func get_ap_server_url() -> String:
+	if hosting_server_url != "":
+		return hosting_server_url
 	if tunnel_url == "":
 		return ""
 	if "localhost" in tunnel_url or "127.0.0.1" in tunnel_url:
@@ -361,6 +384,28 @@ func fetch_http(endpoint: String) -> Dictionary:
 	elif typeof(json.data) == TYPE_ARRAY:
 		return {"data": {"list": json.data}}
 	return {"data": {}}
+
+func set_hosting_mode(mode: String) -> Dictionary:
+	if room_code == "" or user_id == "":
+		return {"error": "Not connected to a room"}
+	var http = HTTPRequest.new()
+	add_child(http)
+	var url = get_http_url() + "/api/rooms/" + room_code.uri_encode() + "/hosting/mode"
+	var headers = ["Content-Type: application/json"]
+	var body = JSON.stringify({"userId": user_id, "hostingMode": mode})
+	var err = http.request(url, headers, HTTPClient.METHOD_POST, body)
+	if err != OK:
+		http.queue_free()
+		return {"error": "Failed to initiate hosting mode request"}
+	var result = await http.request_completed
+	http.queue_free()
+	var response_body = result[3].get_string_from_utf8()
+	var parsed = JSON.parse_string(response_body)
+	if result[1] < 200 or result[1] >= 300:
+		if parsed is Dictionary and parsed.has("error"):
+			return {"error": str(parsed.error)}
+		return {"error": "Hosting mode request failed with HTTP " + str(result[1])}
+	return parsed if parsed is Dictionary else {"success": true}
 
 func cleanup_test_room(code: String) -> Dictionary:
 	var http = HTTPRequest.new()

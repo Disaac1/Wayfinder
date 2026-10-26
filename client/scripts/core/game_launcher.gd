@@ -622,7 +622,7 @@ func track_http_download_progress(node: Node, http_request: HTTPRequest, task_ti
 
 func cancel_tool_installation() -> void:
 	_tool_installation_generation += 1
-	WayfinderLogger.log_message("INSTALL", "Tool installation cancelled by user.")
+	Updater.log_message("INSTALL", "Tool installation cancelled by user.")
 
 func ensure_tool_installed_or_download(node: Node, tool_name: String, download_url: String, subfolder: String, target_exe: String, callback: Callable, fallback_url: String = "", installation_generation: int = -1) -> void:
 	if installation_generation < 0:
@@ -1117,16 +1117,16 @@ func update_archipelago_persistent_storage(clean_url: String) -> void:
 # =====================================================================
 
 func _report_status(ctx: LaunchContext, stage: LaunchStage, message: String, pct: float) -> void:
-	WayfinderLogger.log_message("LAUNCH", "[" + str(stage) + " - " + str(int(pct)) + "%] " + message)
+	Updater.log_message("LAUNCH", "[" + str(stage) + " - " + str(int(pct)) + "%] " + message)
 	emit_signal("launch_status_updated", int(stage), message, pct)
 	if is_instance_valid(ctx.node):
 		_update_modding_status(ctx.node, message, int(pct))
 
 func launch_game(node: Node, game_name: String) -> bool:
-	WayfinderLogger.log_message("LAUNCH", "Initiating launch pipeline for game: " + game_name)
+	Updater.log_message("LAUNCH", "Initiating launch pipeline for game: " + game_name)
 	if game_name.strip_edges() == "":
 		var err_msg: String = "Game name cannot be empty."
-		WayfinderLogger.log_message("ERROR", err_msg)
+		Updater.log_message("ERROR", err_msg)
 		emit_signal("launch_failed", game_name, err_msg)
 		if is_instance_valid(node):
 			_update_modding_status(node, err_msg, 0)
@@ -1135,7 +1135,7 @@ func launch_game(node: Node, game_name: String) -> bool:
 	var preset: Dictionary = get_preset(game_name)
 	if preset.is_empty():
 		var err_msg: String = "No preset configuration found for " + game_name
-		WayfinderLogger.log_message("ERROR", err_msg)
+		Updater.log_message("ERROR", err_msg)
 		emit_signal("launch_failed", game_name, err_msg)
 		if is_instance_valid(node):
 			_update_modding_status(node, err_msg, 0)

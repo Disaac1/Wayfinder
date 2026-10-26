@@ -94,7 +94,7 @@ func _on_send_logs_pressed() -> void:
 		send_logs_btn.text = "Sending..."
 	var s_url: String = NetworkManager.get_http_url()
 	var err_summary: String = launch_instructions.text
-	WayfinderLogger.send_logs_to_server(self, s_url, err_summary, func(ok: bool, msg: String):
+	Updater.send_logs_to_server(self, s_url, err_summary, func(ok: bool, msg: String):
 		if is_instance_valid(error_status_feedback):
 			error_status_feedback.visible = true
 			error_status_feedback.text = "✅ Logs successfully transmitted to host!" if ok else ("❌ " + msg)
@@ -105,7 +105,7 @@ func _on_send_logs_pressed() -> void:
 	)
 
 func _on_copy_diag_pressed() -> void:
-	var report: String = WayfinderLogger.generate_diagnostic_report({
+	var report: String = Updater.generate_diagnostic_report({
 		"active_game": active_game_name,
 		"last_error": launch_instructions.text
 	})

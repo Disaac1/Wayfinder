@@ -27,6 +27,7 @@ scratch/
 *.pyc
 __pycache__/
 backend/.env
+backend/.archipelago-gg-session-id
 backend/database.db*
 backend/failed_generations/
 backend/logs/

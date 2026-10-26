@@ -356,6 +356,18 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.2, 0.8, 0.4, 1)
 text = "Start Game"
 
+[node name="HostingModeOption" type="OptionButton" parent="Margin/VBox/Footer" unique_id=1733394746]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(190, 38)
+layout_mode = 2
+item_count = 2
+selected = 0
+popup/item_0/text = "Host: Wayfinder"
+popup/item_0/id = 0
+popup/item_1/text = "Host: Archipelago.gg"
+popup/item_1/id = 1
+
 [node name="DownloadSeedBtn" type="Button" parent="Margin/VBox/Footer" unique_id=478779442]
 unique_name_in_owner = true
 visible = false

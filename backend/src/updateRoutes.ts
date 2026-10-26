@@ -13,7 +13,12 @@ const UPDATES_DIR = path.join(BACKEND_ROOT, 'public', 'updates');
 const DOWNLOADS_DIR = path.join(BACKEND_ROOT, 'public', 'downloads');
 const VERSION_FILE = path.join(UPDATES_DIR, 'version.json');
 const PCK_FILE = path.join(UPDATES_DIR, 'Wayfinder.pck');
+const BRIDGE_VERSION_FILE = path.join(UPDATES_DIR, 'bridge-version.json');
+const BRIDGE_PCK_FILE = path.join(UPDATES_DIR, 'Wayfinder-bridge.pck');
 const PRIV_KEY_FILE = path.join(BACKEND_ROOT, 'certs', 'updater_private_key.pem');
+const LEGACY_UPDATE_CUTOFF = '1.0.6';
+const BRIDGE_VERSION = '1.0.9';
+const MANUAL_UPDATE_URL = '/api/client/download-client';
 
 // Ensure directories exist
 if (!fs.existsSync(UPDATES_DIR)) {
@@ -67,15 +72,37 @@ const upload = multer({
  */
 router.get('/version', (req: Request, res: Response) => {
   try {
-    if (fs.existsSync(VERSION_FILE)) {
-      const data = JSON.parse(fs.readFileSync(VERSION_FILE, 'utf8'));
-      const hasPck = fs.existsSync(PCK_FILE);
+    const clientVersion = typeof req.query.client_version === 'string'
+      ? req.query.client_version
+      : '';
+    const legacyClient = !clientVersion || isVersionAtOrBelow(clientVersion, LEGACY_UPDATE_CUTOFF);
+    if (legacyClient) {
+      const currentManifest = fs.existsSync(VERSION_FILE)
+        ? JSON.parse(fs.readFileSync(VERSION_FILE, 'utf8'))
+        : { version: '1.1.0' };
+      return res.json({
+        version: currentManifest.version,
+        target_version: currentManifest.version,
+        current_version: clientVersion || 'unknown',
+        update_required: true,
+        requires_full_install: true,
+        update_mode: 'manual',
+        force_restart: false,
+        download_url: MANUAL_UPDATE_URL,
+        message: 'This version is no longer supported. Download and install the latest version of Wayfinder.'
+      });
+    }
+    const manifestFile = VERSION_FILE;
+    const packageFile = PCK_FILE;
+    if (fs.existsSync(manifestFile)) {
+      const data = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+      const hasPck = fs.existsSync(packageFile);
       if (hasPck) {
-        const stats = fs.statSync(PCK_FILE);
+        const stats = fs.statSync(packageFile);
         data.pck_size = stats.size;
         // If file exists but sha256 or signature is missing, auto-sign on the fly if key is available
         if (!data.signature && fs.existsSync(PRIV_KEY_FILE)) {
-          const fileBuf = fs.readFileSync(PCK_FILE);
+          const fileBuf = fs.readFileSync(packageFile);
           const sigResult = signBuffer(fileBuf);
           if (sigResult) {
             data.sha256 = sigResult.sha256;
@@ -87,19 +114,41 @@ router.get('/version', (req: Request, res: Response) => {
       return res.json({
         ...data,
         has_pck: hasPck,
-        download_url: '/api/client/download-pck'
+        download_url: data.download_url || '/api/client/download-pck',
+        update_mode: clientVersion === BRIDGE_VERSION ? 'finalize' : 'normal',
+        force_restart: clientVersion === BRIDGE_VERSION,
+        target_version: data.target_version || data.version
       });
     }
     res.json({
       version: '1.0.0',
       min_version: '1.0.0',
       has_pck: false,
-      notes: 'No update packages available'
+      notes: 'No update packages available',
+      update_mode: 'normal',
+      force_restart: false
     });
   } catch (err: any) {
     res.status(500).json({ error: `Failed to read version metadata: ${err.message}` });
   }
 });
+
+function isVersionAtOrBelow(version: string, maximum: string): boolean {
+  const parse = (value: string): number[] => value.split('.').map((part) => {
+    const match = part.match(/^\d+/);
+    return match ? Number(match[0]) : 0;
+  });
+  const left = parse(version);
+  const right = parse(maximum);
+  const length = Math.max(left.length, right.length);
+  for (let index = 0; index < length; index += 1) {
+    const leftPart = left[index] || 0;
+    const rightPart = right[index] || 0;
+    if (leftPart < rightPart) return true;
+    if (leftPart > rightPart) return false;
+  }
+  return true;
+}
 
 /**
  * GET /api/client/download-client
@@ -141,18 +190,20 @@ router.get('/download-client', (req: Request, res: Response) => {
  * Streams the latest exported Godot package (.pck) to the client
  */
 router.get('/download-pck', (req: Request, res: Response) => {
-  if (!fs.existsSync(PCK_FILE)) {
+  const bridge = req.query.channel === 'bridge';
+  const packageFile = bridge ? BRIDGE_PCK_FILE : PCK_FILE;
+  if (!fs.existsSync(packageFile)) {
     return res.status(404).json({ error: 'No update .pck package available on server' });
   }
 
-  const stat = fs.statSync(PCK_FILE);
+  const stat = fs.statSync(packageFile);
   res.writeHead(200, {
     'Content-Type': 'application/octet-stream',
     'Content-Length': stat.size,
     'Content-Disposition': 'attachment; filename="Wayfinder.pck"'
   });
 
-  const readStream = fs.createReadStream(PCK_FILE);
+  const readStream = fs.createReadStream(packageFile);
   readStream.pipe(res);
 });
 

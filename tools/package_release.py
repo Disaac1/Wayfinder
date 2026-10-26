@@ -69,7 +69,7 @@ def export_godot():
     print(f"  -> Exported Build.pck ({BUILD_PCK.stat().st_size:,} bytes)")
 
 
-def publish_auto_update(version: str, notes: str):
+def publish_auto_update(version: str, notes: str, bridge: bool = False, target_version: str = ""):
     print(f"\n[2/4] Signing and Publishing Auto-Update (v{version})...")
     cmd = [
         sys.executable,
@@ -78,6 +78,8 @@ def publish_auto_update(version: str, notes: str):
         "--version", version,
         "--notes", notes
     ]
+    if bridge:
+        cmd.extend(["--bridge", "--target-version", target_version])
     res = subprocess.run(cmd)
     if res.returncode != 0:
         print("[Error] Failed to sign and publish update package")
@@ -167,6 +169,7 @@ def main():
     parser.add_argument("--version", type=str, required=False, help="Release version (e.g., 1.0.1)")
     parser.add_argument("--notes", type=str, default="Latest release updates", help="Update release notes")
     parser.add_argument("--skip-export", action="store_true", help="Skip Godot export step if already built")
+    parser.add_argument("--bridge-version", type=str, help="Build and publish a legacy bridge before the final version")
     parser.add_argument("--get-next-version", action="store_true", help="Print current and suggested next version")
     
     args = parser.parse_args()
@@ -185,9 +188,14 @@ def main():
     print("=======================================================")
     
     if not args.skip_export:
+        if args.bridge_version:
+            update_updater_base_version(args.bridge_version)
+            export_godot()
+            publish_auto_update(args.bridge_version, args.notes, bridge=True, target_version=args.version)
+
         update_updater_base_version(args.version)
         export_godot()
-        
+
     publish_auto_update(args.version, args.notes)
     package_portable_zip(args.version)
     build_installer(args.version)

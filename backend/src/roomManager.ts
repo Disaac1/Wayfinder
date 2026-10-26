@@ -10,6 +10,7 @@ const execAsync = promisify(exec);
 import db, { touchRoomActivity } from './db.js';
 import { PlayerState, ClientMessage, ServerMessage } from './types.js';
 import { generateSeed } from './archipelagoRunner.js';
+import { getHostingProvider } from './hostingProvider.js';
 import {
   activeServers,
   killRoomServer,
@@ -44,6 +45,8 @@ const BACKEND_ROOT = path.join(__dirname, '..');
 // Character set for 6-digit room codes (excluding confusing characters: 0, 1, I, O, L)
 const ROOM_CODE_CHARACTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
+const CONNECTION_KIND = 'WAYFINDER_LOBBY';
+
 // Map of userId -> active WebSocket connection
 const activeConnections = new Map<string, WebSocket>();
 
@@ -55,7 +58,7 @@ const connectionMetadata = new Map<WebSocket, { userId: string; roomCode: string
 setInterval(() => {
   for (const ws of connectionMetadata.keys()) {
     if ((ws as any).isAlive === false) {
-      console.log('[Heartbeat] Terminating unresponsive connection');
+      console.log(`[Heartbeat][${CONNECTION_KIND}] Terminating unresponsive lobby connection`);
       ws.terminate();
       continue;
     }
@@ -97,12 +100,15 @@ export function executeHostCommand(roomCode: string, userId: string, command: st
  * Start or restart the Central MultiServer process for a room from its existing seed
  */
 export async function startRoomServer(roomCode: string): Promise<void> {
-  const room = db.prepare("SELECT seed_status, seed_zip_name FROM Rooms WHERE code = ?").get(roomCode) as { seed_status: string; seed_zip_name: string | null } | undefined;
+  const room = db.prepare("SELECT seed_status, seed_zip_name, hosting_mode FROM Rooms WHERE code = ?").get(roomCode) as { seed_status: string; seed_zip_name: string | null; hosting_mode: string } | undefined;
   if (!room) {
     throw new Error(`Room ${roomCode} not found.`);
   }
   if (!room.seed_zip_name) {
     throw new Error(`Room ${roomCode} does not have a generated seed archive.`);
+  }
+  if (room.hosting_mode === 'archipelago_gg') {
+    throw new Error(`Room ${roomCode} is hosted on Archipelago.gg and has no local server.`);
   }
   await startCentralServer(roomCode, room.seed_zip_name);
 }
@@ -131,14 +137,26 @@ export async function regenerateRoomSeed(roomCode: string): Promise<{ zipName: s
     });
 
     clearRoomSeedData(roomCode);
-    db.prepare("UPDATE Rooms SET seed_status = 'done', seed_zip_name = ?, seed_spoiler_name = ? WHERE code = ?").run(
+    const hosting = db.prepare("SELECT hosting_mode FROM Rooms WHERE code = ?").get(roomCode) as { hosting_mode: string } | undefined;
+    const provider = getHostingProvider(hosting?.hosting_mode || 'wayfinder_backend');
+    const hosted = await provider.hostSeed(
+      roomCode,
+      path.join(BACKEND_ROOT, 'temp_seeds', roomCode, 'outputs', zipName),
+      zipName
+    );
+    db.prepare("UPDATE Rooms SET seed_status = 'done', seed_zip_name = ?, seed_spoiler_name = ?, hosting_seed_id = ?, hosting_room_id = ?, hosting_room_url = ?, hosting_server_url = ?, hosting_status = ?, hosting_last_activity = ?, hosting_timeout = ?, hosting_last_error = NULL, hosting_updated_at = CURRENT_TIMESTAMP WHERE code = ?").run(
       zipName,
       spoilerName,
+      hosted.seedId,
+      hosted.roomId,
+      hosted.roomUrl,
+      hosted.serverUrl,
+      hosted.status,
+      hosted.lastActivity,
+      hosted.timeout,
       roomCode
     );
 
-    // Auto-restart Central Archipelago Server for the room
-    await startCentralServer(roomCode, zipName);
     broadcastRoomState(roomCode);
     return { zipName, spoilerName };
   } catch (error: any) {
@@ -163,7 +181,10 @@ async function ensureServerRunning(roomCode: string) {
     return;
   }
 
-  const room = db.prepare("SELECT seed_status, seed_zip_name FROM Rooms WHERE code = ?").get(roomCode) as { seed_status: string; seed_zip_name: string | null } | undefined;
+  const room = db.prepare("SELECT seed_status, seed_zip_name, hosting_mode FROM Rooms WHERE code = ?").get(roomCode) as { seed_status: string; seed_zip_name: string | null; hosting_mode: string } | undefined;
+  if (room && !getHostingProvider(room.hosting_mode).managesLocalProcess) {
+    return;
+  }
   if (room && room.seed_status === 'done' && room.seed_zip_name) {
     console.log(`Archipelago server is not running for room ${roomCode} but seed is done. Auto-starting...`);
     try {
@@ -244,11 +265,15 @@ function broadcastToRoom(roomCode: string, message: ServerMessage) {
 }
 
 export function broadcastRoomState(roomCode: string) {
-  const room = db.prepare("SELECT seed_status, seed_zip_name, seed_spoiler_name, tunnel_url FROM Rooms WHERE code = ?").get(roomCode) as {
+  const room = db.prepare("SELECT seed_status, seed_zip_name, seed_spoiler_name, tunnel_url, hosting_mode, hosting_status, hosting_room_url, hosting_server_url FROM Rooms WHERE code = ?").get(roomCode) as {
     seed_status: 'idle' | 'generating' | 'done';
     seed_zip_name: string | null;
     seed_spoiler_name: string | null;
     tunnel_url: string | null;
+    hosting_mode: 'wayfinder_backend' | 'archipelago_gg';
+    hosting_status: string | null;
+    hosting_room_url: string | null;
+    hosting_server_url: string | null;
   } | undefined;
 
   const session = db.prepare("SELECT locked_by FROM Sessions WHERE room_code = ?").get(roomCode) as { locked_by: string | null } | undefined;
@@ -263,6 +288,10 @@ export function broadcastRoomState(roomCode: string) {
     seedZipName: room ? room.seed_zip_name : null,
     seedSpoilerName: room ? room.seed_spoiler_name : null,
     tunnelUrl: room ? room.tunnel_url : null,
+    hostingMode: room?.hosting_mode || 'wayfinder_backend',
+    hostingStatus: room?.hosting_status || null,
+    hostingRoomUrl: room?.hosting_room_url || null,
+    hostingServerUrl: room?.hosting_server_url || null,
     lockedBy: lockedBy,
     checks: roomChecksCache.get(roomCode) || null,
   });
@@ -295,7 +324,7 @@ async function handleGenerateSeed(ws: WebSocket) {
 
   const { userId, roomCode } = meta;
 
-  const room = db.prepare("SELECT host_id, seed_status FROM Rooms WHERE code = ?").get(roomCode) as { host_id: string, seed_status: string } | undefined;
+  const room = db.prepare("SELECT host_id, seed_status, hosting_mode FROM Rooms WHERE code = ?").get(roomCode) as { host_id: string, seed_status: string; hosting_mode: string } | undefined;
   if (!room) {
     return sendToSocket(ws, { type: 'error', message: 'Room not found' });
   }
@@ -331,16 +360,38 @@ async function handleGenerateSeed(ws: WebSocket) {
     });
 
     clearRoomSeedData(roomCode);
-    db.prepare("UPDATE Rooms SET seed_status = 'done', seed_zip_name = ?, seed_spoiler_name = ? WHERE code = ?").run(
+    const provider = getHostingProvider(room.hosting_mode);
+    if (provider.mode === 'archipelago_gg') {
+      broadcastToRoom(roomCode, { type: 'generation_log', line: 'Uploading generated seed to Archipelago.gg...' });
+    }
+    const hosting = await provider.hostSeed(
+      roomCode,
+      path.join(BACKEND_ROOT, 'temp_seeds', roomCode, 'outputs', zipName),
+      zipName
+    );
+    if (provider.mode === 'archipelago_gg') {
+      broadcastToRoom(roomCode, { type: 'generation_log', line: hosting.serverUrl
+        ? `Archipelago.gg room ready at ${hosting.serverUrl}`
+        : 'Archipelago.gg room created; waiting for the hosted server port...' });
+    }
+    db.prepare("UPDATE Rooms SET seed_status = 'done', seed_zip_name = ?, seed_spoiler_name = ?, hosting_seed_id = ?, hosting_room_id = ?, hosting_room_url = ?, hosting_server_url = ?, hosting_status = ?, hosting_last_activity = ?, hosting_timeout = ?, hosting_last_error = NULL, hosting_updated_at = CURRENT_TIMESTAMP, tunnel_url = COALESCE(?, tunnel_url) WHERE code = ?").run(
       zipName,
       spoilerName,
+      hosting.seedId,
+      hosting.roomId,
+      hosting.roomUrl,
+      hosting.serverUrl,
+      hosting.status,
+      hosting.lastActivity,
+      hosting.timeout,
+      hosting.serverUrl,
       roomCode
     );
 
     await fetchRoomChecks(roomCode);
-    await startCentralServer(roomCode, zipName);
 
     console.log(`Room ${roomCode} seed generation completed successfully.`);
+    broadcastRoomState(roomCode);
   } catch (error: any) {
     console.error(`Seed generation failed for room ${roomCode}:`, error);
     
@@ -410,7 +461,7 @@ function handleKickPlayer(ws: WebSocket, targetUserId: string) {
  * Handles incoming WebSocket connection messages
  */
 export function handleConnection(ws: WebSocket) {
-  console.log('New WebSocket connection established.');
+  console.log(`[${CONNECTION_KIND}] New WebSocket connection established.`);
   (ws as any).isAlive = true;
 
   ws.on('pong', () => {
@@ -537,11 +588,15 @@ function handleJoinRoom(ws: WebSocket, roomCode: string, playerName: string) {
       
       console.log(`Player ${playerName} (${userId}) took over disconnected slot in room ${roomCode}`);
       
-      const roomInfo = db.prepare("SELECT seed_status, seed_zip_name, seed_spoiler_name, tunnel_url FROM Rooms WHERE code = ?").get(roomCode) as {
+      const roomInfo = db.prepare("SELECT seed_status, seed_zip_name, seed_spoiler_name, tunnel_url, hosting_mode, hosting_status, hosting_room_url, hosting_server_url FROM Rooms WHERE code = ?").get(roomCode) as {
         seed_status: 'idle' | 'generating' | 'done';
         seed_zip_name: string | null;
         seed_spoiler_name: string | null;
         tunnel_url: string | null;
+        hosting_mode: 'wayfinder_backend' | 'archipelago_gg';
+        hosting_status: string | null;
+        hosting_room_url: string | null;
+        hosting_server_url: string | null;
       } | undefined;
       const session = db.prepare("SELECT locked_by FROM Sessions WHERE room_code = ?").get(roomCode) as { locked_by: string | null } | undefined;
       const players = getRoomState(roomCode);
@@ -554,6 +609,10 @@ function handleJoinRoom(ws: WebSocket, roomCode: string, playerName: string) {
         seedZipName: roomInfo ? roomInfo.seed_zip_name : null,
         seedSpoilerName: roomInfo ? roomInfo.seed_spoiler_name : null,
         tunnelUrl: roomInfo ? roomInfo.tunnel_url : null,
+        hostingMode: roomInfo?.hosting_mode || 'wayfinder_backend',
+        hostingStatus: roomInfo?.hosting_status || null,
+        hostingRoomUrl: roomInfo?.hosting_room_url || null,
+        hostingServerUrl: roomInfo?.hosting_server_url || null,
         lockedBy: session ? session.locked_by : null,
         checks: roomChecksCache.get(roomCode) || null
       });
@@ -625,7 +684,7 @@ function handleReconnect(ws: WebSocket, userId: string, roomCode: string) {
   try {
     const oldWs = activeConnections.get(userId);
     if (oldWs && oldWs !== ws) {
-      console.log(`Closing stale socket connection for user ${userId}`);
+      console.log(`[${CONNECTION_KIND}] Closing stale socket connection for user ${userId} (replaced by a reconnect)`);
       connectionMetadata.delete(oldWs);
       oldWs.close();
     }
@@ -794,8 +853,21 @@ export function kickPlayer(roomCode: string, userId: string): boolean {
   return true;
 }
 
-export function closeRoom(roomCode: string) {
-  killRoomServer(roomCode);
+export async function closeRoom(roomCode: string) {
+  const room = db.prepare('SELECT hosting_mode, hosting_seed_id, hosting_room_id FROM Rooms WHERE code = ?').get(roomCode) as {
+    hosting_mode: string;
+    hosting_seed_id: string | null;
+    hosting_room_id: string | null;
+  } | undefined;
+  if (!room) {
+    throw new Error(`Room ${roomCode} not found.`);
+  }
+  await getHostingProvider(room.hosting_mode).markForDeletion({
+    roomCode,
+    seedId: room.hosting_seed_id,
+    roomId: room.hosting_room_id
+  });
+  getHostingProvider(room.hosting_mode).stop(roomCode);
   broadcastToRoom(roomCode, { type: 'room_deleted', message: 'This room has been closed by the host.' });
 
   for (const [ws, meta] of connectionMetadata.entries()) {

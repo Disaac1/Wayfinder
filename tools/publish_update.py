@@ -24,6 +24,8 @@ BACKEND_DIR = WORKSPACE_ROOT / "backend"
 UPDATES_DIR = BACKEND_DIR / "public" / "updates"
 VERSION_FILE = UPDATES_DIR / "version.json"
 TARGET_PCK = UPDATES_DIR / "Wayfinder.pck"
+BRIDGE_VERSION_FILE = UPDATES_DIR / "bridge-version.json"
+BRIDGE_TARGET_PCK = UPDATES_DIR / "Wayfinder-bridge.pck"
 PRIV_KEY_FILE = BACKEND_DIR / "certs" / "updater_private_key.pem"
 
 
@@ -57,6 +59,8 @@ def main():
     parser.add_argument("--version", type=str, required=True, help="New version string (e.g., 1.0.1)")
     parser.add_argument("--min-version", type=str, default="1.0.0", help="Minimum required client version")
     parser.add_argument("--notes", type=str, default="Maintenance update", help="Release notes")
+    parser.add_argument("--bridge", action="store_true", help="Publish the legacy-client bridge package")
+    parser.add_argument("--target-version", type=str, help="Final version the bridge installs")
     parser.add_argument("--key", type=str, default=str(PRIV_KEY_FILE), help="Private key PEM path")
 
     args = parser.parse_args()
@@ -85,8 +89,10 @@ def main():
 
     # Copy .pck
     import shutil
-    shutil.copy2(pck_path, TARGET_PCK)
-    print(f"[Deploy] Copied .pck to: {TARGET_PCK}")
+    target_pck = BRIDGE_TARGET_PCK if args.bridge else TARGET_PCK
+    target_version_file = BRIDGE_VERSION_FILE if args.bridge else VERSION_FILE
+    shutil.copy2(pck_path, target_pck)
+    print(f"[Deploy] Copied .pck to: {target_pck}")
 
     # Write version.json
     version_data = {
@@ -99,11 +105,14 @@ def main():
         "sha256": digest_hex,
         "signature": sig_b64
     }
+    if args.bridge:
+        version_data["target_version"] = args.target_version or args.version
+        version_data["download_url"] = "/api/client/download-pck?channel=bridge"
 
-    with open(VERSION_FILE, "w", encoding="utf-8") as vf:
+    with open(target_version_file, "w", encoding="utf-8") as vf:
         json.dump(version_data, vf, indent=2)
 
-    print(f"[Deploy] Wrote version manifest to: {VERSION_FILE}")
+    print(f"[Deploy] Wrote version manifest to: {target_version_file}")
     print(f"\n[SUCCESS] Update v{args.version} successfully published and digitally signed!")
 
 
