@@ -1,7 +1,7 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene format=3 uid="uid://djobxbdrt00br"]
 
-[ext_resource type="Theme" path="res://themes/main_theme.tres" id="1_theme"]
-[ext_resource type="Script" path="res://scripts/ui/main_menu.gd" id="1_xxxx"]
+[ext_resource type="Theme" uid="uid://cljyxg4h2rvd5" path="res://themes/main_theme.tres" id="1_theme"]
+[ext_resource type="Script" uid="uid://d3ya2bo2v684r" path="res://scripts/ui/main_menu.gd" id="1_xxxx"]
 [ext_resource type="PackedScene" path="res://scenes/modals/rom_catalog_modal.tscn" id="3_rom_modal"]
 
 [node name="MainMenu" type="Control" unique_id=646118204]
@@ -93,19 +93,19 @@ layout_mode = 2
 text = "wss://wayfinder.disaac1.com"
 placeholder_text = "ws://..."
 
-[node name="RomCatalogBox" type="VBoxContainer" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form"]
+[node name="RomCatalogBox" type="VBoxContainer" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form" unique_id=1234203984]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="RomHeader" type="HBoxContainer" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox"]
+[node name="RomHeader" type="HBoxContainer" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox" unique_id=1657192295]
 layout_mode = 2
 
-[node name="RomLabel" type="Label" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox/RomHeader"]
+[node name="RomLabel" type="Label" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox/RomHeader" unique_id=1307594349]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "ROM CATALOG (rom.json)"
 
-[node name="RomStatusBadge" type="Label" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox/RomHeader"]
+[node name="RomStatusBadge" type="Label" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox/RomHeader" unique_id=1838409330]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -114,46 +114,46 @@ theme_override_font_sizes/font_size = 11
 text = "⚪ Not Loaded"
 horizontal_alignment = 2
 
-[node name="RomUrlRow" type="HBoxContainer" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox"]
+[node name="RomUrlRow" type="HBoxContainer" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox" unique_id=1674160844]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="RomUrlInput" type="LineEdit" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox/RomUrlRow"]
+[node name="RomUrlInput" type="LineEdit" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox/RomUrlRow" unique_id=1120975966]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "https://wayfinder.disaac1.com/roms.json"
 
-[node name="RomDownloadBtn" type="Button" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox/RomUrlRow"]
+[node name="RomDownloadBtn" type="Button" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox/RomUrlRow" unique_id=1973174179]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(90, 0)
 layout_mode = 2
 text = "Download"
 
-[node name="RomActionsRow" type="HBoxContainer" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox"]
+[node name="RomActionsRow" type="HBoxContainer" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox" unique_id=605454841]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="RomLoadFileBtn" type="Button" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox/RomActionsRow"]
+[node name="RomLoadFileBtn" type="Button" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox/RomActionsRow" unique_id=1386330087]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 11
 text = "📁 Load File..."
 
-[node name="RomManageBtn" type="Button" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox/RomActionsRow"]
+[node name="RomManageBtn" type="Button" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox/RomActionsRow" unique_id=395394565]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 11
 text = "📋 View Catalog"
 
-[node name="RomFolderBtn" type="Button" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox/RomActionsRow"]
+[node name="RomFolderBtn" type="Button" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox/RomActionsRow" unique_id=663944310]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(32, 0)
 layout_mode = 2
-theme_override_font_sizes/font_size = 11
 tooltip_text = "Open AppData folder"
+theme_override_font_sizes/font_size = 11
 text = "📂"
 
 [node name="Separator2" type="HSeparator" parent="CenterContainer/HBox/CardPanel/Margin/VBox" unique_id=1305215139]
@@ -226,13 +226,14 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
-[node name="RomCatalogModal" parent="." instance=ExtResource("3_rom_modal")]
+[node name="RomCatalogModal" parent="." unique_id=1573508714 instance=ExtResource("3_rom_modal")]
 unique_name_in_owner = true
 visible = false
+layout_mode = 1
 
-[node name="RomFileDialog" type="FileDialog" parent="."]
+[node name="RomFileDialog" type="FileDialog" parent="." unique_id=480642976]
 unique_name_in_owner = true
-title = "Select rom.json"
+title = "Open a File"
 initial_position = 2
 size = Vector2i(650, 450)
 ok_button_text = "Open"

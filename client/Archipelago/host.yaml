@@ -16,3 +16,15 @@ sotn_options:
 sotn_settings:
   rom_file: ""
   audio_file: ""
+
+pokemon_black_and_white_options:
+  rom_file: "C:/Users/disaa/AppData/Roaming/Godot/app_userdata/Wayfinder/games/pokemon_black_and_white/Pokemon - Black Version (USA, Europe) (NDSi Enhanced).nds"
+
+pokemon_bw_options:
+  rom_file: "C:/Users/disaa/AppData/Roaming/Godot/app_userdata/Wayfinder/games/pokemon_black_and_white/Pokemon - Black Version (USA, Europe) (NDSi Enhanced).nds"
+
+pokemon_black_white_options:
+  rom_file: "C:/Users/disaa/AppData/Roaming/Godot/app_userdata/Wayfinder/games/pokemon_black_and_white/Pokemon - Black Version (USA, Europe) (NDSi Enhanced).nds"
+
+pokemon_bw_settings:
+  rom_file: "C:/Users/disaa/AppData/Roaming/Godot/app_userdata/Wayfinder/games/pokemon_black_and_white/Pokemon - Black Version (USA, Europe) (NDSi Enhanced).nds"

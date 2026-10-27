@@ -99,6 +99,19 @@ static func has_guided_setup(game_name: String) -> bool:
 		return true
 	return _get_declarative_json_path(game_name) != ""
 
+static func get_default_config(game_name: String) -> Dictionary:
+	var json_path = _get_declarative_json_path(game_name)
+	if json_path == "":
+		return {}
+	var fa = FileAccess.open(json_path, FileAccess.READ)
+	if not fa:
+		return {}
+	var parsed = JSON.parse_string(fa.get_as_text())
+	fa.close()
+	if parsed is Dictionary and parsed.get("default_config", {}) is Dictionary:
+		return parsed["default_config"].duplicate(true)
+	return {}
+
 # Validates backend schema and instantiates the wizard if valid
 static func validate_and_create(game_name: String, schema: Dictionary) -> Dictionary:
 	if not has_guided_setup(game_name):
@@ -121,9 +134,10 @@ static func validate_and_create(game_name: String, schema: Dictionary) -> Dictio
 		var wizard = DeclarativeGuidedSetupScript.new()
 		if wizard.load_from_file(json_path):
 			var req_keys = wizard._get_required_schema_keys()
-			var val_res = DeclarativeGuidedSetupScript.validate_schema_json(schema, req_keys)
-			if not val_res.get("valid", false):
-				return {"valid": false, "reason": val_res.get("reason", "Incompatible schema"), "wizard": null}
+			if not schema.is_empty():
+				var val_res = DeclarativeGuidedSetupScript.validate_schema_json(schema, req_keys)
+				if not val_res.get("valid", false):
+					return {"valid": false, "reason": val_res.get("reason", "Incompatible schema"), "wizard": null}
 			return {"valid": true, "reason": "", "wizard": wizard}
 
 	return {"valid": false, "reason": "Failed to create guided setup for " + game_name, "wizard": null}

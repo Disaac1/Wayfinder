@@ -51,18 +51,15 @@ func build_options_ui() -> void:
 	for child in options_container.get_children():
 		child.queue_free()
 
-	if active_schema.is_empty() or active_schema.has("error"):
-		var err_label = Label.new()
-		err_label.text = "Failed to load options definitions."
-		err_label.add_theme_color_override("font_color", COLOR_ERROR_RED)
-		options_container.add_child(err_label)
-		return
-
 	# Check for Guided Setup Wizard
 	var has_guided_wizard: bool = GuidedSetupRegistry.has_guided_setup(active_game_name)
 	if has_guided_wizard and use_guided_setup:
 		var setup_result: Dictionary = GuidedSetupRegistry.validate_and_create(active_game_name, active_schema)
 		if not setup_result.get("valid", false):
+			print("[GuidedSetup] Failed to create guided setup for '%s': %s" % [
+				active_game_name,
+				str(setup_result.get("reason", "unknown reason"))
+			])
 			use_guided_setup = false
 		else:
 			var wizard: RefCounted = setup_result.get("wizard")
@@ -76,6 +73,14 @@ func build_options_ui() -> void:
 				current_config[opt_key] = opt_val
 			)
 			return
+
+	if active_schema.is_empty() or active_schema.has("error"):
+		print("[GuidedSetup] Cannot display guided setup or options for '%s': options schema is unavailable." % active_game_name)
+		var err_label = Label.new()
+		err_label.text = "Failed to load options definitions."
+		err_label.add_theme_color_override("font_color", COLOR_ERROR_RED)
+		options_container.add_child(err_label)
+		return
 
 	if has_guided_wizard and not use_guided_setup:
 		var switch_btn: Button = Button.new()

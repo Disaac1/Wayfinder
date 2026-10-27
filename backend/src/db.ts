@@ -24,6 +24,58 @@ db.pragma('journal_mode = WAL');
 try {
   const schemaSql = fs.readFileSync(SCHEMA_PATH, 'utf8');
   db.exec(schemaSql);
+
+  const roomForeignKeyReferences = db.prepare(`
+    SELECT name, sql
+    FROM sqlite_master
+    WHERE type = 'table' AND name IN ('Users', 'Sessions')
+  `).all() as Array<{ name: string; sql: string }>;
+  if (roomForeignKeyReferences.some(table => table.sql.includes('Rooms_legacy'))) {
+    db.pragma('foreign_keys = OFF');
+    const repairRoomForeignKeys = db.transaction(() => {
+      db.exec(`
+        CREATE TABLE Sessions_repaired (
+          room_code TEXT PRIMARY KEY REFERENCES Rooms(code) ON DELETE CASCADE,
+          save_file_path TEXT,
+          locked_by TEXT REFERENCES Users(id) ON DELETE SET NULL,
+          locked_at DATETIME,
+          force_unlocked INTEGER DEFAULT 0,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+        INSERT INTO Sessions_repaired
+        SELECT room_code, save_file_path, locked_by, locked_at, force_unlocked, updated_at
+        FROM Sessions;
+        DROP TABLE Sessions;
+        ALTER TABLE Sessions_repaired RENAME TO Sessions;
+
+        DROP INDEX IF EXISTS idx_users_room_code;
+        DROP INDEX IF EXISTS idx_users_room_name;
+        CREATE TABLE Users_repaired (
+          id TEXT PRIMARY KEY,
+          room_code TEXT REFERENCES Rooms(code) ON DELETE CASCADE,
+          name TEXT NOT NULL,
+          games TEXT DEFAULT '[]',
+          is_ready INTEGER DEFAULT 0,
+          is_connected INTEGER DEFAULT 1,
+          yaml TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+        INSERT INTO Users_repaired
+        SELECT id, room_code, name, games, is_ready, is_connected, yaml, created_at, updated_at
+        FROM Users;
+        DROP TABLE Users;
+        ALTER TABLE Users_repaired RENAME TO Users;
+        CREATE INDEX idx_users_room_code ON Users(room_code);
+        CREATE UNIQUE INDEX idx_users_room_name
+          ON Users(room_code, name COLLATE NOCASE)
+          WHERE room_code IS NOT NULL;
+      `);
+    });
+    repairRoomForeignKeys();
+    db.pragma('foreign_keys = ON');
+    console.log('Migration: Repaired stale foreign keys referencing Rooms_legacy');
+  }
   
   // Dynamic migrations for Rooms seed generation columns
   const tableInfo = db.prepare("PRAGMA table_info(Rooms)").all() as Array<{ name: string }>;
@@ -68,61 +120,13 @@ try {
     ['remote_updated_at', 'hosting_updated_at']
   ];
   if (columns.includes('remote_seed_id')) {
-    db.pragma('foreign_keys = OFF');
-    db.exec(`
-      CREATE TABLE Rooms_new (
-        code TEXT PRIMARY KEY,
-        host_id TEXT,
-        status TEXT DEFAULT 'active',
-        seed_status TEXT DEFAULT 'idle',
-        seed_zip_name TEXT DEFAULT NULL,
-        seed_spoiler_name TEXT DEFAULT NULL,
-        tunnel_url TEXT DEFAULT NULL,
-        server_ip TEXT DEFAULT NULL,
-        server_port INTEGER DEFAULT NULL,
-        hosting_mode TEXT DEFAULT 'wayfinder_backend',
-        hosting_seed_id TEXT DEFAULT NULL,
-        hosting_room_id TEXT DEFAULT NULL,
-        hosting_room_url TEXT DEFAULT NULL,
-        hosting_server_url TEXT DEFAULT NULL,
-        hosting_status TEXT DEFAULT NULL,
-        hosting_last_activity TEXT DEFAULT NULL,
-        hosting_timeout INTEGER DEFAULT NULL,
-        hosting_last_error TEXT DEFAULT NULL,
-        hosting_updated_at DATETIME DEFAULT NULL,
-        deleted_at DATETIME DEFAULT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
-      INSERT INTO Rooms (
-        code, host_id, status, seed_status, seed_zip_name, seed_spoiler_name,
-        tunnel_url, server_ip, server_port, hosting_mode, hosting_seed_id,
-        hosting_room_id, hosting_room_url, hosting_server_url, hosting_status,
-        hosting_last_activity, hosting_timeout, hosting_last_error, hosting_updated_at,
-        deleted_at, created_at, updated_at
-      )
-      SELECT
-        code, host_id, status, seed_status, seed_zip_name, seed_spoiler_name,
-        tunnel_url, server_ip, server_port,
-        CASE WHEN hosting_mode = 'local' THEN 'wayfinder_backend'
-             WHEN hosting_mode IS NULL THEN 'wayfinder_backend'
-             ELSE hosting_mode END,
-        remote_seed_id, remote_room_id, remote_room_url, remote_server_url,
-        remote_status, remote_last_activity, remote_timeout, remote_last_error,
-        remote_updated_at, deleted_at, created_at, updated_at
-      FROM Rooms;
-      DROP TABLE Rooms;
-      ALTER TABLE Rooms_new RENAME TO Rooms;
-    `);
-    db.pragma('foreign_keys = ON');
-    columns = (db.prepare("PRAGMA table_info(Rooms)").all() as Array<{ name: string }>).map(c => c.name);
-    console.log('Migration: Rebuilt Rooms table with generic hosting fields');
-  }
-  for (const [legacyColumn, hostingColumn] of legacyHostingColumns) {
-    if (columns.includes(legacyColumn) && !columns.includes(hostingColumn)) {
-      db.prepare(`ALTER TABLE Rooms RENAME COLUMN ${legacyColumn} TO ${hostingColumn}`).run();
-      console.log(`Migration: Renamed ${legacyColumn} to ${hostingColumn}`);
+    for (const [legacyColumn, hostingColumn] of legacyHostingColumns) {
+      if (columns.includes(legacyColumn) && !columns.includes(hostingColumn)) {
+        db.prepare(`ALTER TABLE Rooms RENAME COLUMN ${legacyColumn} TO ${hostingColumn}`).run();
+        console.log(`Migration: Renamed ${legacyColumn} to ${hostingColumn}`);
+      }
     }
+    columns = (db.prepare("PRAGMA table_info(Rooms)").all() as Array<{ name: string }>).map(c => c.name);
   }
   if (columns.includes('hosting_mode')) {
     db.prepare("UPDATE Rooms SET hosting_mode = 'wayfinder_backend' WHERE hosting_mode = 'local' OR hosting_mode IS NULL").run();

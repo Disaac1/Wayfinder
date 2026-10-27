@@ -1,0 +1,100 @@
+{
+  "game_title": "Pokémon Black and White",
+  "default_config": {
+    "goal": "ghetsis",
+    "shuffle_badges": "shuffle",
+    "shuffle_tm_hm": "shuffle",
+    "exp_multiplier": 1,
+    "reusable_tms": "on"
+  },
+  "required_schema_keys": [
+    "goal",
+    "shuffle_badges",
+    "shuffle_tm_hm",
+    "exp_multiplier",
+    "reusable_tms"
+  ],
+  "steps": [
+    {
+      "num": 1.0,
+      "title": "1. Goal & Structure",
+      "description": "Step 1: Choose your primary goal and gym badge gates",
+      "controls": [
+        {
+          "type": "card_grid",
+          "option_key": "goal",
+          "columns": 2,
+          "items": [
+            {
+              "id": "ghetsis",
+              "title": "Defeat N & Ghetsis",
+              "desc": "Conquer N's Castle and defeat Ghetsis to clear the main story."
+            },
+            {
+              "id": "champion",
+              "title": "Defeat Alder",
+              "desc": "Post-game goal: defeat Champion Alder in the Pokémon League."
+            }
+          ]
+        },
+        {
+          "type": "dropdown",
+          "option_key": "shuffle_badges",
+          "label": "Badge Placement:",
+          "choices": [
+            { "id": "vanilla", "title": "Vanilla Badge Locations" },
+            { "id": "shuffle", "title": "Shuffle Badge Locations" },
+            { "id": "anything", "title": "Any Badge Anywhere" }
+          ]
+        },
+        {
+          "type": "dropdown",
+          "option_key": "shuffle_tm_hm",
+          "label": "TM/HM Placement:",
+          "choices": [
+            { "id": "shuffle", "title": "Shuffle TMs and HMs" },
+            { "id": "hm_with_badge", "title": "HMs With Badges" },
+            { "id": "anything", "title": "Any TM/HM Anywhere" }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 2.0,
+      "title": "2. Encounters & Pokémon",
+      "description": "Step 2: Configure encounter randomization in the full options editor",
+      "controls": [
+        {
+          "type": "separator"
+        }
+      ]
+    },
+    {
+      "num": 3.0,
+      "title": "3. Quality of Life & Combat",
+      "description": "Step 3: EXP modifiers and reusable TMs",
+      "controls": [
+        {
+          "type": "slider",
+          "option_key": "exp_multiplier",
+          "label": "EXP Multiplier:",
+          "min": 1,
+          "max": 100,
+          "step": 1,
+          "suffix": "x"
+        },
+        {
+          "type": "dropdown",
+          "option_key": "reusable_tms",
+          "label": "Reusable TMs & Move Tutors:",
+          "choices": [
+            { "id": "on", "title": "On" },
+            { "id": "yes_please", "title": "Yes, please" },
+            { "id": "of_course", "title": "Of course" },
+            { "id": "im_not_a_masochist", "title": "Absolutely" }
+          ]
+        }
+      ]
+    }
+  ]
+}

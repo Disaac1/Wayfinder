@@ -356,7 +356,7 @@ func get_ap_server_url() -> String:
 
 func fetch_http(endpoint: String) -> Dictionary:
 	var http = HTTPRequest.new()
-	http.timeout = 5.0
+	http.timeout = 30.0
 	add_child(http)
 	var url = get_http_url() + endpoint
 	print("[HTTP GET] Requesting: ", url)
