@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://dv1mlflgtf3rv"]
 
+
 [ext_resource type="Theme" uid="uid://cljyxg4h2rvd5" path="res://themes/main_theme.tres" id="1_theme"]
 [ext_resource type="Script" uid="uid://d3ya2bo2v684r" path="res://scripts/ui/main_menu.gd" id="1_xxxx"]
 [ext_resource type="PackedScene" path="res://scenes/modals/rom_catalog_modal.tscn" id="3_rom_modal"]
@@ -93,6 +94,7 @@ layout_mode = 2
 text = "wss://wayfinder.disaac1.com"
 placeholder_text = "ws://..."
 
+
 [node name="RomCatalogBox" type="VBoxContainer" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form" unique_id=676121176]
 layout_mode = 2
 theme_override_constants/separation = 4
@@ -101,6 +103,7 @@ theme_override_constants/separation = 4
 layout_mode = 2
 
 [node name="RomLabel" type="Label" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox/RomHeader" unique_id=1032708398]
+
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "ROM CATALOG (rom.json)"

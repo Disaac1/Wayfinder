@@ -1,0 +1,45 @@
+{
+  "game_name": "Pokemon Black and White",
+  "short_tag": "BW",
+  "aliases": [
+    "Pokémon Black and White",
+    "Pokemon Black",
+    "Pokemon White",
+    "Pokemon Black Version",
+    "Pokemon White Version",
+    "pokemon_black_and_white",
+    "pokemon_bw"
+  ],
+  "support_tier": 1,
+  "launch_mode": "ap_client",
+  "patch_extension": ".apbw",
+  "patch_extension_aliases": [
+    ".apbw",
+    ".apnds",
+    ".apblack",
+    ".apwhite"
+  ],
+  "client_tool": "archipelago_client",
+  "client_component": "BizHawk Client",
+  "emulator_tool": "bizhawk",
+  "required_rom": "Pokemon - Black Version (USA, Europe) (NDSi Enhanced).nds",
+  "rom_aliases": [
+    "Pokemon - Black Version (USA, Europe).nds",
+    "Pokemon - White Version (USA, Europe) (NDSi Enhanced).nds",
+    "Pokemon - White Version (USA, Europe).nds",
+    "Pokemon Black.nds",
+    "Pokemon White.nds"
+  ],
+  "host_yaml": {
+    "section": "pokemon_bw_settings",
+    "dynamic_rom_key": "dynamic_rom"
+  },
+  "auto_connect": true,
+  "tracker": {
+    "supported": true,
+    "pack_name": "Pokemon Black and White AP Tracker",
+    "package_uid": "ap_pokemon_bw",
+    "auto_tracking": true
+  },
+  "install_instructions": "Tier 1 Full Support: Select your clean Pokémon Black or White (.nds) base ROM. Wayfinder will configure BizHawk, sync your host settings, launch the Archipelago Client, and connect your game to the multiworld."
+}

@@ -246,6 +246,12 @@ func _load_launcher_catalogs() -> void:
 	launcher.load_paths_config()
 	launcher.load_roms_catalog()
 	launcher.load_launcher_config()
+	launcher.sync_custom_worlds_from_server(self, func(success: bool):
+		if success:
+			print("[Lobby] Custom Archipelago worlds synchronized from backend.")
+		else:
+			print("[Lobby] Custom Archipelago world synchronization failed; continuing with local worlds.")
+	)
 
 func _connect_network_signals() -> void:
 	NetworkManager.room_state_updated.connect(_update_players_ui)
@@ -754,6 +760,7 @@ func _is_game_supported(game_name: String) -> bool:
 func _on_game_card_selected(game_name: String) -> void:
 	if not local_selected_games.has(game_name):
 		local_selected_games.append(game_name)
+		await _ensure_remote_guided_setup(game_name)
 		await _prepopulate_default_options(game_name)
 		_sync_state_to_server()
 	_open_config_popup(game_name)
@@ -768,20 +775,52 @@ func _open_config_popup(game_name: String) -> void:
 	config_modal.open(game_name, schema_dict, config_states.get(game_name, {}), use_guided_setup_mode.get(game_name, true))
 
 func _ensure_remote_guided_setup(game_name: String) -> void:
-	if GuidedSetupRegistry.has_guided_setup(game_name):
-		return
 	var slug: String = GuidedSetupRegistry.get_game_slug(game_name)
 	var cache_dir: String = "user://cache/games/" + slug
 	var cache_path: String = cache_dir + "/guided_setup.json"
+	var had_cached_setup: bool = GuidedSetupRegistry.has_guided_setup(game_name)
 	
 	var res: Dictionary = await NetworkManager.fetch_http("/api/games/" + slug + "/guided-setup")
-	if not res.has("error") and res.get("data") is Dictionary:
-		DirAccess.make_dir_recursive_absolute(cache_dir)
-		var fa: FileAccess = FileAccess.open(cache_path, FileAccess.WRITE)
-		if fa:
-			fa.store_string(JSON.stringify(res.data, "  "))
-			fa.close()
-			print("[Lobby] Cached remote guided setup for: ", game_name)
+	if res.has("error"):
+		print("[GuidedSetup] Failed to refresh setup for '%s' (slug '%s'): %s%s" % [
+			game_name,
+			slug,
+			str(res.get("error")),
+			". Using cached setup." if had_cached_setup else ""
+		])
+		return
+	if not res.has("data") or not res.get("data") is Dictionary:
+		print("[GuidedSetup] Failed to refresh setup for '%s' (slug '%s'): response did not contain a valid setup object.%s" % [
+			game_name,
+			slug,
+			" Using cached setup." if had_cached_setup else ""
+		])
+		return
+
+	if res.get("data").is_empty():
+		print("[GuidedSetup] Failed to refresh setup for '%s' (slug '%s'): server returned an empty setup object.%s" % [
+			game_name,
+			slug,
+			" Using cached setup." if had_cached_setup else ""
+		])
+		return
+
+	if not res.get("data").has("steps"):
+		print("[GuidedSetup] Failed to refresh setup for '%s' (slug '%s'): setup is missing its steps.%s" % [
+			game_name,
+			slug,
+			" Using cached setup." if had_cached_setup else ""
+		])
+		return
+
+	DirAccess.make_dir_recursive_absolute(cache_dir)
+	var fa: FileAccess = FileAccess.open(cache_path, FileAccess.WRITE)
+	if fa:
+		fa.store_string(JSON.stringify(res.data, "  "))
+		fa.close()
+		print("[GuidedSetup] Refreshed cached setup for: ", game_name)
+	else:
+		print("[GuidedSetup] Failed to cache setup for '%s' at '%s': could not open the cache file." % [game_name, cache_path])
 
 func _prepopulate_default_options(game_name: String) -> void:
 	if not config_states.has(game_name):
@@ -792,15 +831,24 @@ func _prepopulate_default_options(game_name: String) -> void:
 		var opt_name: String = option_def.get("name", "")
 		if not config_states[game_name].has(opt_name):
 			config_states[game_name][opt_name] = option_def.get("default")
+	if options_list.is_empty() and GuidedSetupRegistry.has_guided_setup(game_name):
+		var guided_defaults = GuidedSetupRegistry.get_default_config(game_name)
+		for opt_name in guided_defaults:
+			if not config_states[game_name].has(opt_name):
+				config_states[game_name][opt_name] = guided_defaults[opt_name]
 
 func _get_options_schema(game_name: String) -> Dictionary:
 	if options_cache.has(game_name):
 		return options_cache[game_name]
 	var endpoint: String = "/api/options/" + game_name.uri_encode()
 	var response: Dictionary = await NetworkManager.fetch_http(endpoint)
-	if not response.has("error") and response.data is Dictionary:
+	if response.has("error"):
+		print("[GuidedSetup] Failed to load options schema for '%s': %s" % [game_name, str(response.get("error"))])
+		return {}
+	if response.has("data") and response.data is Dictionary:
 		options_cache[game_name] = response.data
 		return response.data
+	print("[GuidedSetup] Failed to load options schema for '%s': response did not contain a valid schema object." % game_name)
 	return {}
 
 func _on_config_modal_saved(game_name: String, config: Dictionary) -> void:
@@ -1004,7 +1052,11 @@ func _on_launch_game_pressed() -> void:
 func _check_and_launch_game(game_name: String) -> void:
 	print("[Lobby] User initiated launch for game: '", game_name, "'")
 	_show_launch_preparing_overlay(game_name)
-	launcher.launch_game(self, game_name)
+	launcher.sync_custom_worlds_from_server(self, func(success: bool):
+		if not success:
+			print("[Lobby] Custom Archipelago world refresh failed before launch; using local worlds.")
+		launcher.launch_game(self, game_name)
+	)
 
 func _show_launch_preparing_overlay(game_name: String) -> void:
 	_active_launch_game = game_name

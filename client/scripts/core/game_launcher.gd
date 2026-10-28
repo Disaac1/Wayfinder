@@ -816,8 +816,8 @@ func _write_synced_host_yaml_file(target_yaml_path: String, absolute_rom_path: S
 			var option_key: String = host_cfg.get("rom_file_key", "rom_file")
 			var req_rom: String = preset.get("required_rom", "")
 			var req_ext: String = req_rom.get_extension().to_lower()
-			
 			var is_matching_rom: bool = false
+			
 			if req_ext != "" and req_ext == rom_ext:
 				is_matching_rom = true
 			else:
@@ -949,6 +949,7 @@ func sync_custom_worlds_from_server(node: Node, target_games: Array = [], callba
 	http.request_completed.connect(func(result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray):
 		http.queue_free()
 		if result != HTTPRequest.RESULT_SUCCESS or response_code != 200:
+			print("[Launcher] Failed to list custom worlds from backend. Result: ", result, ", HTTP status: ", response_code)
 			sync_custom_worlds_to_archipelago()
 			if callback.is_valid():
 				callback.call(false)
@@ -956,6 +957,7 @@ func sync_custom_worlds_from_server(node: Node, target_games: Array = [], callba
 			
 		var parsed = JSON.parse_string(body.get_string_from_utf8())
 		if not (parsed is Dictionary) or not parsed.has("worlds"):
+			print("[Launcher] Backend returned an invalid custom worlds list.")
 			sync_custom_worlds_to_archipelago()
 			if callback.is_valid():
 				callback.call(false)
@@ -986,6 +988,7 @@ func sync_custom_worlds_from_server(node: Node, target_games: Array = [], callba
 	var list_url: String = NetworkManager.get_http_url() + "/api/custom-worlds"
 	var err: Error = http.request(list_url)
 	if err != OK:
+		print("[Launcher] Failed to start custom worlds list request. Error: ", err)
 		http.queue_free()
 		sync_custom_worlds_to_archipelago()
 		if callback.is_valid():
@@ -1037,10 +1040,16 @@ func _download_next_custom_world(node: Node, worlds: Array, index: int, finish_c
 		http.queue_free()
 		if result == HTTPRequest.RESULT_SUCCESS and response_code == 200:
 			print("[Launcher] Downloaded updated custom world from server: ", fn)
+		else:
+			print("[Launcher] Failed to download custom world '", fn, "'. Result: ", result, ", HTTP status: ", response_code)
 		_download_next_custom_world(node, worlds, index + 1, finish_cb)
 	)
 	var dl_url: String = NetworkManager.get_http_url() + "/api/custom-worlds/" + fn.uri_encode()
-	http.request(dl_url)
+	var err: Error = http.request(dl_url)
+	if err != OK:
+		print("[Launcher] Failed to start custom world download for '", fn, "'. Error: ", err)
+		http.queue_free()
+		_download_next_custom_world(node, worlds, index + 1, finish_cb)
 
 
 # =====================================================================

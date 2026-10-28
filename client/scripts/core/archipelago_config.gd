@@ -5,6 +5,8 @@ const USER_TOOLS_DIR: String = "user://tools"
 const USER_BASE_ROMS_DIR: String = "user://base_roms"
 const USER_GAMES_DIR: String = "user://games"
 
+
+
 ## Injects emulator firmware configuration into an emulator INI/config file
 static func inject_emulator_firmware_config(emulator_dir: String, emu_cfg: Dictionary) -> void:
 	if emu_cfg.is_empty():
