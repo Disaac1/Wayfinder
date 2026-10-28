@@ -341,7 +341,7 @@ func get_ap_server_url() -> String:
 			return "ws://" + host_part + ":" + port
 
 	# If tunnel_url is a wss:// URL without an explicit port, inject :443
-	# Archipelago client requires :443 to avoid defaulting to port 38281
+	# Archipelago client requires an explicit port, otherwise it defaults to port 38281
 	if tunnel_url.begins_with("wss://"):
 		var scheme_split: PackedStringArray = tunnel_url.split("://")
 		if scheme_split.size() > 1:
@@ -351,7 +351,6 @@ func get_ap_server_url() -> String:
 			var path_part: String = rest.substr(slash_idx) if slash_idx != -1 else ""
 			if not ":" in host_part:
 				return "wss://" + host_part + ":443" + path_part
-
 	return tunnel_url
 
 func fetch_http(endpoint: String) -> Dictionary:

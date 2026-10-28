@@ -185,8 +185,10 @@ export async function startCentralServer(roomCode: string, zipName: string): Pro
   const isDirectMode = hostingMode === 'direct' || Boolean(roomServerIp && roomServerIp.trim());
 
   if (!isDirectMode && publicDomain && !publicDomain.includes('localhost') && !publicDomain.includes('127.0.0.1')) {
-    const portSuffix = publicDomain.includes(':') ? '' : ':443';
-    tunnelUrl = `wss://${publicDomain}${portSuffix}/ap/${roomCode}`;
+    const isSsl = process.env.USE_SSL === 'true' || Boolean(process.env.CLOUDFLARE_TUNNEL_TOKEN) || publicDomain.includes(':443');
+    const scheme = isSsl ? 'wss' : 'ws';
+    const portSuffix = publicDomain.includes(':') ? '' : (isSsl ? ':443' : '');
+    tunnelUrl = `${scheme}://${publicDomain}${portSuffix}/ap/${roomCode}`;
     serverAddress = tunnelUrl;
   } else {
     tunnelUrl = `ws://${serverHost}:${port}`;

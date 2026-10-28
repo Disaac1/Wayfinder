@@ -17,7 +17,7 @@ export function injectServerIntoPatchFile(patchFilePath: string, roomCode: strin
       try {
         const roomInfo = db.prepare("SELECT server_ip, server_port, tunnel_url FROM Rooms WHERE code = ?").get(roomCode) as { server_ip?: string; server_port?: number; tunnel_url?: string } | undefined;
         if (roomInfo) {
-          if (roomInfo.tunnel_url && roomInfo.tunnel_url.startsWith('wss://')) {
+          if (roomInfo.tunnel_url && (roomInfo.tunnel_url.startsWith('wss://') || roomInfo.tunnel_url.startsWith('ws://'))) {
             serverAddress = roomInfo.tunnel_url;
           } else {
             if (roomInfo.server_ip && roomInfo.server_ip.trim()) {

@@ -11,7 +11,8 @@ WORKDIR /app/backend
 # Prevent Python from writing pyc files and buffering stdout/stderr
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV NODE_ENV=production
+ENV PYTHON=python3
+ENV NODE_ENV=development
 ENV PORT=8080
 ENV AP_START_PORT=38000
 ENV AP_MAX_PORT=38010
@@ -22,6 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     build-essential \
     python3-dev \
+    python-is-python3 \
     net-tools \
     sqlite3 \
     ca-certificates \
@@ -38,15 +40,19 @@ RUN git clone --depth 1 https://github.com/ArchipelagoMW/Archipelago.git /opt/ar
 
 # Copy backend package manifests and install npm dependencies
 COPY backend/package*.json ./
-RUN npm install
+RUN npm install --include=dev && cd node_modules/better-sqlite3 && npx --yes node-gyp rebuild && cd ../..
 
 # Install Archipelago Python dependencies
 RUN pip install --no-cache-dir \
     -r /opt/archipelago_core/requirements.txt
 
 # Copy backend source code and assets
-COPY backend/ ./
+COPY backend/src ./src
+COPY backend/public ./public
+COPY backend/data ./data
+COPY backend/tsconfig.json ./tsconfig.json
 RUN rm -rf archipelago_core && mv /opt/archipelago_core ./archipelago_core
+
 
 # Build TypeScript to JavaScript
 RUN npm run build

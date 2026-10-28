@@ -1,13 +1,13 @@
 
 pokemon_emerald_options:
-  rom_file: "C:/Users/disaa/AppData/Roaming/Godot/app_userdata/Wayfinder/games/metroid_fusion/Metroid Fusion (USA).gba"
+  rom_file: "C:/Users/hompc/AppData/Roaming/Godot/app_userdata/Wayfinder/games/metroid_fusion/Metroid Fusion (USA).gba"
 
 bizhawkclient_options:
-  emuhawk_path: "C:/Users/disaa/AppData/Roaming/Godot/app_userdata/Wayfinder/tools/BizHawk/EmuHawk.exe"
+  emuhawk_path: "C:/Users/hompc/AppData/Roaming/Godot/app_userdata/Wayfinder/tools/BizHawk/EmuHawk.exe"
   rom_start: true
 
 metroid_fusion_options:
-  rom_file: "C:/Users/disaa/AppData/Roaming/Godot/app_userdata/Wayfinder/games/metroid_fusion/Metroid Fusion (USA).gba"
+  rom_file: "C:/Users/hompc/AppData/Roaming/Godot/app_userdata/Wayfinder/games/metroid_fusion/Metroid Fusion (USA).gba"
 
 sotn_options:
   rom_file: ""

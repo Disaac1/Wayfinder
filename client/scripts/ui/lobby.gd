@@ -146,9 +146,23 @@ func _ready() -> void:
 	hosting_mode_option.item_selected.connect(_on_hosting_mode_selected)
 	_load_hosting_mode()
 	_update_hosting_mode_ui()
+	_sync_needed_custom_worlds()
 	_load_cached_games_list()
+
 	_update_room_header()
 	_update_players_ui()
+
+func _sync_needed_custom_worlds() -> void:
+	var needed_games: Array = []
+	for p in NetworkManager.players:
+		for g in p.get("games", []):
+			if not needed_games.has(g):
+				needed_games.append(g)
+	for g in local_selected_games:
+		if not needed_games.has(g):
+			needed_games.append(g)
+	if not needed_games.is_empty():
+		launcher.sync_custom_worlds_from_server(self, needed_games)
 
 func _update_room_header() -> void:
 	room_label.text = "ROOM: " + NetworkManager.room_code
@@ -595,6 +609,7 @@ func _update_players_ui(players: Array = []) -> void:
 	_update_server_address_display()
 	_update_lock_status_display(players)
 	_update_hosting_mode_ui()
+	_sync_needed_custom_worlds()
 	
 	if NetworkManager.seed_status == "done":
 		if is_instance_valid(status_label):
@@ -681,7 +696,6 @@ func _on_hosting_mode_selected(index: int) -> void:
 		status_label.text = "Hosting selection failed: " + str(result.error)
 		return
 	NetworkManager.hosting_mode = mode
-	_update_hosting_mode_ui()
 
 func _get_sorted_players(players: Array) -> Array:
 	var sorted_players: Array = []

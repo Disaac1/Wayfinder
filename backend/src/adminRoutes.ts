@@ -28,6 +28,10 @@ const CUSTOM_WORLDS_DIR = path.join(BACKEND_ROOT, 'archipelago_core', 'custom_wo
  * Middleware to restrict access strictly to localhost requests (127.0.0.1 or ::1)
  */
 export function localhostOnly(req: Request, res: Response, next: NextFunction) {
+  // If running behind a reverse proxy (e.g. Traefik) that enforces authentication
+  if (process.env.ALLOW_PROXY_ADMIN === 'true') {
+    return next();
+  }
   const remoteIp = req.socket.remoteAddress || req.ip || '';
   const hostHeader = req.headers.host || '';
 

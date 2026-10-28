@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs';
+import AdmZip from 'adm-zip';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -19,7 +20,17 @@ router.get('/', (req: Request, res: Response) => {
     const worlds = files.map(filename => {
       const filePath = path.join(CUSTOM_WORLDS_DIR, filename);
       const stat = fs.statSync(filePath);
+      let game = '';
+      try {
+        const zip = new AdmZip(filePath);
+        const entry = zip.getEntries().find(e => e.entryName.endsWith('archipelago.json') || e.entryName.endsWith('manifest.json'));
+        if (entry) {
+          const parsed = JSON.parse(entry.getData().toString('utf8'));
+          game = parsed.game || parsed.world || parsed.name || '';
+        }
+      } catch {}
       return {
+        game,
         filename,
         size: stat.size,
         modified: stat.mtime.toISOString(),

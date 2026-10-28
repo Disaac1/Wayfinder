@@ -878,9 +878,9 @@ func get_custom_world_destinations() -> Array[String]:
 		var candidate_custom: String = exe_dir.path_join("custom_worlds")
 		if not dests.has(candidate_custom):
 			dests.append(candidate_custom)
-		var candidate_lib: String = exe_dir.path_join("lib/worlds")
-		if not dests.has(candidate_lib):
-			dests.append(candidate_lib)
+		pass
+
+
 	return dests
 
 func sync_custom_worlds_to_archipelago() -> void:
@@ -935,7 +935,7 @@ func sync_custom_worlds_to_archipelago() -> void:
 				else:
 					print("[Launcher Warning] Failed to copy custom world: ", fn, " to: ", dst_path, " (Error: ", copy_err, ")")
 
-func sync_custom_worlds_from_server(node: Node, callback: Callable = Callable()) -> void:
+func sync_custom_worlds_from_server(node: Node, target_games: Array = [], callback: Callable = Callable()) -> void:
 	if not is_instance_valid(node):
 		if callback.is_valid():
 			callback.call(false)
@@ -962,6 +962,24 @@ func sync_custom_worlds_from_server(node: Node, callback: Callable = Callable())
 			return
 			
 		var worlds: Array = parsed.get("worlds", [])
+		if not target_games.is_empty():
+			var filtered: Array = []
+			var targets: Array[String] = []
+			for tg in target_games:
+				var n: String = str(tg).to_lower().replace(" ", "").replace("_", "").replace("-", "").replace(":", "")
+				if n != "" and not targets.has(n):
+					targets.append(n)
+			for w in worlds:
+				var w_game: String = str(w.get("game", "")).to_lower().replace(" ", "").replace("_", "").replace("-", "").replace(":", "")
+				var w_fn: String = str(w.get("filename", "")).to_lower().replace(".apworld", "").replace("_", "").replace("-", "")
+				var is_match: bool = false
+				for t in targets:
+					if (w_game != "" and (t in w_game or w_game in t)) or (w_fn != "" and (t in w_fn or w_fn in t)):
+						is_match = true
+						break
+				if is_match:
+					filtered.append(w)
+			worlds = filtered
 		_download_next_custom_world(node, worlds, 0, callback)
 	)
 	
@@ -1062,10 +1080,16 @@ func build_launch_context(game_path: String, patch_path: String = "", rom_path: 
 	var server_clean_url: String = server_url.replace("ws://", "").replace("wss://", "").trim_suffix("/")
 	var server_host: String = "localhost"
 	var server_port: String = "38000"
-	if server_url.begins_with("wss://") or "/ap/" in server_url:
+	if server_url.begins_with("wss://") or server_url.begins_with("ws://") or "/ap/" in server_url:
 		server_clean_url = server_url
-		server_host = "wayfinder.disaac1.com"
-		server_port = "443"
+		var clean_host_part: String = server_url.replace("wss://", "").replace("ws://", "").split("/")[0]
+		if clean_host_part.contains(":"):
+			var host_parts: PackedStringArray = clean_host_part.split(":")
+			server_host = host_parts[0]
+			server_port = host_parts[1]
+		else:
+			server_host = clean_host_part if clean_host_part != "" else "wayfinder.disaac1.com"
+			server_port = "443" if server_url.begins_with("wss://") else "80"
 	elif server_clean_url.contains(":"):
 		var parts: PackedStringArray = server_clean_url.split(":")
 		server_host = parts[0]

@@ -159,20 +159,18 @@ static func update_archipelago_persistent_storage(clean_url: String, tools_dir: 
 ## Returns destinations for Archipelago custom worlds
 static func get_custom_world_destinations(tools_dir: String = USER_TOOLS_DIR) -> Array[String]:
 	var dests: Array[String] = [
-		tools_dir.path_join("Archipelago/custom_worlds"),
-		tools_dir.path_join("Archipelago/lib/worlds")
+		tools_dir.path_join("Archipelago/custom_worlds")
 	]
 	if OS.get_name() == "Windows":
-		var appdata: String = OS.get_environment("APPDATA")
-		if appdata != "":
-			dests.append(appdata.path_join("Archipelago/custom_worlds"))
-			dests.append(appdata.path_join("Archipelago/lib/worlds"))
 		var local_appdata: String = OS.get_environment("LOCALAPPDATA")
 		if local_appdata != "":
-			dests.append(local_appdata.path_join("Archipelago/custom_worlds"))
-			dests.append(local_appdata.path_join("Archipelago/lib/worlds"))
-		dests.append("C:/ProgramData/Archipelago/custom_worlds")
-	dests.append(OS.get_environment("HOME").path_join("Archipelago/custom_worlds"))
+			var local_dest: String = local_appdata.path_join("Archipelago/custom_worlds")
+			if not dests.has(local_dest):
+				dests.append(local_dest)
+	elif OS.get_environment("HOME") != "":
+		var home_dest: String = OS.get_environment("HOME").path_join("Archipelago/custom_worlds")
+		if not dests.has(home_dest):
+			dests.append(home_dest)
 	return dests
 
 ## Updates an individual key in a YAML section cleanly
