@@ -1,5 +1,5 @@
 # Wayfinder & Archipelago Headless Core Python Dependencies
-setuptools>=69.0.0
+setuptools>=70.0.0,<81.0.0
 websockets>=13.1
 requests>=2.31.0
 cryptography>=42.0.0
