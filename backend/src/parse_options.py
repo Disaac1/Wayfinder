@@ -2,6 +2,7 @@ import warnings
 warnings.filterwarnings("ignore")
 import sys
 import os
+os.environ["SKIP_REQUIREMENTS_UPDATE"] = "1"
 import json
 import importlib
 
