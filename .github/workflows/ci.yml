@@ -42,7 +42,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install cryptography requests websockets
+          pip install cryptography requests websockets PyYAML pathspec jinja2 schema bsdiff4 orjson colorama typing_extensions platformdirs
 
       - name: Check Python syntax
         run: python -m compileall -q backend/src backend/tests tools

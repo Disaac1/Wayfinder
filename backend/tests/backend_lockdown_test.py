@@ -45,13 +45,26 @@ async def run_test():
         print("[Test] Generating seed...")
         await ws.send(json.dumps({"type": "generate_seed"}))
         
-        # Recv till seed is done
+        # Recv till seed is done (with timeout and error handling)
         seed_done = False
+        start_wait = asyncio.get_event_loop().time()
         while not seed_done:
-            msg = json.loads(await ws.recv())
-            if msg.get("type") == "room_state" and msg.get("seedStatus") == "done":
-                seed_done = True
-                print("[Test] Seed generation completed successfully.")
+            if asyncio.get_event_loop().time() - start_wait > 30.0:
+                raise TimeoutError("Timed out waiting for seed generation after 30s")
+            try:
+                raw = await asyncio.wait_for(ws.recv(), timeout=5.0)
+            except asyncio.TimeoutError:
+                continue
+            msg = json.loads(raw)
+            if msg.get("type") == "error":
+                raise RuntimeError(f"Server error during seed generation: {msg.get('message')}")
+            if msg.get("type") == "room_state":
+                status = msg.get("seedStatus")
+                if status == "done":
+                    seed_done = True
+                    print("[Test] Seed generation completed successfully.")
+                elif status == "failed":
+                    raise RuntimeError(f"Seed generation failed: {msg.get('error') or msg.get('message')}")
                 
         # 4. Attempt to modify room state (Lockdown Check)
         print("[Test] Verifying backend lockdown on state updates...")
