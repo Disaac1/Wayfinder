@@ -190,28 +190,32 @@ async def run_multiplayer_test():
     print(f"\n[Step 6] Connecting Alice and Bob AP clients directly to Archipelago MultiServer on port {ap_port}...")
     ap_ws_uri = f"ws://localhost:{ap_port}"
     
-    # Wait for AP server port to finish initializing
+    # Wait for AP server port to finish initializing and send RoomInfo packet
     alice_ap_ws = None
-    for attempt in range(25):
+    room_info_a = None
+    for attempt in range(30):
         try:
-            alice_ap_ws = await websockets.connect(ap_ws_uri)
-            break
-        except (ConnectionRefusedError, OSError):
+            ws = await websockets.connect(ap_ws_uri)
+            raw = await asyncio.wait_for(ws.recv(), timeout=4.0)
+            data = json.loads(raw)
+            if isinstance(data, list) and data and data[0].get("cmd") == "RoomInfo":
+                alice_ap_ws = ws
+                room_info_a = data[0]
+                break
+            else:
+                await ws.close()
+        except (ConnectionRefusedError, OSError, asyncio.TimeoutError, websockets.ConnectionClosed):
             await asyncio.sleep(0.5)
-    assert alice_ap_ws is not None, f"Could not connect to Archipelago MultiServer on port {ap_port} after 12s"
     
+    assert alice_ap_ws is not None, f"Could not connect to Archipelago MultiServer and receive RoomInfo on port {ap_port} after 15s"
+    print(f"  -> Alice connected and verified RoomInfo packet (Seed: {room_info_a.get('seed_name')}).")
+
+    # Connect Bob
     bob_ap_ws = await websockets.connect(ap_ws_uri)
-    
-    # 6a. Receive RoomInfo on both sockets
-    room_info_raw_a = await alice_ap_ws.recv()
-    room_info_a = json.loads(room_info_raw_a)[0]
-    assert room_info_a.get("cmd") == "RoomInfo", f"Expected RoomInfo, got: {room_info_a}"
-    print("  -> Received Archipelago RoomInfo packet on Alice AP socket.")
-    
-    room_info_raw_b = await bob_ap_ws.recv()
+    room_info_raw_b = await asyncio.wait_for(bob_ap_ws.recv(), timeout=5.0)
     room_info_b = json.loads(room_info_raw_b)[0]
-    assert room_info_b.get("cmd") == "RoomInfo"
-    print("  -> Received Archipelago RoomInfo packet on Bob AP socket.")
+    assert room_info_b.get("cmd") == "RoomInfo", f"Expected RoomInfo for Bob, got: {room_info_b}"
+    print("  -> Bob connected and verified RoomInfo packet.")
     
     # 6b. Send Connect packet for Alice (Slot: Alice, Game: Pokemon Emerald)
     connect_alice = [{
