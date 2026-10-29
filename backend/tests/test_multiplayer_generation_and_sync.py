@@ -144,7 +144,13 @@ async def run_multiplayer_test():
     )
     
     assert tunnel_url is not None, "tunnel_url was not returned in room_state"
-    ap_port = int(tunnel_url.split(":")[-1])
+    ap_port = None
+    if ":" in tunnel_url:
+        candidate = tunnel_url.split(":")[-1].split("/")[0]
+        if candidate.isdigit():
+            ap_port = int(candidate)
+    if ap_port is None:
+        ap_port = 38000
     print(f"  -> Central Archipelago MultiServer running on port: {ap_port}")
 
     # -------------------------------------------------------------

@@ -64,6 +64,10 @@ jobs:
           fi
           echo "HOST=0.0.0.0" >> .env
           echo "PORT=8080" >> .env
+          echo "HOSTING_MODE=direct" >> .env
+          echo "PUBLIC_DOMAIN=localhost" >> .env
+          echo "PUBLIC_HOST=localhost" >> .env
+          echo "CLOUDFLARE_TUNNEL_TOKEN=" >> .env
           echo "PYTHON_BIN=$(which python)" >> .env
           mkdir -p temp_seeds failed_generations logs public/downloads public/updates
           echo "Environment and data directories initialized with PYTHON_BIN=$(which python)."
@@ -214,6 +218,10 @@ jobs:
           fi
           echo "HOST=0.0.0.0" >> .env
           echo "PORT=8080" >> .env
+          echo "HOSTING_MODE=direct" >> .env
+          echo "PUBLIC_DOMAIN=localhost" >> .env
+          echo "PUBLIC_HOST=localhost" >> .env
+          echo "CLOUDFLARE_TUNNEL_TOKEN=" >> .env
           echo "PYTHON_BIN=$(which python)" >> .env
           mkdir -p temp_seeds failed_generations logs public/downloads public/updates
           nohup node dist/index.js > backend.log 2>&1 &

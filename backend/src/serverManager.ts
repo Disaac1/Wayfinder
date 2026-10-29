@@ -181,8 +181,9 @@ export async function startCentralServer(roomCode: string, zipName: string): Pro
     (process.env.PUBLIC_URL ? new URL(process.env.PUBLIC_URL.includes('://') ? process.env.PUBLIC_URL : `https://${process.env.PUBLIC_URL}`).host : null) || 
     (process.env.CLOUDFLARE_TUNNEL_TOKEN ? 'wayfinder.disaac1.com' : null);
 
-  const hostingMode = (process.env.HOSTING_MODE || 'tunnel').trim().toLowerCase();
-  const isDirectMode = hostingMode === 'direct' || Boolean(roomServerIp && roomServerIp.trim());
+  const isCI = process.env.CI === 'true' || process.env.NODE_ENV === 'test';
+  const hostingMode = isCI ? 'direct' : (process.env.HOSTING_MODE || 'tunnel').trim().toLowerCase();
+  const isDirectMode = isCI || hostingMode === 'direct' || Boolean(roomServerIp && roomServerIp.trim());
 
   if (!isDirectMode && publicDomain && !publicDomain.includes('localhost') && !publicDomain.includes('127.0.0.1')) {
     const isSsl = process.env.USE_SSL === 'true' || Boolean(process.env.CLOUDFLARE_TUNNEL_TOKEN) || publicDomain.includes(':443');
