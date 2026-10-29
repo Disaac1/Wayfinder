@@ -32,7 +32,7 @@
     </p>
 
     <div class="cta-group">
-      <a href="/api/client/download-client" class="btn btn-primary" id="downloadClientBtn">
+      <a href="https://github.com/Disaac1/Wayfinder/releases/latest/download/Lodestone_Setup.exe" class="btn btn-primary" id="downloadClientBtn">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
           <polyline points="7 10 12 15 17 10"></polyline>
@@ -50,9 +50,9 @@
     <div style="margin-top: 10px; font-size: 0.9rem; opacity: 0.85;">
       <span>Latest Release on <a href="https://github.com/Disaac1/Wayfinder/releases/latest" target="_blank" rel="noopener noreferrer" id="latestReleaseLink" style="color: #60a5fa; text-decoration: underline;">GitHub Releases</a></span>
       <span style="margin: 0 8px;">&bull;</span>
-      <a href="/api/client/download-client?type=zip" style="color: #cbd5e1; text-decoration: underline;">Portable (.ZIP)</a>
+      <a href="https://github.com/Disaac1/Wayfinder/releases/latest/download/Lodestone_Windows.zip" id="portableZipLink" style="color: #cbd5e1; text-decoration: underline;">Portable (.ZIP)</a>
       <span style="margin: 0 8px;">&bull;</span>
-      <a href="/api/client/download-client?platform=linux" style="color: #cbd5e1; text-decoration: underline;">Linux Package</a>
+      <a href="https://github.com/Disaac1/Wayfinder/releases/latest/download/Lodestone_Linux.tar.gz" id="linuxPkgLink" style="color: #cbd5e1; text-decoration: underline;">Linux Package</a>
     </div>
 
     <!-- Features -->
@@ -141,11 +141,24 @@
         const res = await fetch('/api/client/download-info');
         if (res.ok) {
           const data = await res.json();
+          const btnText = document.getElementById('downloadBtnText');
+          const downloadBtn = document.getElementById('downloadClientBtn');
+          const releaseLink = document.getElementById('latestReleaseLink');
+          const portableLink = document.getElementById('portableZipLink');
+          const linuxLink = document.getElementById('linuxPkgLink');
+
           if (data && data.version && data.version !== 'latest') {
-            const btnText = document.getElementById('downloadBtnText');
             if (btnText) btnText.textContent = `Download for Windows (v${data.version})`;
-            const releaseLink = document.getElementById('latestReleaseLink');
             if (releaseLink) releaseLink.textContent = `GitHub Releases (${data.tag})`;
+          }
+          if (data && data.installer_url && downloadBtn) {
+            downloadBtn.href = data.installer_url;
+          }
+          if (data && data.portable_url && portableLink) {
+            portableLink.href = data.portable_url;
+          }
+          if (data && data.linux_url && linuxLink) {
+            linuxLink.href = data.linux_url;
           }
         }
       } catch (e) {}

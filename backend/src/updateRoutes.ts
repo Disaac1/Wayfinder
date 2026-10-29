@@ -50,33 +50,59 @@ interface GitHubRelease {
 let cachedRelease: { release: GitHubRelease; timestamp: number } | null = null;
 const GITHUB_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-export async function fetchLatestGitHubRelease(): Promise<GitHubRelease | null> {
+export async function fetchLatestGitHubRelease(forceRefresh = false, tag?: string): Promise<GitHubRelease | null> {
   const now = Date.now();
-  if (cachedRelease && (now - cachedRelease.timestamp) < GITHUB_CACHE_TTL_MS) {
+  if (!forceRefresh && !tag && cachedRelease && (now - cachedRelease.timestamp) < GITHUB_CACHE_TTL_MS) {
     return cachedRelease.release;
   }
 
+  const endpoint = tag
+    ? `https://api.github.com/repos/Disaac1/Wayfinder/releases/tags/${encodeURIComponent(tag)}`
+    : 'https://api.github.com/repos/Disaac1/Wayfinder/releases/latest';
+
+  const headers: Record<string, string> = {
+    'User-Agent': 'Wayfinder-Lodestone-Backend',
+    'Accept': 'application/vnd.github.v3+json'
+  };
+
+  const githubToken = process.env.GITHUB_TOKEN;
+  if (githubToken) {
+    headers['Authorization'] = `Bearer ${githubToken}`;
+  }
+
   try {
-    const res = await fetch('https://api.github.com/repos/Disaac1/Wayfinder/releases/latest', {
-      headers: {
-        'User-Agent': 'Wayfinder-Lodestone-Backend',
-        'Accept': 'application/vnd.github.v3+json'
-      }
-    });
+    const res = await fetch(endpoint, { headers });
 
     if (!res.ok) {
-      console.warn(`[GitHub Releases] API returned HTTP ${res.status}`);
+      console.warn(`[GitHub Releases] API returned HTTP ${res.status} for ${endpoint}`);
       return cachedRelease ? cachedRelease.release : null;
     }
 
     const data = await res.json() as GitHubRelease;
     cachedRelease = { release: data, timestamp: now };
+    console.log(`[GitHub Releases] Cached release: ${data.tag_name} (${data.name})`);
     return data;
   } catch (err: any) {
-    console.warn('[GitHub Releases] Error fetching latest release:', err.message);
+    console.warn('[GitHub Releases] Error fetching release:', err.message);
     return cachedRelease ? cachedRelease.release : null;
   }
 }
+
+// Background polling: keep the release metadata fresh every 10 minutes
+const GITHUB_POLL_INTERVAL_MS = 10 * 60 * 1000;
+const githubPoller = setInterval(() => {
+  fetchLatestGitHubRelease(true).catch(err => {
+    console.warn('[GitHub Releases] Background poll error:', err.message);
+  });
+}, GITHUB_POLL_INTERVAL_MS);
+
+// Allow Node process to terminate cleanly without waiting on poller timer
+if (githubPoller.unref) {
+  githubPoller.unref();
+}
+
+// Initial async fetch on module load
+fetchLatestGitHubRelease().catch(() => {});
 
 export function signBuffer(buffer: Buffer): { sha256: string; signature: string } | null {
   if (!fs.existsSync(PRIV_KEY_FILE)) {
@@ -201,6 +227,53 @@ function isVersionAtOrBelow(version: string, maximum: string): boolean {
 }
 
 /**
+ * POST /api/client/sync-release
+ * Authenticated webhook to trigger instant sync of latest GitHub release
+ * Can be called by GitHub Actions upon publishing a release or by admins.
+ * Protected by RELEASE_WEBHOOK_SECRET or localhost access.
+ */
+router.post('/sync-release', async (req: Request, res: Response) => {
+  const webhookSecret = process.env.RELEASE_WEBHOOK_SECRET;
+  const authHeader = req.headers['authorization'];
+  const tokenFromAuth = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  const clientSecret = req.headers['x-release-secret'] || tokenFromAuth;
+
+  const clientIp = req.ip || req.socket.remoteAddress || '';
+  const isLocal = clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === '::ffff:127.0.0.1' || req.hostname === 'localhost';
+  const isSecretValid = Boolean(webhookSecret && clientSecret && clientSecret === webhookSecret);
+
+  if (!isSecretValid && !isLocal) {
+    return res.status(401).json({ error: 'Unauthorized: invalid or missing release webhook secret' });
+  }
+
+  const requestedTag = typeof req.body?.tag === 'string' ? req.body.tag.trim() : undefined;
+  console.log(`[GitHub Releases] Release sync triggered via webhook${requestedTag ? ` for tag: ${requestedTag}` : ''}`);
+
+  try {
+    const release = await fetchLatestGitHubRelease(true, requestedTag);
+    if (!release) {
+      return res.status(502).json({
+        success: false,
+        message: 'Webhook received but failed to retrieve release from GitHub API'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Release synced successfully',
+      tag: release.tag_name,
+      version: release.tag_name.replace(/^v/, ''),
+      name: release.name,
+      published_at: release.published_at,
+      asset_count: release.assets?.length || 0
+    });
+  } catch (err: any) {
+    console.error('[GitHub Releases] Error processing sync-release webhook:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
  * GET /api/client/download-info
  * Returns metadata and direct download URLs for the latest GitHub release
  */
@@ -218,8 +291,8 @@ router.get('/download-info', async (req: Request, res: Response) => {
       name: release.name,
       html_url: release.html_url,
       published_at: release.published_at,
-      installer_url: setupAsset?.browser_download_url || 'https://github.com/Disaac1/Wayfinder/releases/latest',
-      portable_url: zipAsset?.browser_download_url || null,
+      installer_url: setupAsset?.browser_download_url || 'https://github.com/Disaac1/Wayfinder/releases/latest/download/Lodestone_Setup.exe',
+      portable_url: zipAsset?.browser_download_url || 'https://github.com/Disaac1/Wayfinder/releases/latest/download/Lodestone_Windows.zip',
       linux_url: linuxAsset?.browser_download_url || null,
       assets: release.assets.map(a => ({ name: a.name, size: a.size, url: a.browser_download_url }))
     });
@@ -229,8 +302,8 @@ router.get('/download-info', async (req: Request, res: Response) => {
     tag: 'latest',
     version: 'latest',
     html_url: 'https://github.com/Disaac1/Wayfinder/releases/latest',
-    installer_url: 'https://github.com/Disaac1/Wayfinder/releases/latest',
-    portable_url: null,
+    installer_url: 'https://github.com/Disaac1/Wayfinder/releases/latest/download/Lodestone_Setup.exe',
+    portable_url: 'https://github.com/Disaac1/Wayfinder/releases/latest/download/Lodestone_Windows.zip',
     linux_url: null,
     assets: []
   });

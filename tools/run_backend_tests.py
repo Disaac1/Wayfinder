@@ -27,6 +27,7 @@ DEFAULT_TEST_FILES = [
     "test_multiplayer_session_resilience.py",
     "test_inactivity_auto_delete.py",
     "backend_lockdown_test.py",
+    "test_release_sync_and_downloads.py",
     "test_multiplayer_generation_and_sync.py",
 ]
 

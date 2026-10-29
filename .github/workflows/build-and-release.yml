@@ -332,10 +332,12 @@ jobs:
           chmod +x client/.export/Lodestone.x86_64
           tar -czvf "release_assets/Lodestone_v${VER}_Linux.tar.gz" -C client/.export Lodestone.x86_64 Lodestone.pck
           zip -j "release_assets/Lodestone_v${VER}_Linux.zip" client/.export/Lodestone.x86_64 client/.export/Lodestone.pck
+          cp "release_assets/Lodestone_v${VER}_Linux.tar.gz" "release_assets/Lodestone_Linux.tar.gz"
+          cp "release_assets/Lodestone_v${VER}_Linux.zip" "release_assets/Lodestone_Linux.zip"
 
           # Compute Linux SHA-256 Checksums
           cd release_assets
-          sha256sum Lodestone_v${VER}_Linux.tar.gz Lodestone_v${VER}_Linux.zip > checksums-linux.txt
+          sha256sum Lodestone_v${VER}_Linux.tar.gz Lodestone_v${VER}_Linux.zip Lodestone_Linux.tar.gz Lodestone_Linux.zip > checksums-linux.txt
           cat checksums-linux.txt
 
       - name: Upload Linux Artifacts
@@ -387,3 +389,18 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify Backend to Sync Release
+        if: success()
+        run: |
+          SERVER_URL="${{ secrets.SERVER_URL }}"
+          RELEASE_SECRET="${{ secrets.RELEASE_WEBHOOK_SECRET }}"
+          if [ -n "$SERVER_URL" ] && [ -n "$RELEASE_SECRET" ]; then
+            echo "Notifying server at $SERVER_URL of new release..."
+            curl -s -X POST "$SERVER_URL/api/client/sync-release" \
+              -H "Content-Type: application/json" \
+              -H "x-release-secret: $RELEASE_SECRET" \
+              -d "{\"tag\": \"${{ needs.build-windows.outputs.tag_name }}\", \"version\": \"${{ needs.build-windows.outputs.clean_version }}\"}" || true
+          else
+            echo "SERVER_URL or RELEASE_WEBHOOK_SECRET not configured, skipping webhook notification."
+          fi
