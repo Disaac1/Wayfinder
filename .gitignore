@@ -27,12 +27,26 @@ scratch/
 *.pyc
 __pycache__/
 backend/.env
+.env
+.env.local
+.env.*.local
 backend/.archipelago-gg-session-id
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
 backend/database.db*
+backend/runtime/
 backend/failed_generations/
 backend/logs/
 backend/temp_seeds/
 temp_seeds/
+
+# OS and filesystem artifacts
+Thumbs.db
+[Dd]esktop.ini
+.DS_Store
 
 # Downloaded game/runtime dependencies (store these in release or artifact storage)
 backend/archipelago_core/
