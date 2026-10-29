@@ -1,3 +1,14 @@
+
+import unittest
+
+def is_backend_online(base_url="http://localhost:8080"):
+    try:
+        req = urllib.request.Request(f"{base_url}/api/games", headers={"User-Agent": "CI-Test"})
+        with urllib.request.urlopen(req, timeout=1) as resp:
+            return resp.status == 200
+    except Exception:
+        return False
+
 import sqlite3
 import os
 import urllib.request
@@ -93,6 +104,14 @@ def main():
     print(f"[OK] Active room {new_code} was safely preserved!")
 
     print("\n[SUCCESS] 3-Month Inactivity Auto-Purge verified successfully!")
+
+
+
+class TestInactivityAutoDelete(unittest.TestCase):
+    def test_inactivity_auto_delete(self):
+        if not is_backend_online():
+            raise unittest.SkipTest("Backend service is offline at http://localhost:8080")
+        main()
 
 if __name__ == "__main__":
     main()

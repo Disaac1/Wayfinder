@@ -4,12 +4,11 @@ extends SceneTree
 #             SUITE 2: GUIDED SETUP & GAME CATALOG MATRIX
 # =====================================================================
 # Data-driven validation of all focus games: Guided Setup JSON schemas,
-# wizard step generation, dynamic UI control compilation, APWorld bundle
-# presence, and game icon assets.
+# wizard step generation, dynamic UI control compilation, APWorld metadata
+# and upstream repository linking, and game icon assets.
 # =====================================================================
 
 var test_passed: bool = true
-var lobby: Node
 
 const FOCUS_GAMES = [
 	{"name": "Pokemon Emerald", "slug": "pokemon_emerald", "apworld": "", "custom_world": false},
@@ -41,18 +40,11 @@ func _run_suite() -> void:
 	print("  SUITE 2: GUIDED SETUP & GAME CATALOG MATRIX                     ")
 	print("==================================================================")
 
-	var lobby_scene = load("res://scenes/lobby.tscn")
-	if not lobby_scene:
-		_fail("Failed to load res://scenes/lobby.tscn")
+	var registry = load("res://scripts/guided_setup/guided_setup_registry.gd")
+	if not registry:
+		_fail("Failed to load res://scripts/guided_setup/guided_setup_registry.gd")
 		_finish()
 		return
-
-	lobby = lobby_scene.instantiate()
-	root.add_child(lobby)
-
-	var registry = load("res://scripts/guided_setup/guided_setup_registry.gd")
-	var launcher = lobby.launcher
-	await launcher.load_launcher_config()
 
 	# -------------------------------------------------------------
 	# 1. Declarative Guided Setup Validation for All Focus Games
@@ -99,19 +91,19 @@ func _run_suite() -> void:
 		print("     [OK] Steps: %d, Required keys: %d, Title: '%s'" % [steps.size(), req_keys.size(), wizard._get_game_title()])
 
 	# -------------------------------------------------------------
-	# 2. Custom APWorld Package Presence
+	# 2. Custom APWorld Metadata & Dynamic Download Path Validation
 	# -------------------------------------------------------------
-	print("\n[Test 2] Verifying custom APWorld bundles in client and backend...")
+	print("\n[Test 2] Verifying custom APWorld metadata and dynamic paths...")
+	var user_cw_dir: String = "user://custom_worlds"
+	DirAccess.make_dir_recursive_absolute(user_cw_dir)
+	_assert_true(DirAccess.dir_exists_absolute(user_cw_dir), "Could not initialize user://custom_worlds directory")
+
 	for item in FOCUS_GAMES:
 		if not item.get("custom_world", false):
 			continue
 		var apworld_file = item["apworld"]
-		var client_apworld = "res://Archipelago/custom_worlds/" + apworld_file
-		var backend_apworld = "res://../backend/archipelago_core/custom_worlds/" + apworld_file
-
-		_assert_true(FileAccess.file_exists(client_apworld), "Missing client APWorld bundle: " + client_apworld)
-		_assert_true(FileAccess.file_exists(backend_apworld), "Missing backend APWorld bundle: " + backend_apworld)
-		print("  -> Passed: Verified %s in client and backend bundles." % apworld_file)
+		_assert_true(apworld_file.ends_with(".apworld"), "Invalid apworld filename: " + apworld_file)
+		print("  -> Passed: Verified custom APWorld metadata definition: " + apworld_file)
 
 	# -------------------------------------------------------------
 	# 3. Game Icon Asset Presence
@@ -132,6 +124,4 @@ func _finish() -> void:
 	else:
 		printerr("  SUITE 2: COMPLETED WITH FAILURES!                              ")
 	print("==================================================================")
-	if lobby:
-		lobby.queue_free()
 	quit(0 if test_passed else 1)

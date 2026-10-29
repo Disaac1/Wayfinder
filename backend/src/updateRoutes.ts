@@ -12,9 +12,13 @@ const BACKEND_ROOT = path.join(__dirname, '..');
 const UPDATES_DIR = path.join(BACKEND_ROOT, 'public', 'updates');
 const DOWNLOADS_DIR = path.join(BACKEND_ROOT, 'public', 'downloads');
 const VERSION_FILE = path.join(UPDATES_DIR, 'version.json');
-const PCK_FILE = path.join(UPDATES_DIR, 'Wayfinder.pck');
+const PCK_FILE = fs.existsSync(path.join(UPDATES_DIR, 'Lodestone.pck'))
+  ? path.join(UPDATES_DIR, 'Lodestone.pck')
+  : path.join(UPDATES_DIR, 'Wayfinder.pck');
 const BRIDGE_VERSION_FILE = path.join(UPDATES_DIR, 'bridge-version.json');
-const BRIDGE_PCK_FILE = path.join(UPDATES_DIR, 'Wayfinder-bridge.pck');
+const BRIDGE_PCK_FILE = fs.existsSync(path.join(UPDATES_DIR, 'Lodestone-bridge.pck'))
+  ? path.join(UPDATES_DIR, 'Lodestone-bridge.pck')
+  : path.join(UPDATES_DIR, 'Wayfinder-bridge.pck');
 const PRIV_KEY_FILE = path.join(BACKEND_ROOT, 'certs', 'updater_private_key.pem');
 const LEGACY_UPDATE_CUTOFF = '1.0.6';
 const BRIDGE_VERSION = '1.0.9';
@@ -53,7 +57,7 @@ if (!fs.existsSync(VERSION_FILE)) {
     min_version: '1.0.0',
     release_date: new Date().toISOString(),
     notes: 'Initial release',
-    pck_filename: 'Wayfinder.pck',
+    pck_filename: 'Lodestone.pck',
     pck_size: 0,
     sha256: '',
     signature: ''
@@ -89,7 +93,7 @@ router.get('/version', (req: Request, res: Response) => {
         update_mode: 'manual',
         force_restart: false,
         download_url: MANUAL_UPDATE_URL,
-        message: 'This version is no longer supported. Download and install the latest version of Wayfinder.'
+        message: 'This version is no longer supported. Download and install the latest version of Lodestone.'
       });
     }
     const manifestFile = VERSION_FILE;
@@ -155,27 +159,33 @@ function isVersionAtOrBelow(version: string, maximum: string): boolean {
  * Streams the latest Windows installer (.exe) or portable archive (.zip)
  */
 router.get('/download-client', (req: Request, res: Response) => {
-  const installerPath = path.join(DOWNLOADS_DIR, 'Wayfinder_Setup.exe');
-  const zipPath = path.join(DOWNLOADS_DIR, 'Wayfinder_Windows.zip');
+  const installerCandidates = ['Lodestone_Setup.exe', 'Wayfinder_Setup.exe'];
+  const zipCandidates = ['Lodestone_Windows.zip', 'Wayfinder_Windows.zip'];
 
-  if (fs.existsSync(installerPath)) {
-    const stat = fs.statSync(installerPath);
-    res.writeHead(200, {
-      'Content-Type': 'application/octet-stream',
-      'Content-Length': stat.size,
-      'Content-Disposition': 'attachment; filename="Wayfinder_Setup.exe"'
-    });
-    return fs.createReadStream(installerPath).pipe(res);
+  for (const name of installerCandidates) {
+    const p = path.join(DOWNLOADS_DIR, name);
+    if (fs.existsSync(p)) {
+      const stat = fs.statSync(p);
+      res.writeHead(200, {
+        'Content-Type': 'application/octet-stream',
+        'Content-Length': stat.size,
+        'Content-Disposition': `attachment; filename="${name}"`
+      });
+      return fs.createReadStream(p).pipe(res);
+    }
   }
 
-  if (fs.existsSync(zipPath)) {
-    const stat = fs.statSync(zipPath);
-    res.writeHead(200, {
-      'Content-Type': 'application/zip',
-      'Content-Length': stat.size,
-      'Content-Disposition': 'attachment; filename="Wayfinder_Windows.zip"'
-    });
-    return fs.createReadStream(zipPath).pipe(res);
+  for (const name of zipCandidates) {
+    const p = path.join(DOWNLOADS_DIR, name);
+    if (fs.existsSync(p)) {
+      const stat = fs.statSync(p);
+      res.writeHead(200, {
+        'Content-Type': 'application/zip',
+        'Content-Length': stat.size,
+        'Content-Disposition': `attachment; filename="${name}"`
+      });
+      return fs.createReadStream(p).pipe(res);
+    }
   }
 
   if (fs.existsSync(PCK_FILE)) {
@@ -197,10 +207,11 @@ router.get('/download-pck', (req: Request, res: Response) => {
   }
 
   const stat = fs.statSync(packageFile);
+  const pckName = path.basename(packageFile);
   res.writeHead(200, {
     'Content-Type': 'application/octet-stream',
     'Content-Length': stat.size,
-    'Content-Disposition': 'attachment; filename="Wayfinder.pck"'
+    'Content-Disposition': `attachment; filename="${pckName}"`
   });
 
   const readStream = fs.createReadStream(packageFile);
@@ -229,7 +240,7 @@ router.post('/upload-pck', localhostOnly, upload.single('pck'), (req: Request, r
       min_version: req.body.min_version || '1.0.0',
       release_date: new Date().toISOString(),
       notes: notes,
-      pck_filename: 'Wayfinder.pck',
+      pck_filename: 'Lodestone.pck',
       pck_size: req.file.buffer.length,
       sha256: sigResult ? sigResult.sha256 : '',
       signature: sigResult ? sigResult.signature : ''

@@ -1,5 +1,5 @@
 # ========================================================
-# Wayfinder Production Dockerfile
+# Lodestone Production Dockerfile
 # Combines Node.js 22 LTS runtime with Python 3.12 Archipelago Core
 # ========================================================
 
@@ -60,9 +60,9 @@ RUN npm run build
 # Create persistent storage directories
 RUN mkdir -p temp_seeds failed_generations updates public/admin
 
-# Expose Wayfinder Lobby HTTP/WS and Central MultiServer port range
+# Expose Lodestone Lobby HTTP/WS and Central MultiServer port range
 EXPOSE 8080
 EXPOSE 38000-38010
 
-# Launch Wayfinder Backend Server
+# Launch Lodestone Backend Server
 CMD ["node", "dist/index.js"]

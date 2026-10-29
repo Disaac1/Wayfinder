@@ -14,7 +14,7 @@ import { startCloudflareTunnel, stopCloudflareTunnel } from './tunnelManager.js'
 import adminRoutes, { localhostOnly } from './adminRoutes.js';
 import updateRoutes from './updateRoutes.js';
 import sessionRoutes from './sessionRoutes.js';
-import roomRoutes from './roomRoutes.js';
+import roomRoutes, { testCleanupHandler } from './roomRoutes.js';
 import customWorldRoutes from './customWorldRoutes.js';
 import seedRoutes from './seedRoutes.js';
 import clientLogRoutes from './clientLogRoutes.js';
@@ -88,6 +88,7 @@ app.use('/api/tools', toolsRouter);
 app.use('/api/custom-worlds', customWorldRoutes);
 app.use('/api/seeds', seedRoutes);
 app.use('/api/client/logs', clientLogRoutes);
+app.post('/api/test/cleanup', localhostOnly, testCleanupHandler);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -204,7 +205,7 @@ server.on('upgrade', (req, clientSocket, head) => {
     });
   } else {
     // Normal Wayfinder Lobby WebSocket upgrade
-    console.log(`[WAYFINDER_LOBBY] WebSocket upgrade requested for ${reqUrl}`);
+    console.log(`[LODESTONE_LOBBY] WebSocket upgrade requested for ${reqUrl}`);
     wss.handleUpgrade(req, clientSocket, head, (ws) => {
       wss.emit('connection', ws, req);
     });
@@ -226,7 +227,7 @@ async function startServer() {
     const listenCallback = () => {
       const publicDomain = process.env.PUBLIC_DOMAIN || 'wayfinder.disaac1.com';
       console.log(`===============================================`);
-      console.log(`  Wayfinder Lobby Backend running on port ${PORT}`);
+      console.log(`  Lodestone Lobby Backend running on port ${PORT}`);
       console.log(`  Local WebSocket:  ws://localhost:${PORT}`);
       console.log(`  Local HTTP API:   http://localhost:${PORT}`);
       if (process.env.CLOUDFLARE_TUNNEL_TOKEN) {

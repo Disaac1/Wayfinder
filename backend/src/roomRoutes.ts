@@ -48,7 +48,7 @@ router.post('/:code/hosting/mode', async (req: Request, res: Response) => {
   const userId = req.body?.userId || req.query?.userId;
   if (!isRoomHost(roomCode, userId)) return res.status(403).json({ error: 'Only the room host can change hosting mode' });
   const mode = req.body?.hostingMode;
-  if (mode !== 'wayfinder_backend' && mode !== 'archipelago_gg') return res.status(400).json({ error: 'hostingMode must be wayfinder_backend or archipelago_gg' });
+  if (mode !== 'lodestone_backend' && mode !== 'wayfinder_backend' && mode !== 'archipelago_gg') return res.status(400).json({ error: 'hostingMode must be lodestone_backend or archipelago_gg' });
   const room = db.prepare('SELECT seed_status FROM Rooms WHERE code = ?').get(roomCode) as { seed_status: string } | undefined;
   if (!room) return res.status(404).json({ error: `Room ${roomCode} not found` });
   if (room.seed_status !== 'idle') return res.status(409).json({ error: 'Hosting mode can only be changed before seed generation' });
@@ -195,7 +195,7 @@ router.post('/:code/recover', (req: Request, res: Response) => {
 });
 
 // 4. Cleanup route for integration tests (Restricted to localhost)
-router.post('/test/cleanup', localhostOnly, (req: Request, res: Response) => {
+export const testCleanupHandler = (req: Request, res: Response) => {
   const roomCode = getValidatedRoomCode(req.body.roomCode);
   if (!roomCode) {
     return res.status(400).json({ error: 'Valid 6-character roomCode is required' });
@@ -217,7 +217,9 @@ router.post('/test/cleanup', localhostOnly, (req: Request, res: Response) => {
     console.error(`Failed to clean up room ${roomCode}:`, error);
     res.status(500).json({ error: error.message });
   }
-});
+};
+
+router.post('/test/cleanup', localhostOnly, testCleanupHandler);
 
 // 5. Host command execution route
 router.post('/:code/command', (req: Request, res: Response) => {

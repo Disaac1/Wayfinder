@@ -10,7 +10,7 @@ on:
 env:
   GODOT_VERSION: '4.7.2'
   NODE_VERSION: '22'
-  PYTHON_VERSION: '3.11'
+  PYTHON_VERSION: '3.12'
 
 jobs:
   # =========================================================================
@@ -191,6 +191,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Python dependencies for local backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install websockets requests cryptography PyYAML
 
       - name: Shallow clone Archipelago core for local backend
         run: |

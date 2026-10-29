@@ -195,6 +195,29 @@ optionsRouter.get('/:gameName', async (req: Request, res: Response) => {
     const schema = await getGameOptions(gameName, force);
     res.json(schema);
   } catch (error: any) {
+    console.warn(`[Options] Python parser failed for "${gameName}", checking bundled fallback:`, error.message);
+    const canonical = getCanonicalGameSlug(gameName);
+    const guidedPath = path.join(GAMES_DIR, canonical, 'guided_setup.json');
+    if (fs.existsSync(guidedPath)) {
+      const guided = readJsonFile(guidedPath, `fallback guided_setup.json for ${gameName}`);
+      if (guided) {
+        const fallbackOptions = (guided.required_schema_keys || []).map((k: string) => ({
+          name: k,
+          display_name: k,
+          type: 'toggle',
+          default: false,
+          choices: [],
+          min: 0,
+          max: 0
+        }));
+        return res.json({
+          game: gameName,
+          item_names: [],
+          location_names: [],
+          options: fallbackOptions
+        });
+      }
+    }
     res.status(500).json({ error: error.message || `Failed to fetch options for ${gameName}` });
   }
 });

@@ -1,4 +1,4 @@
-// Wayfinder Management Console Frontend Application Logic
+// Lodestone Management Console Frontend Application Logic
 
 let currentTab = 'overview';
 let activeDbTable = 'Rooms';

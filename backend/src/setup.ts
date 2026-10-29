@@ -45,4 +45,4 @@ if (!fs.existsSync(envPath) && fs.existsSync(envExamplePath)) {
   console.log(`Created ${envPath} from .env.example. Review it before enabling production services.`);
 }
 
-console.log('Wayfinder backend setup completed.');
+console.log('Lodestone backend setup completed.');

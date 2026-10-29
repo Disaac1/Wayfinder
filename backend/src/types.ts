@@ -35,8 +35,8 @@ export interface RoomChecks {
 // Messages sent by the Server to Clients
 export type ServerMessage =
   | { type: 'room_created'; roomCode: string; userId: string }
-  | { type: 'room_joined'; roomCode: string; userId: string; players: PlayerState[]; seedStatus: 'idle' | 'generating' | 'done'; seedZipName: string | null; seedSpoilerName: string | null; tunnelUrl?: string | null; hostingMode?: 'wayfinder_backend' | 'archipelago_gg'; hostingStatus?: string | null; hostingRoomUrl?: string | null; hostingServerUrl?: string | null; lockedBy?: string | null; checks?: RoomChecks | null }
-  | { type: 'room_state'; roomCode: string; players: PlayerState[]; seedStatus: 'idle' | 'generating' | 'done'; seedZipName: string | null; seedSpoilerName: string | null; tunnelUrl?: string | null; hostingMode?: 'wayfinder_backend' | 'archipelago_gg'; hostingStatus?: string | null; hostingRoomUrl?: string | null; hostingServerUrl?: string | null; lockedBy?: string | null; checks?: RoomChecks | null }
+  | { type: 'room_joined'; roomCode: string; userId: string; players: PlayerState[]; seedStatus: 'idle' | 'generating' | 'done'; seedZipName: string | null; seedSpoilerName: string | null; tunnelUrl?: string | null; hostingMode?: 'lodestone_backend' | 'wayfinder_backend' | 'archipelago_gg'; hostingStatus?: string | null; hostingRoomUrl?: string | null; hostingServerUrl?: string | null; lockedBy?: string | null; checks?: RoomChecks | null }
+  | { type: 'room_state'; roomCode: string; players: PlayerState[]; seedStatus: 'idle' | 'generating' | 'done'; seedZipName: string | null; seedSpoilerName: string | null; tunnelUrl?: string | null; hostingMode?: 'lodestone_backend' | 'wayfinder_backend' | 'archipelago_gg'; hostingStatus?: string | null; hostingRoomUrl?: string | null; hostingServerUrl?: string | null; lockedBy?: string | null; checks?: RoomChecks | null }
   | { type: 'error'; message: string }
   | { type: 'generation_log'; line: string }
   | { type: 'kicked'; message: string }

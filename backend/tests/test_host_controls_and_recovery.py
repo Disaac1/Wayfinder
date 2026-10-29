@@ -1,3 +1,14 @@
+
+import unittest
+
+def is_backend_online(base_url="http://localhost:8080"):
+    try:
+        req = urllib.request.Request(f"{base_url}/api/games", headers={"User-Agent": "CI-Test"})
+        with urllib.request.urlopen(req, timeout=1) as resp:
+            return resp.status == 200
+    except Exception:
+        return False
+
 import asyncio
 import json
 import websockets
@@ -14,9 +25,14 @@ def http_post(endpoint, data=None):
     req = urllib.request.Request(url, data=payload, headers={'Content-Type': 'application/json'} if data else {})
     try:
         with urllib.request.urlopen(req) as resp:
-            return resp.status, json.loads(resp.read().decode('utf-8'))
+            raw = resp.read().decode('utf-8')
+            return resp.status, json.loads(raw) if raw else {}
     except urllib.error.HTTPError as e:
-        return e.code, json.loads(e.read().decode('utf-8'))
+        raw = e.read().decode('utf-8')
+        try:
+            return e.code, json.loads(raw) if raw else {}
+        except Exception:
+            return e.code, {"error": raw}
 
 async def main():
     print("=== Testing Host Controls (Kick Player), Soft Delete & Recovery ===")
@@ -137,6 +153,14 @@ async def main():
     # Cleanup test room
     http_post("/api/test/cleanup", {"roomCode": room_code})
     print("\n[SUCCESS] All host controls, soft deletion, and recovery tests passed!")
+
+
+
+class TestHostControlsAndRecovery(unittest.IsolatedAsyncioTestCase):
+    async def test_host_controls_and_recovery(self):
+        if not is_backend_online():
+            raise unittest.SkipTest("Backend service is offline at http://localhost:8080")
+        await main()
 
 if __name__ == "__main__":
     asyncio.run(main())

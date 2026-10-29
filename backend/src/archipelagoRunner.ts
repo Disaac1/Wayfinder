@@ -81,10 +81,13 @@ export function ensureArchipelagoCore(): Promise<void> {
  * Resolves the Python executable and any prefix arguments (e.g. ['-3.12'] on Windows).
  */
 export function getPythonCommand(): { exe: string; prefixArgs: string[] } {
+  if (process.env.PYTHON_BIN) {
+    return { exe: process.env.PYTHON_BIN, prefixArgs: [] };
+  }
   if (process.platform === 'win32') {
     return { exe: 'py', prefixArgs: ['-3.12'] };
   }
-  return { exe: 'python3', prefixArgs: [] };
+  return { exe: 'python', prefixArgs: [] };
 }
 
 /**
@@ -102,6 +105,7 @@ function runParser(gameName: string): Promise<any> {
     ];
 
     const options = {
+      maxBuffer: 10 * 1024 * 1024,
       env: {
         ...process.env,
         SKIP_REQUIREMENTS_UPDATE: '1'

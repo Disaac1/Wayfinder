@@ -1,6 +1,6 @@
-# Wayfinder
+# Lodestone
 
-Wayfinder is an Archipelago multiplayer lobby with a Godot client and a
+Lodestone is an Archipelago multiplayer lobby with a Godot client and a
 TypeScript/Python backend.
 
 ## Fresh checkout
@@ -35,7 +35,7 @@ setup command is recommended because it installs the Python dependencies
 explicitly and reports failures before the server is launched.
 
 The Godot editor/runtime is also an external prerequisite for running the
-client from source. Install Godot 4.x separately or use a packaged Wayfinder
+client from source. Install Godot 4.x separately or use a packaged Lodestone
 release. Game tools and ROMs require their respective licenses and must be
 provided separately; they are not silently downloaded by the repository.
 
@@ -45,7 +45,7 @@ PopTracker is represented as a pinned launcher tool in
 `backend/data/tools/poptracker.json`. The client validates the configured
 SHA-256 checksum before installing it. Game-specific tracker packs are
 configured separately in each game's `launch.json`; a game must provide a
-verified pack URL and checksum before Wayfinder advertises tracker support.
+verified pack URL and checksum before Lodestone advertises tracker support.
 
 On Windows, the same commands work in PowerShell; use `npm.cmd` if your
 PowerShell execution policy blocks `npm.ps1`.

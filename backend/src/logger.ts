@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const LOGS_DIR = path.join(__dirname, '..', 'logs');
-const LOG_FILE_PATH = path.join(LOGS_DIR, 'wayfinder-backend.log');
+const LOG_FILE_PATH = path.join(LOGS_DIR, 'lodestone-backend.log');
 const MAX_LOG_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
 if (!fs.existsSync(LOGS_DIR)) {

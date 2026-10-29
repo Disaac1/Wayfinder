@@ -1,0 +1,74 @@
+{
+  "hades.apworld": {
+    "game": "Hades",
+    "filename": "hades.apworld",
+    "repo": "NaixGames/Polycosmos",
+    "release_tag": "latest",
+    "download_url": "https://github.com/NaixGames/Polycosmos/releases/latest/download/hades.apworld",
+    "description": "Polycosmos Hades Archipelago World integration"
+  },
+  "luigismansion.apworld": {
+    "game": "Luigi's Mansion",
+    "filename": "luigismansion.apworld",
+    "repo": "Pwoody/LuigisMansionAPWorld",
+    "release_tag": "latest",
+    "download_url": "https://github.com/Pwoody/LuigisMansionAPWorld/releases/latest/download/luigismansion.apworld",
+    "description": "Luigi's Mansion (GameCube) Archipelago World"
+  },
+  "metroidfusion.apworld": {
+    "game": "Metroid Fusion",
+    "filename": "metroidfusion.apworld",
+    "repo": "MetroidFusionAP/MetroidFusionAPWorld",
+    "release_tag": "latest",
+    "download_url": "https://github.com/MetroidFusionAP/MetroidFusionAPWorld/releases/latest/download/metroidfusion.apworld",
+    "description": "Metroid Fusion (GBA) Archipelago World"
+  },
+  "pokemon_bw.apworld": {
+    "game": "Pokemon Black and White",
+    "filename": "pokemon_bw.apworld",
+    "repo": "PokemonBWAP/PokemonBWAPWorld",
+    "release_tag": "latest",
+    "download_url": "https://github.com/PokemonBWAP/PokemonBWAPWorld/releases/latest/download/pokemon_bw.apworld",
+    "description": "Pokemon Black & White (NDS) Archipelago World"
+  },
+  "pvzr.apworld": {
+    "game": "Plants vs. Zombies",
+    "filename": "pvzr.apworld",
+    "repo": "pvz-rando/pvzr-apworld",
+    "release_tag": "latest",
+    "download_url": "https://github.com/pvz-rando/pvzr-apworld/releases/latest/download/pvzr.apworld",
+    "description": "Plants vs. Zombies Replanted Archipelago World"
+  },
+  "sotn.apworld": {
+    "game": "Castlevania: Symphony of the Night",
+    "filename": "sotn.apworld",
+    "repo": "CastlevaniaSotNAP/SotNAPWorld",
+    "release_tag": "latest",
+    "download_url": "https://github.com/CastlevaniaSotNAP/SotNAPWorld/releases/latest/download/sotn.apworld",
+    "description": "Castlevania: Symphony of the Night (PSX) Archipelago World"
+  },
+  "spire.apworld": {
+    "game": "Slay the Spire",
+    "filename": "spire.apworld",
+    "repo": "spire-rando/spire-apworld",
+    "release_tag": "latest",
+    "download_url": "https://github.com/spire-rando/spire-apworld/releases/latest/download/spire.apworld",
+    "description": "Slay the Spire Archipelago World"
+  },
+  "spire2.apworld": {
+    "game": "Slay the Spire 2",
+    "filename": "spire2.apworld",
+    "repo": "spire-rando/spire2-apworld",
+    "release_tag": "latest",
+    "download_url": "https://github.com/spire-rando/spire2-apworld/releases/latest/download/spire2.apworld",
+    "description": "Slay the Spire II Archipelago World"
+  },
+  "tboir.apworld": {
+    "game": "The Binding of Isaac Repentance",
+    "filename": "tboir.apworld",
+    "repo": "TheRealGamer/tboir-apworld",
+    "release_tag": "latest",
+    "download_url": "https://github.com/TheRealGamer/tboir-apworld/releases/latest/download/tboir.apworld",
+    "description": "The Binding of Isaac: Repentance Archipelago World"
+  }
+}

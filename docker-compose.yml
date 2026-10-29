@@ -1,9 +1,9 @@
 services:
-  wayfinder:
+  lodestone:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: wayfinder-server
+    container_name: lodestone-server
     restart: unless-stopped
     ports:
       # Lobby HTTP API and WebSocket
@@ -22,7 +22,7 @@ services:
       - DATABASE_URL=/app/backend/runtime/database.db
     volumes:
       # Persistent SQLite database
-      - wayfinder-database:/app/backend/runtime
+      - lodestone-database:/app/backend/runtime
       # Persistent seed generations, patches, and save files
       - ./backend/temp_seeds:/app/backend/temp_seeds
       # Custom .apworld worlds directory
@@ -33,4 +33,4 @@ services:
       - ./backend/updates:/app/backend/updates
 
 volumes:
-  wayfinder-database:
+  lodestone-database:

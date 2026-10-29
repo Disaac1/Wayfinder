@@ -2,7 +2,7 @@ import { uploadSeedAndCreateRoom, getRoomStatus, wakeRoom, markRoomAndSeedForDel
 import { startCentralServer, killRoomServer } from './serverManager.js';
 import db from './db.js';
 
-export type HostingMode = 'wayfinder_backend' | 'archipelago_gg';
+export type HostingMode = 'lodestone_backend' | 'wayfinder_backend' | 'archipelago_gg';
 
 export interface HostingResult {
   seedId: string | null;
@@ -55,8 +55,8 @@ function archipelagoStatusResult(status: ArchipelagoGgRoomStatus, roomId: string
   };
 }
 
-const wayfinderBackendProvider: HostingProvider = {
-  mode: 'wayfinder_backend',
+const lodestoneBackendProvider: HostingProvider = {
+  mode: 'lodestone_backend',
   managesLocalProcess: true,
   async hostSeed(roomCode, seedArchivePath, zipName) {
     await startCentralServer(roomCode, zipName);
@@ -128,14 +128,16 @@ const archipelagoGgProvider: HostingProvider = {
   }
 };
 
-const providers: Record<HostingMode, HostingProvider> = {
-  wayfinder_backend: wayfinderBackendProvider,
+const providers: Record<string, HostingProvider> = {
+  lodestone_backend: lodestoneBackendProvider,
+  wayfinder_backend: lodestoneBackendProvider,
   archipelago_gg: archipelagoGgProvider
 };
 
 export function getHostingProvider(mode: string | null | undefined): HostingProvider {
-  if (mode !== 'wayfinder_backend' && mode !== 'archipelago_gg') {
+  const normalized = (!mode || mode === 'wayfinder_backend' || mode === 'lodestone_backend') ? 'lodestone_backend' : mode;
+  if (!providers[normalized]) {
     throw new Error(`Unsupported hosting mode: ${mode || 'empty'}`);
   }
-  return providers[mode];
+  return providers[normalized];
 }

@@ -45,7 +45,7 @@ const BACKEND_ROOT = path.join(__dirname, '..');
 // Character set for 6-digit room codes (excluding confusing characters: 0, 1, I, O, L)
 const ROOM_CODE_CHARACTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
-const CONNECTION_KIND = 'WAYFINDER_LOBBY';
+const CONNECTION_KIND = 'LODESTONE_LOBBY';
 
 // Map of userId -> active WebSocket connection
 const activeConnections = new Map<string, WebSocket>();

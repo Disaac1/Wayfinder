@@ -18,6 +18,7 @@ import {
 } from './roomManager.js';
 import { clearCache } from './archipelagoRunner.js';
 import { getLogs, clearLogs, addLog } from './logger.js';
+import { loadRegistry, downloadFromUpstream } from './customWorldRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -587,6 +588,33 @@ router.post('/custom-worlds/upload', upload.single('file'), (req: Request, res: 
  * DELETE /api/admin/custom-worlds/:filename
  * Delete a custom .apworld file
  */
+
+/**
+ * POST /api/admin/custom-worlds/sync-upstream
+ * Automatically downloads/updates custom .apworld packages from their upstream GitHub repositories.
+ */
+router.post('/custom-worlds/sync-upstream', async (req: Request, res: Response) => {
+  try {
+    const registry = loadRegistry();
+    const results: Array<{ filename: string; success: boolean; repo: string }> = [];
+
+    if (!fs.existsSync(CUSTOM_WORLDS_DIR)) {
+      fs.mkdirSync(CUSTOM_WORLDS_DIR, { recursive: true });
+    }
+
+    for (const [filename, item] of Object.entries(registry)) {
+      const dest = path.join(CUSTOM_WORLDS_DIR, filename);
+      const success = await downloadFromUpstream(item.download_url, dest);
+      results.push({ filename, success, repo: item.repo });
+    }
+
+    clearCache();
+    res.json({ success: true, count: results.filter(r => r.success).length, results });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.delete('/custom-worlds/:filename', (req: Request, res: Response) => {
   const safeFilename = path.basename(req.params.filename as string);
   try {
