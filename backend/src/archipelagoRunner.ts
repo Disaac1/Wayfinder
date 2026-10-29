@@ -146,12 +146,39 @@ export function clearCache(): void {
 /**
  * Returns a list of all registered Archipelago games (official + custom).
  */
+
+function getCustomWorldsFingerprint(): string {
+  try {
+    if (!fs.existsSync(CUSTOM_WORLDS_DIR)) return '';
+    const entries = fs.readdirSync(CUSTOM_WORLDS_DIR).filter(f => f.endsWith('.apworld'));
+    const stats = entries.map(f => {
+      const p = path.join(CUSTOM_WORLDS_DIR, f);
+      const stat = fs.statSync(p);
+      return f + ':' + stat.size + ':' + stat.mtimeMs;
+    });
+    return stats.sort().join(';');
+  } catch {
+    return '';
+  }
+}
+
+let lastCustomWorldsFingerprint: string | null = null;
+
 export async function getAvailableGames(forceRefresh: boolean = false): Promise<string[]> {
   if (!forceRefresh && gamesCache) {
     return gamesCache;
   }
 
   const cacheKey = 'games_list';
+
+  const currentFingerprint = getCustomWorldsFingerprint();
+  if (lastCustomWorldsFingerprint === null) {
+    lastCustomWorldsFingerprint = currentFingerprint;
+  } else if (lastCustomWorldsFingerprint !== currentFingerprint) {
+    console.log('[ArchipelagoRunner] Detected custom_worlds changes on disk; invalidating games_list cache.');
+    lastCustomWorldsFingerprint = currentFingerprint;
+    forceRefresh = true;
+  }
 
   if (!forceRefresh) {
     try {
@@ -197,6 +224,15 @@ export async function getGameOptions(gameName: string, forceRefresh: boolean = f
   }
 
   const cacheKey = `game:${gameName}`;
+
+  const currentFingerprint = getCustomWorldsFingerprint();
+  if (lastCustomWorldsFingerprint === null) {
+    lastCustomWorldsFingerprint = currentFingerprint;
+  } else if (lastCustomWorldsFingerprint !== currentFingerprint) {
+    console.log('[ArchipelagoRunner] Detected custom_worlds changes on disk; invalidating games_list cache.');
+    lastCustomWorldsFingerprint = currentFingerprint;
+    forceRefresh = true;
+  }
 
   if (!forceRefresh) {
     try {

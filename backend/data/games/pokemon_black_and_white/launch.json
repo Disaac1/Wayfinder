@@ -32,7 +32,34 @@
   ],
   "host_yaml": {
     "section": "pokemon_bw_settings",
-    "dynamic_rom_key": "dynamic_rom"
+    "extra_sections": [
+      "pokemon_bw_options"
+    ],
+    "mappings": [
+      {
+        "key": "dynamic_rom",
+        "value": "{rom_path}"
+      },
+      {
+        "key": "black_rom",
+        "value": "{rom_path}",
+        "when_filename_matches": "*black*"
+      },
+      {
+        "key": "white_rom",
+        "value": "{rom_path}",
+        "when_filename_matches": "*white*"
+      }
+    ],
+    "options": {
+      "enable_encounter_plando": true,
+      "enable_stats_plando": true,
+      "enable_move_data_plando": true,
+      "dump_patched_files": false,
+      "enable_arm7_expansion_test": false,
+      "extract_text": false,
+      "extended_spoiler": false
+    }
   },
   "auto_connect": true,
   "tracker": {

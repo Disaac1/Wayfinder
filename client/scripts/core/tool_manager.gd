@@ -1,7 +1,8 @@
 class_name ToolManager
 extends RefCounted
 
-const DEFAULT_ARCHIPELAGO_DOWNLOAD_URL: String = "https://github.com/ArchipelagoMW/Archipelago/releases/download/0.6.7/Setup.Archipelago.0.6.7.exe"
+const DEFAULT_ARCHIPELAGO_DOWNLOAD_URL: String = "/tools/archipelago.zip"
+const DEFAULT_ARCHIPELAGO_FALLBACK_URL: String = "https://github.com/ArchipelagoMW/Archipelago/releases/download/0.6.7/Setup.Archipelago.0.6.7.exe"
 
 var paths_config: Dictionary
 var locator

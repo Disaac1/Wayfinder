@@ -20,7 +20,8 @@ const RomDownloadServiceScript = preload("res://scripts/core/rom_download_servic
 const TrackerManagerScript = preload("res://scripts/core/tracker_manager.gd")
 
 # --- CONSTANTS ---
-const DEFAULT_ARCHIPELAGO_DOWNLOAD_URL: String = "https://github.com/ArchipelagoMW/Archipelago/releases/download/0.6.7/Setup.Archipelago.0.6.7.exe"
+const DEFAULT_ARCHIPELAGO_DOWNLOAD_URL: String = "/tools/archipelago.zip"
+const DEFAULT_ARCHIPELAGO_FALLBACK_URL: String = "https://github.com/ArchipelagoMW/Archipelago/releases/download/0.6.7/Setup.Archipelago.0.6.7.exe"
 const DEFAULT_BIZHAWK_PREREQS_URL: String = "https://github.com/TASEmulators/BizHawk-Prereqs/releases/download/2.4.8_1/bizhawk_prereqs_v2.4.8_1.zip"
 
 const BYTES_PER_MB: float = 1024.0 * 1024.0
@@ -208,8 +209,8 @@ func get_rom_download_entry(identifier: String) -> Dictionary:
 func resolve_download_url(raw_url: String) -> String:
 	return LauncherUtils.resolve_download_url(raw_url)
 
-func decrypt_file_aes256(encrypted_path: String, output_path: String, passphrase: String) -> bool:
-	return LauncherUtils.decrypt_file_aes256(encrypted_path, output_path, passphrase)
+func decrypt_file_aes256(encrypted_path: String, output_path: String, passphrase: String, progress_callback: Callable = Callable()) -> bool:
+	return LauncherUtils.decrypt_file_aes256(encrypted_path, output_path, passphrase, progress_callback)
 
 
 func load_paths_config() -> void:
@@ -281,10 +282,14 @@ func find_existing_base_rom(rom_name: String) -> String:
 						var m_err: Error = DirAccess.copy_absolute(p_path, target_unified)
 						if m_err == OK:
 							print("[Launcher] Auto-migrated paths_config legacy ROM to unified path: ", target_unified)
+							DirAccess.remove_absolute(p_path)
+							_cleanup_legacy_base_roms_dir()
 							paths_config[g_name] = target_unified
 							save_paths_config()
 							return target_unified
 					else:
+						DirAccess.remove_absolute(p_path)
+						_cleanup_legacy_base_roms_dir()
 						paths_config[g_name] = target_unified
 						save_paths_config()
 						return target_unified
@@ -342,12 +347,63 @@ func find_existing_base_rom(rom_name: String) -> String:
 							var mig_err: Error = DirAccess.copy_absolute(full_file_path, target_unified)
 							if mig_err == OK:
 								print("[Launcher] Auto-migrated legacy ROM to unified game path: ", target_unified)
+								DirAccess.remove_absolute(full_file_path)
+								_cleanup_legacy_base_roms_dir()
 								return target_unified
 						else:
+							DirAccess.remove_absolute(full_file_path)
+							_cleanup_legacy_base_roms_dir()
 							return target_unified
 					return full_file_path
 			
 	return _fuzzy_search_matching_rom(candidate_directories, rom_name, target_extension)
+
+func migrate_all_legacy_base_roms() -> void:
+	var legacy_dirs: Array[String] = [USER_BASE_ROMS_DIR, "user://base_rom", "user://roms"]
+	for l_dir in legacy_dirs:
+		if not DirAccess.dir_exists_absolute(l_dir):
+			continue
+		var da: DirAccess = DirAccess.open(l_dir)
+		if not da:
+			continue
+		da.list_dir_begin()
+		var fn: String = da.get_next()
+		while fn != "":
+			if not da.current_is_dir() and not fn.begins_with("."):
+				var old_path: String = l_dir.path_join(fn)
+				var slug: String = get_game_slug_for_rom(fn)
+				if slug != "":
+					var game_folder: String = USER_GAMES_DIR.path_join(slug)
+					var target_path: String = game_folder.path_join(fn)
+					if not FileAccess.file_exists(target_path):
+						DirAccess.make_dir_recursive_absolute(game_folder)
+						var err: Error = DirAccess.copy_absolute(old_path, target_path)
+						if err == OK:
+							print("[Launcher] Auto-migrated legacy base ROM to: ", target_path)
+							DirAccess.remove_absolute(old_path)
+					else:
+						DirAccess.remove_absolute(old_path)
+						print("[Launcher] Removed redundant legacy ROM (already in games/): ", old_path)
+			fn = da.get_next()
+	_cleanup_legacy_base_roms_dir()
+
+func _cleanup_legacy_base_roms_dir() -> void:
+	var legacy_dirs: Array[String] = [USER_BASE_ROMS_DIR, "user://base_rom", "user://roms"]
+	for l_dir in legacy_dirs:
+		if DirAccess.dir_exists_absolute(l_dir):
+			var da: DirAccess = DirAccess.open(l_dir)
+			if da:
+				da.list_dir_begin()
+				var fn: String = da.get_next()
+				var is_empty: bool = true
+				while fn != "":
+					if not fn.begins_with("."):
+						is_empty = false
+						break
+					fn = da.get_next()
+				if is_empty:
+					DirAccess.remove_absolute(l_dir)
+					print("[Launcher] Cleaned up empty legacy directory: ", l_dir)
 
 func _fuzzy_search_matching_rom(candidate_directories: Array[String], rom_name: String, target_extension: String) -> String:
 	var search_keywords: Array[String] = []
@@ -420,8 +476,12 @@ func _fuzzy_search_matching_rom(candidate_directories: Array[String], rom_name: 
 										var mig_err: Error = DirAccess.copy_absolute(found_path, target_unified)
 										if mig_err == OK:
 											print("[Launcher] Auto-migrated fuzzy legacy ROM to unified path: ", target_unified)
+											DirAccess.remove_absolute(found_path)
+											_cleanup_legacy_base_roms_dir()
 											return target_unified
 									else:
+										DirAccess.remove_absolute(found_path)
+										_cleanup_legacy_base_roms_dir()
 										return target_unified
 								return found_path
 				file_item = dir_access.get_next()
@@ -655,21 +715,28 @@ func _inject_emulator_firmware_config(emulator_dir: String, emu_cfg: Dictionary)
 #                ARCHIPELAGO CONFIG SYNC (host.yaml)
 # =====================================================================
 
-func sync_archipelago_host_yaml(rom_path: String, bizhawk_path: String = "") -> void:
+func sync_archipelago_host_yaml(rom_path: String, bizhawk_path: String = "", dolphin_path: String = "", server_url: String = "") -> void:
 	if bizhawk_path == "":
 		bizhawk_path = paths_config.get("bizhawk_emulator", "")
 		if bizhawk_path == "" or not FileAccess.file_exists(bizhawk_path):
 			bizhawk_path = find_executable_recursive(USER_TOOLS_DIR, "EmuHawk.exe")
+	if dolphin_path == "":
+		dolphin_path = paths_config.get("dolphin_emulator", "")
+		if dolphin_path == "" or not FileAccess.file_exists(dolphin_path):
+			dolphin_path = find_executable_recursive(USER_TOOLS_DIR, "Dolphin.exe")
 
 	var possible_host_yaml_paths: Array[String] = _get_archipelago_host_yaml_paths()
 	var absolute_rom_path: String = ProjectSettings.globalize_path(rom_path).replace("\\", "/")
 	var absolute_bizhawk_path: String = ProjectSettings.globalize_path(bizhawk_path).replace("\\", "/") if bizhawk_path != "" else ""
+	var absolute_dolphin_path: String = ProjectSettings.globalize_path(dolphin_path).replace("\\", "/") if dolphin_path != "" else ""
 
-	_sync_base_rom_files_to_archipelago_dirs(rom_path)
+	_cleanup_legacy_archipelago_rom_copies()
 	sync_custom_worlds_to_archipelago()
 
+	if server_url == "" and Engine.has_singleton("NetworkManager"):
+		server_url = NetworkManager.get_ap_server_url()
 	for target_yaml_path in possible_host_yaml_paths:
-		_write_synced_host_yaml_file(target_yaml_path, absolute_rom_path, absolute_bizhawk_path)
+		_write_synced_host_yaml_file(target_yaml_path, absolute_rom_path, absolute_bizhawk_path, absolute_dolphin_path, server_url)
 
 func _get_archipelago_host_yaml_paths() -> Array[String]:
 	var possible_paths: Array[String] = [
@@ -703,69 +770,44 @@ func get_matching_rom_aliases(rom_path: String) -> Array[String]:
 					destination_filenames.append(alias_str)
 	return destination_filenames
 
-func _sync_base_rom_files_to_archipelago_dirs(rom_path: String) -> void:
-	if rom_path.strip_edges() == "":
-		return
+func _sync_base_rom_files_to_archipelago_dirs(_rom_path: String = "") -> void:
+	# Deprecated: ROMs and ISOs are now stored exclusively in user://games/<game_slug>/
+	_cleanup_legacy_archipelago_rom_copies()
 
-	var base_rom_dirs: Array[String] = [
-		USER_TOOLS_DIR.path_join("Archipelago/base_roms"),
-		USER_TOOLS_DIR.path_join("Archipelago")
-	]
+func _cleanup_legacy_archipelago_rom_copies() -> void:
+	# 1. Clean up base_roms directory inside tools/Archipelago
+	var ap_base_roms_dir: String = USER_TOOLS_DIR.path_join("Archipelago/base_roms")
+	if DirAccess.dir_exists_absolute(ap_base_roms_dir):
+		var da: DirAccess = DirAccess.open(ap_base_roms_dir)
+		if da:
+			da.list_dir_begin()
+			var fn: String = da.get_next()
+			while fn != "":
+				if not da.current_is_dir() and not fn.begins_with("."):
+					DirAccess.remove_absolute(ap_base_roms_dir.path_join(fn))
+				fn = da.get_next()
+		DirAccess.remove_absolute(ap_base_roms_dir)
+		print("[Launcher] Cleaned up legacy tools/Archipelago/base_roms directory")
 
-	var src_len: int = 0
-	var src_fa: FileAccess = FileAccess.open(rom_path, FileAccess.READ)
-	if src_fa:
-		src_len = src_fa.get_length()
-		src_fa.close()
-
-	# If CD-ROM / large file (> 50MB), only copy primary filename to avoid copying 513MB multiple times
-	var destination_filenames: Array[String] = []
-	if src_len > 50 * 1024 * 1024:
-		destination_filenames.append(rom_path.get_file())
-	else:
-		destination_filenames = get_matching_rom_aliases(rom_path)
-	if destination_filenames.is_empty():
-		return
-
-	for base_dir in base_rom_dirs:
-		DirAccess.make_dir_recursive_absolute(base_dir)
-		for dest_name in destination_filenames:
-			var target_dest_path: String = base_dir.path_join(dest_name)
-			var should_copy: bool = true
-			if FileAccess.file_exists(target_dest_path):
-				var dest_fa: FileAccess = FileAccess.open(target_dest_path, FileAccess.READ)
-				if dest_fa:
-					var dest_len: int = dest_fa.get_length()
-					dest_fa.close()
-					if dest_len == src_len and (src_len == 0 or dest_len > 1024):
-						should_copy = false
-			if should_copy:
-				DirAccess.copy_absolute(rom_path, target_dest_path)
-
-	# Dynamic supplemental / multi-track ROM syncing (e.g. CD-ROM audio tracks)
-	for game_key in launcher_presets.keys():
-		var preset: Dictionary = launcher_presets[game_key]
-		var req_audio: String = preset.get("required_audio_rom", "")
-		if req_audio != "":
-			var suppl_path: String = _find_supplemental_rom_path(rom_path, req_audio)
-			if suppl_path != "":
-				var s_fa: FileAccess = FileAccess.open(suppl_path, FileAccess.READ)
-				var s_len: int = 0
-				if s_fa:
-					s_len = s_fa.get_length()
-					s_fa.close()
-				for base_dir in base_rom_dirs:
-					var s_dest: String = base_dir.path_join(req_audio)
-					var should_copy_s: bool = true
-					if FileAccess.file_exists(s_dest):
-						var dest_fa: FileAccess = FileAccess.open(s_dest, FileAccess.READ)
-						if dest_fa:
-							var dest_len: int = dest_fa.get_length()
-							dest_fa.close()
-							if dest_len == s_len and dest_len > 1024:
-								should_copy_s = false
-					if should_copy_s:
-						DirAccess.copy_absolute(suppl_path, s_dest)
+	# 2. Clean up duplicate ROM/ISO files in tools/Archipelago root
+	var ap_dir: String = USER_TOOLS_DIR.path_join("Archipelago")
+	if DirAccess.dir_exists_absolute(ap_dir):
+		var ap_da: DirAccess = DirAccess.open(ap_dir)
+		if ap_da:
+			var rom_extensions: PackedStringArray = [
+				"iso", "rvz", "bin", "cue", "gba", "gbc", "gb",
+				"sfc", "smc", "z64", "n64", "nds", "gcm", "cso",
+				"chd", "wbfs"
+			]
+			ap_da.list_dir_begin()
+			var f: String = ap_da.get_next()
+			while f != "":
+				if not ap_da.current_is_dir() and not f.begins_with("."):
+					var f_ext: String = f.get_extension().to_lower()
+					if rom_extensions.has(f_ext):
+						DirAccess.remove_absolute(ap_dir.path_join(f))
+						print("[Launcher] Cleaned up redundant ROM from tools/Archipelago: ", f)
+				f = ap_da.get_next()
 
 func _find_supplemental_rom_path(rom_path: String, target_filename: String) -> String:
 	if target_filename == "":
@@ -796,7 +838,7 @@ func _find_supplemental_rom_path(rom_path: String, target_filename: String) -> S
 			return norm_path
 	return ""
 
-func _write_synced_host_yaml_file(target_yaml_path: String, absolute_rom_path: String, absolute_bizhawk_path: String) -> void:
+func _write_synced_host_yaml_file(target_yaml_path: String, absolute_rom_path: String, absolute_bizhawk_path: String, absolute_dolphin_path: String = "", server_url: String = "") -> void:
 	var dir_path: String = target_yaml_path.get_base_dir()
 	DirAccess.make_dir_recursive_absolute(dir_path)
 
@@ -808,12 +850,16 @@ func _write_synced_host_yaml_file(target_yaml_path: String, absolute_rom_path: S
 			file_access.close()
 
 	var rom_ext: String = absolute_rom_path.get_extension().to_lower()
+	var rom_filename_lower: String = absolute_rom_path.get_file().to_lower()
+	var clean_server_addr: String = server_url.replace("wss://", "").replace("ws://", "").trim_suffix("/")
+	if clean_server_addr == "" and Engine.has_singleton("NetworkManager"):
+		clean_server_addr = NetworkManager.get_ap_server_url().replace("wss://", "").replace("ws://", "").trim_suffix("/")
+
 	for game_key in launcher_presets.keys():
 		var preset: Dictionary = launcher_presets[game_key]
 		if preset.has("host_yaml") and preset["host_yaml"] is Dictionary:
 			var host_cfg: Dictionary = preset["host_yaml"]
 			var section: String = host_cfg.get("section", "")
-			var option_key: String = host_cfg.get("rom_file_key", "rom_file")
 			var req_rom: String = preset.get("required_rom", "")
 			var req_ext: String = req_rom.get_extension().to_lower()
 			var is_matching_rom: bool = false
@@ -825,6 +871,15 @@ func _write_synced_host_yaml_file(target_yaml_path: String, absolute_rom_path: S
 					if str(alias).get_extension().to_lower() == rom_ext:
 						is_matching_rom = true
 						break
+			if not is_matching_rom and rom_ext == "exe":
+				var client_exec: String = preset.get("client_executable", preset.get("executable_name", "")).to_lower()
+				if client_exec != "" and (rom_filename_lower == client_exec or client_exec.get_file() == rom_filename_lower):
+					is_matching_rom = true
+				else:
+					for exec_alias in preset.get("executable_aliases", []):
+						if str(exec_alias).to_lower() == rom_filename_lower:
+							is_matching_rom = true
+							break
 			
 			if is_matching_rom and section != "":
 				var sections_to_update: Array[String] = [section]
@@ -838,10 +893,55 @@ func _write_synced_host_yaml_file(target_yaml_path: String, absolute_rom_path: S
 				if audio_opt_key != "" and req_audio != "":
 					audio_path = _find_supplemental_rom_path(absolute_rom_path, req_audio)
 				
+				# Dictionary of patches for this section
+				var patches: Dictionary = {}
+				
+				# 1. Generic data-driven static options/patches dict
+				var raw_options: Dictionary = host_cfg.get("options", host_cfg.get("patches", {}))
+				for opt_k in raw_options.keys():
+					var raw_val = raw_options[opt_k]
+					if typeof(raw_val) == TYPE_STRING:
+						patches[opt_k] = _evaluate_yaml_template(str(raw_val), absolute_rom_path, absolute_bizhawk_path, absolute_dolphin_path, server_url, clean_server_addr)
+					else:
+						patches[opt_k] = raw_val
+				
+				# 2. Generic data-driven mappings list
+				var mappings: Array = host_cfg.get("mappings", [])
+				for m in mappings:
+					if not m is Dictionary:
+						continue
+					var map_key: String = str(m.get("key", ""))
+					if map_key == "":
+						continue
+					
+					# Check optional conditions
+					var when_matches: String = str(m.get("when_filename_matches", "")).to_lower()
+					if when_matches != "":
+						var pattern: String = when_matches.trim_prefix("*").trim_suffix("*")
+						if pattern != "" and not rom_filename_lower.contains(pattern):
+							continue
+					
+					var raw_v = m.get("value", "{rom_path}")
+					if typeof(raw_v) == TYPE_STRING:
+						patches[map_key] = _evaluate_yaml_template(str(raw_v), absolute_rom_path, absolute_bizhawk_path, absolute_dolphin_path, server_url, clean_server_addr)
+					else:
+						patches[map_key] = raw_v
+				
+				# 3. Backwards compatibility for rom_file_key / audio_file_key / dynamic_rom_key
+				var option_key: String = host_cfg.get("rom_file_key", "rom_file")
+				if option_key != "" and not patches.has(option_key):
+					patches[option_key] = absolute_rom_path
+				if audio_opt_key != "" and audio_path != "" and not patches.has(audio_opt_key):
+					patches[audio_opt_key] = audio_path
+				var dyn_rom_key: String = host_cfg.get("dynamic_rom_key", "")
+				if dyn_rom_key != "" and not patches.has(dyn_rom_key):
+					patches[dyn_rom_key] = absolute_rom_path
+				
 				for sec in sections_to_update:
-					yaml_content = _update_yaml_section_key(yaml_content, sec, option_key, absolute_rom_path)
-					if audio_opt_key != "" and audio_path != "":
-						yaml_content = _update_yaml_section_key(yaml_content, sec, audio_opt_key, audio_path)
+					yaml_content = ArchipelagoConfig.patch_yaml_section(yaml_content, sec, patches)
+
+	if absolute_dolphin_path != "":
+		yaml_content = _update_yaml_dolphin_block(yaml_content, absolute_dolphin_path)
 
 	if absolute_bizhawk_path != "":
 		yaml_content = _update_yaml_bizhawk_block(yaml_content, absolute_bizhawk_path)
@@ -859,11 +959,33 @@ func _write_synced_host_yaml_file(target_yaml_path: String, absolute_rom_path: S
 		writer_file.close()
 		print("[Launcher] Synced Archipelago host.yaml at: ", target_yaml_path)
 
+
+func _evaluate_yaml_template(raw_str: String, rom_path: String, bizhawk_path: String, dolphin_path: String, server_url: String, clean_server_addr: String) -> String:
+	var res: String = raw_str
+	res = res.replace("{rom_path}", rom_path)
+	res = res.replace("{game_dir}", rom_path.get_base_dir() if rom_path.get_extension() != "" else rom_path)
+	res = res.replace("{bizhawk_path}", bizhawk_path)
+	res = res.replace("{dolphin_path}", dolphin_path)
+	res = res.replace("{server_url}", server_url)
+	res = res.replace("{server_address}", clean_server_addr)
+	res = res.replace("{server_host}", clean_server_addr.split(":")[0] if clean_server_addr.contains(":") else clean_server_addr)
+	res = res.replace("{server_port}", clean_server_addr.split(":")[1] if clean_server_addr.contains(":") else "38000")
+	return res
+
+func update_yaml_value(yaml_content: String, section_key: String, option_path: String, val: Variant, extra_lines: Array[String] = []) -> String:
+	return ArchipelagoConfig.update_yaml_value(yaml_content, section_key, option_path, val, extra_lines)
+
+func patch_yaml_section(yaml_content: String, section_key: String, patches: Dictionary) -> String:
+	return ArchipelagoConfig.patch_yaml_section(yaml_content, section_key, patches)
+
 func _update_yaml_section_key(yaml_content: String, section_key: String, option_key: String, option_val: String, extra_lines: Array[String] = []) -> String:
 	return ArchipelagoConfig.update_yaml_section_key(yaml_content, section_key, option_key, option_val, extra_lines)
 
 func _update_yaml_bizhawk_block(yaml_content: String, absolute_bizhawk_path: String) -> String:
 	return ArchipelagoConfig.update_yaml_bizhawk_block(yaml_content, absolute_bizhawk_path)
+
+func _update_yaml_dolphin_block(yaml_content: String, absolute_dolphin_path: String) -> String:
+	return ArchipelagoConfig.update_yaml_dolphin_block(yaml_content, absolute_dolphin_path)
 
 
 # =====================================================================
@@ -1339,7 +1461,7 @@ func _pipeline_prepare_tools(ctx: LaunchContext) -> bool:
 			ctx.client_exe_path = client_path
 		else:
 			var c_url: String = client_tool.get("download_url", DEFAULT_ARCHIPELAGO_DOWNLOAD_URL)
-			var c_fallback: String = client_tool.get("fallback_download_url", DEFAULT_ARCHIPELAGO_DOWNLOAD_URL)
+			var c_fallback: String = client_tool.get("fallback_download_url", DEFAULT_ARCHIPELAGO_FALLBACK_URL)
 			var subs_arr: Array = client_tool.get("sub_folders", ["Archipelago"])
 			var c_sub: String = subs_arr[0] if not subs_arr.is_empty() else "Archipelago"
 			var c_exe: String = client_tool.get("executable", "ArchipelagoLauncher.exe")
@@ -1400,6 +1522,7 @@ func _pipeline_prepare_tools(ctx: LaunchContext) -> bool:
 
 	# Custom Mod Packages (e.g. Modding API, Archipelago Mods)
 	var packages: Array = _get_preset_packages(ctx.preset)
+	var packages_installed: bool = false
 	if not packages.is_empty() and ctx.base_rom_path != "":
 		var game_dir: String = ctx.base_rom_path.get_base_dir()
 		for pkg_idx in range(packages.size()):
@@ -1425,8 +1548,117 @@ func _pipeline_prepare_tools(ctx: LaunchContext) -> bool:
 					if not pkg_res.get("success", false):
 						emit_signal("launch_failed", ctx.game_name, "Failed to install " + pkg_name + ": " + pkg_res.get("error", ""))
 						return false
+					packages_installed = true
 						
+
+		if packages_installed and ctx.preset.has("mod_importer"):
+			var imp_cfg: Dictionary = ctx.preset.get("mod_importer", {})
+			var imp_rel: String = imp_cfg.get("executable", "Content/modimporter.exe")
+			var full_imp_path: String = game_dir.path_join(imp_rel)
+			if FileAccess.file_exists(full_imp_path):
+				_report_status(ctx, LaunchStage.PREPARING_TOOLS, "Importing mods via ModImporter...", 48)
+				var imp_dir: String = full_imp_path.get_base_dir()
+				var cmd_str: String = "cd /d \"" + ProjectSettings.globalize_path(imp_dir) + "\" && echo. | \"" + ProjectSettings.globalize_path(full_imp_path) + "\""
+				print("[Launcher] Running ModImporter: ", cmd_str)
+				OS.execute("cmd.exe", ["/c", cmd_str], [], true)
+
+	# 3. RVZ decompression if ROM is RVZ or target ISO requires RVZ conversion
+	var is_dolphin_game: bool = ctx.preset.get("emulator_tool", "") == "dolphin"
+	var req_rom_name: String = ctx.preset.get("required_rom", "")
+	var base_is_rvz: bool = ctx.base_rom_path.to_lower().ends_with(".rvz")
+	if is_dolphin_game and (base_is_rvz or req_rom_name.to_lower().ends_with(".iso")):
+		var target_iso_name: String = req_rom_name if req_rom_name.to_lower().ends_with(".iso") else ctx.base_rom_path.get_file().get_basename() + ".iso"
+		var game_dir: String = get_game_dir(ctx.game_name)
+		var target_iso_path: String = game_dir.path_join(target_iso_name)
+		
+		if not FileAccess.file_exists(target_iso_path):
+			var source_rvz: String = ctx.base_rom_path if base_is_rvz else ""
+			if source_rvz == "":
+				var rvz_candidate: String = find_existing_base_rom(target_iso_name.get_basename() + ".rvz")
+				if rvz_candidate != "":
+					source_rvz = rvz_candidate
+			if source_rvz != "":
+				var dolphin_tool: String = _find_dolphin_tool_path(ctx.emulator_exe_path)
+				if dolphin_tool != "":
+					_report_status(ctx, LaunchStage.PREPARING_ROM, "Decompressing RVZ to vanilla ISO...", 45)
+					var conv_res: Dictionary = convert_rvz_to_iso(source_rvz, target_iso_path, dolphin_tool, true)
+					if not conv_res.get("success", false):
+						emit_signal("launch_failed", ctx.game_name, conv_res.get("error", "RVZ decompression failed."))
+						return false
+					ctx.base_rom_path = target_iso_path
+					paths_config[ctx.game_name] = target_iso_path
+					save_paths_config()
+				else:
+					print("[Launcher Warning] Found RVZ ( " + source_rvz + " ) but DolphinTool.exe not found to extract ISO.")
+		elif base_is_rvz:
+			var global_user_dir: String = ProjectSettings.globalize_path("user://").replace("\\", "/").trim_suffix("/")
+			var global_base: String = ProjectSettings.globalize_path(ctx.base_rom_path).replace("\\", "/")
+			if ctx.base_rom_path.begins_with("user://") or global_base.begins_with(global_user_dir):
+				DirAccess.remove_absolute(ctx.base_rom_path)
+				print("[Launcher] Removed redundant RVZ since ISO already exists: ", ctx.base_rom_path)
+			ctx.base_rom_path = target_iso_path
+			paths_config[ctx.game_name] = target_iso_path
+			save_paths_config()
+
 	return true
+
+
+func _find_dolphin_tool_path(dolphin_exe_path: String) -> String:
+	if dolphin_exe_path != "":
+		var dolphin_dir: String = dolphin_exe_path.get_base_dir()
+		var tool_candidate: String = dolphin_dir.path_join("DolphinTool.exe")
+		if FileAccess.file_exists(tool_candidate):
+			return tool_candidate
+			
+	var discovered: String = find_game_executable("DolphinTool.exe", ["Dolphin", "Dolphin-x64", "dolphin-master"], [], true)
+	if discovered != "" and FileAccess.file_exists(discovered):
+		return discovered
+	return ""
+
+func convert_rvz_to_iso(rvz_path: String, output_iso_path: String, dolphin_tool_path: String, delete_source: bool = false) -> Dictionary:
+	if dolphin_tool_path == "" or not FileAccess.file_exists(dolphin_tool_path):
+		return {"success": false, "error": "DolphinTool.exe not found for RVZ conversion."}
+	if not FileAccess.file_exists(rvz_path):
+		return {"success": false, "error": "Input RVZ file not found: " + rvz_path}
+		
+	var abs_rvz: String = ProjectSettings.globalize_path(rvz_path)
+	var abs_iso: String = ProjectSettings.globalize_path(output_iso_path)
+	
+	DirAccess.make_dir_recursive_absolute(output_iso_path.get_base_dir())
+	print("[Launcher] Converting RVZ to uncompressed ISO via DolphinTool...")
+	print("[Launcher] Command: ", dolphin_tool_path, " convert -i ", abs_rvz, " -o ", abs_iso, " -f iso")
+	
+	var args: Array = ["convert", "-i", abs_rvz, "-o", abs_iso, "-f", "iso"]
+	var pipe_data: Dictionary = OS.execute_with_pipe(dolphin_tool_path, args)
+	if not pipe_data.has("pid") or pipe_data["pid"] <= 0:
+		# Fallback to direct execute if execute_with_pipe fails
+		var output: Array = []
+		var exit_code: int = OS.execute(dolphin_tool_path, args, output, true)
+		if exit_code != 0:
+			var err_msg: String = " ".join(output)
+			return {"success": false, "error": "DolphinTool conversion failed: " + err_msg}
+	else:
+		var pid: int = pipe_data["pid"]
+		while OS.is_process_running(pid):
+			OS.delay_msec(100)
+		var stdout_pipe: FileAccess = pipe_data.get("stdout")
+		if stdout_pipe and stdout_pipe.is_open():
+			stdout_pipe.close()
+		var stderr_pipe: FileAccess = pipe_data.get("stderr")
+		if stderr_pipe and stderr_pipe.is_open():
+			stderr_pipe.close()
+		
+	if not FileAccess.file_exists(output_iso_path):
+		return {"success": false, "error": "DolphinTool finished with 0 but ISO was not generated."}
+		
+	print("[Launcher] RVZ converted to ISO successfully: ", output_iso_path)
+	if delete_source:
+		var global_user_dir: String = ProjectSettings.globalize_path("user://").replace("\\", "/").trim_suffix("/")
+		var global_rvz: String = ProjectSettings.globalize_path(rvz_path).replace("\\", "/")
+		if rvz_path.begins_with("user://") or global_rvz.begins_with(global_user_dir):
+			DirAccess.remove_absolute(rvz_path)
+			print("[Launcher] Deleted source RVZ after successful conversion: ", rvz_path)
+	return {"success": true, "path": output_iso_path}
 
 func _pipeline_prepare_firmware(ctx: LaunchContext) -> bool:
 	if not ctx.preset.has("required_firmware") or ctx.emulator_exe_path == "":
@@ -1439,13 +1671,14 @@ func _pipeline_prepare_firmware(ctx: LaunchContext) -> bool:
 
 func _pipeline_prepare_session_payload(ctx: LaunchContext) -> bool:
 	if ctx.launch_mode in ["ap_client", "patch_rom", "native_cli"]:
-		_report_status(ctx, LaunchStage.FETCHING_PATCH, "Retrieving multiworld seed patch...", 65)
 		var patch_ext: String = ctx.preset.get("patch_extension", "")
-		var patch_res: Dictionary = await _async_ensure_patch(ctx.node, ctx.game_name, patch_ext)
-		if not patch_res.get("success", false) or patch_res.get("path", "") == "":
-			emit_signal("launch_failed", ctx.game_name, "Could not retrieve seed patch: " + patch_res.get("error", ""))
-			return false
-		ctx.patch_path = patch_res.get("path")
+		if patch_ext != "":
+			_report_status(ctx, LaunchStage.FETCHING_PATCH, "Retrieving multiworld seed patch...", 65)
+			var patch_res: Dictionary = await _async_ensure_patch(ctx.node, ctx.game_name, patch_ext)
+			if not patch_res.get("success", false) or patch_res.get("path", "") == "":
+				emit_signal("launch_failed", ctx.game_name, "Could not retrieve seed patch: " + patch_res.get("error", ""))
+				return false
+			ctx.patch_path = patch_res.get("path")
 		
 		# Server connection URL
 		var ap_url: String = NetworkManager.get_ap_server_url()
@@ -1474,10 +1707,13 @@ func _pipeline_prepare_session_payload(ctx: LaunchContext) -> bool:
 
 func _pipeline_sync_environment(ctx: LaunchContext) -> bool:
 	_report_status(ctx, LaunchStage.SYNCING_CONFIG, "Syncing configuration...", 78)
-	if ctx.launch_mode == "ap_client":
+	if ctx.preset.has("host_yaml") or ctx.launch_mode == "ap_client":
 		sync_custom_worlds_to_archipelago()
-		sync_archipelago_host_yaml(ctx.base_rom_path, ctx.emulator_exe_path)
-	elif ctx.launch_mode in ["direct", "mod_injector"]:
+		var is_dolphin_emu = ctx.preset.get("emulator_tool", "") == "dolphin"
+		var b_path = "" if is_dolphin_emu else ctx.emulator_exe_path
+		var d_path = ctx.emulator_exe_path if is_dolphin_emu else ""
+		sync_archipelago_host_yaml(ctx.base_rom_path, b_path, d_path, ctx.server_url)
+	if ctx.launch_mode in ["direct", "mod_injector"]:
 		var total_games: int = 1
 		if is_instance_valid(ctx.node) and "local_selected_games" in ctx.node and not ctx.node.local_selected_games.is_empty():
 			total_games = ctx.node.local_selected_games.size()
@@ -1488,8 +1724,11 @@ func _pipeline_sync_environment(ctx: LaunchContext) -> bool:
 func _pipeline_spawn_process(ctx: LaunchContext) -> bool:
 	_report_status(ctx, LaunchStage.SPAWNING_PROCESS, "Starting game process...", 88)
 	if ctx.launch_mode == "ap_client":
-		var global_patch_path: String = ProjectSettings.globalize_path(ctx.patch_path)
-		var launch_args: Array = [global_patch_path]
+		var launch_args: Array = []
+		if ctx.patch_path != "":
+			launch_args.append(ProjectSettings.globalize_path(ctx.patch_path))
+		elif ctx.preset.get("client_component", "") != "":
+			launch_args.append(ctx.preset.get("client_component"))
 		if ctx.preset.get("auto_connect", false) and ctx.server_url != "":
 			launch_args.append("--")
 			launch_args.append("--connect")
@@ -1501,10 +1740,12 @@ func _pipeline_spawn_process(ctx: LaunchContext) -> bool:
 			print("[Launcher] Spawning Archipelago with patch: ", abs_client, " args: ", launch_args)
 			ctx.process_id = OS.create_process(abs_client, launch_args)
 		else:
-			print("[Launcher] Opening patch file directly via OS: ", global_patch_path)
-			var shell_err = OS.shell_open(global_patch_path)
-			if shell_err == OK:
-				ctx.process_id = 1
+			if ctx.patch_path != "":
+				var global_patch_path: String = ProjectSettings.globalize_path(ctx.patch_path)
+				print("[Launcher] Opening patch file directly via OS: ", global_patch_path)
+				var shell_err = OS.shell_open(global_patch_path)
+				if shell_err == OK:
+					ctx.process_id = 1
 				
 		if ctx.process_id <= 0:
 			emit_signal("launch_failed", ctx.game_name, "Failed to spawn Archipelago process: " + target_client)
@@ -1531,6 +1772,7 @@ func _pipeline_spawn_process(ctx: LaunchContext) -> bool:
 			print("[Launcher] Launching via Steam protocol: steam://rungameid/", steam_appid)
 			OS.shell_open("steam://rungameid/" + steam_appid)
 			ctx.process_id = 1
+			_spawn_companion_client_tool_if_needed(ctx)
 			return true
 
 		var total_games: int = 1
@@ -1551,6 +1793,7 @@ func _pipeline_spawn_process(ctx: LaunchContext) -> bool:
 		if ctx.process_id <= 0:
 			emit_signal("launch_failed", ctx.game_name, "Failed to launch game executable: " + abs_game_path)
 			return false
+		_spawn_companion_client_tool_if_needed(ctx)
 		return true
 
 	elif ctx.launch_mode == "patch_rom":
@@ -1955,3 +2198,18 @@ func _track_client_modding_and_finish(node: Node, patch_path: String, has_tracki
 			_update_modding_status(node, "Archipelago patcher active...\nModding game files, please wait...", highest_pct)
 
 	_dismiss_modding_overlay(node)
+
+func _spawn_companion_client_tool_if_needed(ctx: LaunchContext) -> void:
+	var client_tool_key: String = ctx.preset.get("client_tool", "")
+	if client_tool_key != "" and ctx.client_exe_path != "" and FileAccess.file_exists(ctx.client_exe_path):
+		var abs_client: String = ProjectSettings.globalize_path(ctx.client_exe_path)
+		var client_args: Array = []
+		var comp: String = ctx.preset.get("client_component", "")
+		if comp != "":
+			client_args.append(comp)
+		if ctx.preset.get("auto_connect", false) and ctx.server_url != "":
+			client_args.append("--")
+			client_args.append("--connect")
+			client_args.append(ctx.server_url)
+		print("[Launcher] Spawning companion client tool: ", abs_client, " args: ", client_args)
+		OS.create_process(abs_client, client_args)

@@ -114,5 +114,5 @@ func _build_step_content(step_num: int, container: VBoxContainer) -> void:
 			"dropdown":
 				var opt_key = ctrl.get("option_key", "")
 				var label = ctrl.get("label", opt_key)
-				var choices = ctrl.get("choices", [])
+				var choices = ctrl.get("choices", ctrl.get("options", []))
 				add_dropdown_option(container, label, opt_key, choices)

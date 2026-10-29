@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Wayfinder Release & Deployment Pipeline
+Lodestone Release & Deployment Pipeline
 ========================================
 Automates the full deploy workflow:
 1. Exports Godot client (Build.exe + Build.pck).
-2. Signs and publishes auto-update package (Wayfinder.pck + version.json).
-3. Packages portable client ZIP (Wayfinder_Windows.zip) for website download.
-4. If Inno Setup (iscc.exe) is installed, compiles Windows installer (Wayfinder_Setup.exe).
+2. Signs and publishes auto-update package (Lodestone.pck + version.json).
+3. Packages portable client ZIP (Lodestone_Windows.zip) for website download.
+4. If Inno Setup (iscc.exe) is installed, compiles Windows installer (Lodestone_Setup.exe).
 5. Deploys downloads to backend/public/downloads/.
 """
 
@@ -32,7 +32,7 @@ DOWNLOADS_DIR = BACKEND_DIR / "public" / "downloads"
 TOOLS_DIR = WORKSPACE_ROOT / "tools"
 GODOT_EXE = CLIENT_DIR / "godot_console.exe"
 PUBLISH_SCRIPT = TOOLS_DIR / "publish_update.py"
-INSTALLER_ISS = WORKSPACE_ROOT / "installer" / "wayfinder.iss"
+INSTALLER_ISS = WORKSPACE_ROOT / "installer" / "lodestone.iss"
 
 
 def update_updater_base_version(version: str):
@@ -46,6 +46,24 @@ def update_updater_base_version(version: str):
         )
         updater_file.write_text(updated, encoding="utf-8")
         print(f"  -> Updated BASE_VERSION to {version} in client/scripts/core/updater.gd")
+
+
+def update_export_metadata(version: str):
+    presets_file = CLIENT_DIR / "export_presets.cfg"
+    if presets_file.exists():
+        content = presets_file.read_text(encoding="utf-8")
+        parts = version.split(".")
+        while len(parts) < 4:
+            parts.append("0")
+        four_part = ".".join(parts[:4])
+        content = re.sub(r'application/file_version="[^"]*"', f'application/file_version="{four_part}"', content)
+        content = re.sub(r'application/product_version="[^"]*"', f'application/product_version="{version}"', content)
+        content = re.sub(r'application/company_name="[^"]*"', 'application/company_name="Lodestone"', content)
+        content = re.sub(r'application/product_name="[^"]*"', 'application/product_name="Lodestone"', content)
+        content = re.sub(r'application/file_description="[^"]*"', 'application/file_description="Lodestone Archipelago Multiworld Client"', content)
+        content = re.sub(r'application/copyright="[^"]*"', 'application/copyright="Copyright 2026 Lodestone"', content)
+        presets_file.write_text(content, encoding="utf-8")
+        print(f"  -> Embedded PE version info ({four_part}) into client/export_presets.cfg")
 
 
 def export_godot():
@@ -89,12 +107,12 @@ def publish_auto_update(version: str, notes: str, bridge: bool = False, target_v
 def package_portable_zip(version: str):
     print(f"\n[3/4] Creating Portable Client Archive for Website...")
     DOWNLOADS_DIR.mkdir(parents=True, exist_ok=True)
-    zip_path = DOWNLOADS_DIR / "Wayfinder_Windows.zip"
-    versioned_zip = DOWNLOADS_DIR / f"Wayfinder_v{version}_Windows.zip"
+    zip_path = DOWNLOADS_DIR / "Lodestone_Windows.zip"
+    versioned_zip = DOWNLOADS_DIR / f"Lodestone_v{version}_Windows.zip"
     
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.write(BUILD_EXE, arcname="Wayfinder.exe")
-        zf.write(BUILD_PCK, arcname="Wayfinder.pck")
+        zf.write(BUILD_EXE, arcname="Lodestone.exe")
+        zf.write(BUILD_PCK, arcname="Lodestone.pck")
         
     shutil.copy2(zip_path, versioned_zip)
     print(f"  -> Generated: {zip_path.name} ({zip_path.stat().st_size:,} bytes)")
@@ -120,9 +138,9 @@ def build_installer(version: str):
     res = subprocess.run(cmd, cwd=WORKSPACE_ROOT)
     if res.returncode == 0:
         dist_dir = WORKSPACE_ROOT / "dist"
-        setup_exe = dist_dir / f"Wayfinder_Setup_v{version}.exe"
+        setup_exe = dist_dir / f"Lodestone_Setup_v{version}.exe"
         if setup_exe.exists():
-            dest_setup = DOWNLOADS_DIR / "Wayfinder_Setup.exe"
+            dest_setup = DOWNLOADS_DIR / "Lodestone_Setup.exe"
             shutil.copy2(setup_exe, dest_setup)
             print(f"  -> Successfully built and deployed: {dest_setup.name} ({setup_exe.stat().st_size:,} bytes)")
     else:
@@ -131,27 +149,12 @@ def build_installer(version: str):
 
 def get_version_info():
     version_file = UPDATES_DIR / "version.json"
-    curr = "1.0.0"
+    curr = "1.2.0"
     if version_file.exists():
         try:
             with open(version_file, "r", encoding="utf-8") as vf:
                 data = json.load(vf)
-                curr = data.get("version", "1.0.0")
-        except Exception:
-            pass
-
-    # If local version is still fallback 1.0.0, attempt fetching latest from published server
-    if curr == "1.0.0":
-        try:
-            req = urllib.request.Request(
-                "https://wayfinder.disaac1.com/api/client/version",
-                headers={"User-Agent": "Wayfinder-Release-Tool/1.0"}
-            )
-            with urllib.request.urlopen(req, timeout=2.5) as resp:
-                remote_data = json.loads(resp.read().decode("utf-8"))
-                rem_ver = remote_data.get("version")
-                if rem_ver:
-                    curr = rem_ver
+                curr = data.get("version", "1.2.0")
         except Exception:
             pass
 
@@ -165,8 +168,8 @@ def get_version_info():
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Wayfinder Full Build & Deploy Tool")
-    parser.add_argument("--version", type=str, required=False, help="Release version (e.g., 1.0.1)")
+    parser = argparse.ArgumentParser(description="Lodestone Full Build & Deploy Tool")
+    parser.add_argument("--version", type=str, required=False, help="Release version (e.g., 1.2.0)")
     parser.add_argument("--notes", type=str, default="Latest release updates", help="Update release notes")
     parser.add_argument("--skip-export", action="store_true", help="Skip Godot export step if already built")
     parser.add_argument("--bridge-version", type=str, help="Build and publish a legacy bridge before the final version")
@@ -184,7 +187,7 @@ def main():
         sys.exit(1)
     
     print("=======================================================")
-    print(f"       Wayfinder Build & Deploy Pipeline (v{args.version})")
+    print(f"       Lodestone Build & Deploy Pipeline (v{args.version})")
     print("=======================================================")
     
     if not args.skip_export:
@@ -194,6 +197,7 @@ def main():
             publish_auto_update(args.bridge_version, args.notes, bridge=True, target_version=args.version)
 
         update_updater_base_version(args.version)
+        update_export_metadata(args.version)
         export_godot()
 
     publish_auto_update(args.version, args.notes)

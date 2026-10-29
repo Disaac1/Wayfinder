@@ -294,6 +294,8 @@ func add_dropdown_option(container: VBoxContainer, label_text: String, option_ke
 	
 	var drop = OptionButton.new()
 	drop.focus_mode = Control.FOCUS_NONE
+	if choices.is_empty():
+		return
 	var current_val = str(current_config.get(option_key, choices[0].get("id", choices[0].get("name", ""))))
 	var selected_idx = 0
 	

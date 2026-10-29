@@ -1,0 +1,214 @@
+{
+  "game_title": "Slay the Spire",
+  "default_config": {
+    "characters": [
+      "Ironclad",
+      "Silent",
+      "Defect",
+      "Watcher"
+    ],
+    "pick_num_characters": 2,
+    "num_chars_goal": 0,
+    "lock_characters": "locked_random",
+    "unlocked_character": "",
+    "ascension": 1,
+    "final_act": false,
+    "downfall": false,
+    "campfire_sanity": false,
+    "gold_sanity": false,
+    "potion_sanity": false,
+    "key_sanity": false,
+    "shop_sanity": false,
+    "shop_sanity_costs": "discount_tiered",
+    "death_link": 0,
+    "chatty_mc": true
+  },
+  "required_schema_keys": [
+    "characters",
+    "pick_num_characters",
+    "num_chars_goal",
+    "ascension",
+    "death_link"
+  ],
+  "steps": [
+    {
+      "num": 1,
+      "title": "1. Character Roster & Goals",
+      "description": "Step 1: Choose characters in the pool, how many you play, and win condition",
+      "controls": [
+        {
+          "type": "card_grid",
+          "option_key": "pick_num_characters",
+          "columns": 3,
+          "items": [
+            {
+              "id": 1,
+              "title": "\u26a1 Solo Climber (1 Hero)",
+              "desc": "Focus entirely on one chosen hero's deck and run."
+            },
+            {
+              "id": 2,
+              "title": "\u2694\ufe0f Duo Climb (2 Heroes)",
+              "desc": "Standard multiworld experience with 2 rotating character pools."
+            },
+            {
+              "id": 4,
+              "title": "\ud83d\udc51 All Four Heroes",
+              "desc": "Play all base classes (Ironclad, Silent, Defect, Watcher)."
+            }
+          ]
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "slider",
+          "option_key": "pick_num_characters",
+          "label": "Number of Characters to Pick (1 - 4):",
+          "min": 1,
+          "max": 4,
+          "step": 1,
+          "suffix": " hero(es)"
+        },
+        {
+          "type": "slider",
+          "option_key": "num_chars_goal",
+          "label": "Characters Required for Victory (0 = all picked):",
+          "min": 0,
+          "max": 4,
+          "step": 1,
+          "suffix": " hero(es)"
+        },
+        {
+          "type": "dropdown",
+          "option_key": "lock_characters",
+          "label": "Character Unlock Logic:",
+          "choices": [
+            {
+              "id": "unlocked",
+              "title": "All Unlocked (Play immediately)"
+            },
+            {
+              "id": "locked_random",
+              "title": "Locked Random (Find unlocks in multiworld)"
+            },
+            {
+              "id": "locked_fixed",
+              "title": "Locked Fixed (Start with 1 chosen hero)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 2,
+      "title": "2. Difficulty & Acts",
+      "description": "Step 2: Configure Ascension level and Act 4 Heart encounter",
+      "controls": [
+        {
+          "type": "slider",
+          "option_key": "ascension",
+          "label": "Ascension Level (0 - 20):",
+          "min": 0,
+          "max": 20,
+          "step": 1,
+          "suffix": " Ascension"
+        },
+        {
+          "type": "checkbox",
+          "option_key": "final_act",
+          "label": "Final Act (Act 4 Heart)",
+          "desc": "Require clearing Act 4 and the Corrupt Heart for victory."
+        },
+        {
+          "type": "checkbox",
+          "option_key": "downfall",
+          "label": "Downfall Mod Compatibility",
+          "desc": "Enable Downfall villain characters and boss progression if mod is installed."
+        }
+      ]
+    },
+    {
+      "num": 3,
+      "title": "3. Sanity & Check Pool",
+      "description": "Step 3: Shuffle campfire actions, gold, potions, and shop slots into multiworld",
+      "controls": [
+        {
+          "type": "checkbox",
+          "option_key": "campfire_sanity",
+          "label": "Campfire Sanity",
+          "desc": "Shuffle Rest and Smith abilities at campsites per Act into the multiworld."
+        },
+        {
+          "type": "checkbox",
+          "option_key": "gold_sanity",
+          "label": "Gold Sanity",
+          "desc": "Adds 27 gold drop checks per character to the multiworld pool."
+        },
+        {
+          "type": "checkbox",
+          "option_key": "potion_sanity",
+          "label": "Potion Sanity",
+          "desc": "Adds 9 potion drop locations per character to the multiworld pool."
+        },
+        {
+          "type": "checkbox",
+          "option_key": "key_sanity",
+          "label": "Key Sanity",
+          "desc": "Shuffle Emerald, Ruby, and Sapphire keys into the item pool."
+        },
+        {
+          "type": "checkbox",
+          "option_key": "shop_sanity",
+          "label": "Shop Sanity",
+          "desc": "Shuffle card, relic, and potion shop slots into the item pool."
+        },
+        {
+          "type": "dropdown",
+          "option_key": "shop_sanity_costs",
+          "label": "Shop Sanity Pricing Tier:",
+          "choices": [
+            {
+              "id": "discount_tiered",
+              "title": "Discount Tiered (50% vanilla price - Recommended)"
+            },
+            {
+              "id": "super_discount_tiered",
+              "title": "Super Discount (20% vanilla price)"
+            },
+            {
+              "id": "fixed",
+              "title": "Fixed Price (15 gold per item)"
+            },
+            {
+              "id": "tiered",
+              "title": "Vanilla Full Price"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "num": 4,
+      "title": "4. Death Link & Notifications",
+      "description": "Step 4: Configure multiplayer Death Link and chat notifications",
+      "controls": [
+        {
+          "type": "slider",
+          "option_key": "death_link",
+          "label": "Death Link Percentage (0 = Disabled, 1-100% chance):",
+          "min": 0,
+          "max": 100,
+          "step": 25,
+          "suffix": "%"
+        },
+        {
+          "type": "checkbox",
+          "option_key": "chatty_mc",
+          "label": "Chatty Merchant / Characters",
+          "desc": "In-game characters give humorous dialogue reactions to Archipelago multiworld events."
+        }
+      ]
+    }
+  ]
+}

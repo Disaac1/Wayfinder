@@ -1,0 +1,11 @@
+{
+  "name": "Dolphin Emulator",
+  "executable": "Dolphin.exe",
+  "sub_folders": [
+    "Dolphin",
+    "Dolphin-x64",
+    "dolphin-master"
+  ],
+  "download_url": "https://dl.dolphin-emu.org/builds/dolphin-master-2412-x64.7z",
+  "fallback_download_url": "https://github.com/dolphin-emu/dolphin/releases"
+}

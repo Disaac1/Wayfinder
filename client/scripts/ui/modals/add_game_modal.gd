@@ -16,6 +16,14 @@ var _selected_games: Array = []
 var _cards_built: bool = false
 var _card_buttons: Dictionary = {}
 
+
+func update_games(new_games: Array, supported_fn: Callable = Callable()) -> void:
+	_all_games = new_games
+	if supported_fn.is_valid():
+		_is_game_supported_fn = supported_fn
+	if visible:
+		_rebuild_cards()
+
 func _ready() -> void:
 	close_btn.pressed.connect(close)
 	search_input.text_changed.connect(_on_search_changed)

@@ -57,7 +57,7 @@ func get_preset(game_name: String) -> Dictionary:
 		"client_tool": "archipelago_client",
 		"client_component": "Archipelago Launcher",
 		"auto_connect": true,
-		"install_instructions": "Community APWorld: Select your clean base ROM or executable if required. Wayfinder will open Archipelago Launcher and connect automatically."
+		"install_instructions": "Community APWorld: Select your clean base ROM or executable if required. Lodestone will open Archipelago Launcher and connect automatically."
 	}
 
 func has_preset(game_name: String) -> bool:

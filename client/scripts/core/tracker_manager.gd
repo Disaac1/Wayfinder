@@ -88,7 +88,7 @@ func open_tracker(
 		if not tool_ok:
 			callback.call(false, executable_path)
 			return
-		_install_pack(node, tracker, game_slug, func(pack_ok: bool, pack_path: String):
+		_install_pack(node, tracker, game_slug, launcher, func(pack_ok: bool, pack_path: String):
 			if not pack_ok:
 				callback.call(false, pack_path)
 				return
@@ -121,7 +121,7 @@ func open_tracker(
 		)
 	)
 
-func _install_pack(node: Node, tracker: Dictionary, game_slug: String, callback: Callable) -> void:
+func _install_pack(node: Node, tracker: Dictionary, game_slug: String, launcher, callback: Callable) -> void:
 	var download_url := str(tracker.get("pack_download_url", "")).strip_edges()
 	var expected_sha256 := str(tracker.get("pack_sha256", "")).strip_edges().to_lower()
 	var pack_name := str(tracker.get("pack_name", game_slug)).strip_edges()
@@ -140,13 +140,20 @@ func _install_pack(node: Node, tracker: Dictionary, game_slug: String, callback:
 	http.use_threads = true
 	http.download_file = temp_path
 	node.add_child(http)
+	var is_downloading: Array = [true]
+	if launcher and launcher.has_method("track_http_download_progress"):
+		launcher.track_http_download_progress(node, http, pack_name + " Tracker Pack", is_downloading)
+
 	http.request_completed.connect(func(result: int, response_code: int, _headers: PackedStringArray, _body: PackedByteArray):
+		is_downloading[0] = false
 		http.queue_free()
 		if result != HTTPRequest.RESULT_SUCCESS or (response_code != 200 and response_code != 0):
 			_cleanup(temp_path)
 			callback.call(false, "Failed to download " + pack_name + " tracker pack (HTTP " + str(response_code) + ").")
 			return
 		Updater.log_message("TRACKER", "Downloaded " + pack_name + " tracker pack; validating checksum")
+		if is_instance_valid(node) and "launch_instructions" in node and is_instance_valid(node.launch_instructions):
+			node.launch_instructions.text = "Validating checksum for " + pack_name + "..."
 		var validation := validate_pack_archive(temp_path, expected_sha256)
 		if not validation.get("valid", false):
 			_cleanup(temp_path)
@@ -165,6 +172,7 @@ func _install_pack(node: Node, tracker: Dictionary, game_slug: String, callback:
 	)
 	var request_error := http.request(download_url)
 	if request_error != OK:
+		is_downloading[0] = false
 		http.queue_free()
 		callback.call(false, "Failed to start tracker pack download: " + str(request_error))
 

@@ -31,7 +31,9 @@ func _run_test() -> void:
 		"Hollow Knight",
 		"Metroid Fusion",
 		"Plants vs. Zombies",
-		"Symphony of the Night"
+		"Symphony of the Night",
+		"Slay the Spire",
+		"Slay the Spire 2"
 	]
 	
 	for g_name in games_to_test:

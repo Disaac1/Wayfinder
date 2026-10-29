@@ -67,7 +67,10 @@ func install(
 		var working_zip: String = temp_download_path
 		if decryption_key != "" or working_zip.ends_with(".enc"):
 			var decrypted_path: String = extract_dir.path_join("decrypted_game.zip")
-			var decrypted_ok: bool = bool(decrypt_callback.call(working_zip, decrypted_path, decryption_key))
+			var dec_cb: Callable = func(pct: int, done_bytes: int, total_bytes: int):
+				_update_decrypt_progress(node, game_name, pct, done_bytes, total_bytes)
+			_update_decrypt_progress(node, game_name, 0, 0, 1)
+			var decrypted_ok: bool = bool(decrypt_callback.call(working_zip, decrypted_path, decryption_key, dec_cb))
 			_cleanup(working_zip)
 			if not decrypted_ok:
 				callback.call(false, "Failed to decrypt game archive.")
@@ -110,3 +113,25 @@ func _get_redirect_location(headers: PackedStringArray) -> String:
 		if header.to_lower().begins_with("location:"):
 			return header.substr(9).strip_edges()
 	return ""
+
+func _update_decrypt_progress(node: Node, game_name: String, pct: int, done_bytes: int, total_bytes: int) -> void:
+	if not is_instance_valid(node):
+		return
+	var dl_card: Node = null
+	if node.has_node("%DownloadProgressCard"):
+		dl_card = node.get_node("%DownloadProgressCard")
+	elif node.has_node("DownloadProgressCard"):
+		dl_card = node.get_node("DownloadProgressCard")
+	elif node.has_node("%LaunchOverlay") and node.get_node("%LaunchOverlay").has_node("%DownloadProgressCard"):
+		dl_card = node.get_node("%LaunchOverlay").get_node("%DownloadProgressCard")
+
+	if is_instance_valid(dl_card):
+		dl_card.visible = true
+		dl_card.set_task("Decrypting Game Archive")
+		dl_card.set_message("Decrypting " + game_name + " (" + str(pct) + "%)...")
+		dl_card.update_progress(pct, done_bytes, total_bytes, 0.0)
+
+	if "launch_instructions" in node and is_instance_valid(node.launch_instructions):
+		var done_mb: float = float(done_bytes) / (1024.0 * 1024.0)
+		var tot_mb: float = float(total_bytes) / (1024.0 * 1024.0)
+		node.launch_instructions.text = "Decrypting Game Archive (" + game_name + ")...\n[" + str(pct) + "%] " + String.num(done_mb, 1) + " MB / " + String.num(tot_mb, 1) + " MB"

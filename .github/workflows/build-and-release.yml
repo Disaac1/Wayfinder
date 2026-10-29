@@ -1,0 +1,385 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 1.2.0 or v1.2.0)'
+        required: true
+        default: '1.2.0'
+        type: string
+      godot_version:
+        description: 'Godot Engine version'
+        required: false
+        default: '4.7.2'
+        type: string
+      build_linux:
+        description: 'Build Linux client package'
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+env:
+  DEFAULT_GODOT_VERSION: '4.7.2'
+
+jobs:
+  # =========================================================================
+  # Windows Desktop Application Build & Inno Setup Packaging
+  # =========================================================================
+  build-windows:
+    name: Build Windows (Godot + Inno Setup)
+    runs-on: windows-latest
+    outputs:
+      clean_version: ${{ steps.version.outputs.clean_version }}
+      tag_name: ${{ steps.version.outputs.tag_name }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # -----------------------------------------------------------------------
+      # Resolve Version Tag
+      # -----------------------------------------------------------------------
+      - name: Resolve Release Version
+        id: version
+        shell: pwsh
+        run: |
+          $rawVer = "${{ github.event.inputs.version }}"
+          if ([string]::IsNullOrWhiteSpace($rawVer)) {
+              $rawVer = "${{ github.ref_name }}"
+          }
+          $cleanVer = $rawVer.TrimStart("v").Trim()
+          $tagVer = "v" + $cleanVer
+          Write-Host "Resolved release version: $cleanVer (Tag: $tagVer)"
+          "clean_version=$cleanVer" >> $env:GITHUB_OUTPUT
+          "tag_name=$tagVer" >> $env:GITHUB_OUTPUT
+
+      # -----------------------------------------------------------------------
+      # Python 3.11 Setup & Dependencies
+      # -----------------------------------------------------------------------
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          pip install cryptography
+
+      # -----------------------------------------------------------------------
+      # Inno Setup 6 Installation
+      # -----------------------------------------------------------------------
+      - name: Install Inno Setup 6
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress
+          $isccDir = "C:\Program Files (x86)\Inno Setup 6"
+          if (Test-Path "$isccDir\ISCC.exe") {
+              Write-Host "Inno Setup installed at $isccDir"
+              "$isccDir" >> $env:GITHUB_PATH
+          } else {
+              Write-Error "ISCC.exe was not found after installation."
+          }
+
+      # -----------------------------------------------------------------------
+      # Godot 4.x Binary & Export Templates Setup
+      # -----------------------------------------------------------------------
+      - name: Download and Configure Godot 4.x Headless & Export Templates
+        shell: pwsh
+        run: |
+          $godotVer = "${{ github.event.inputs.godot_version || env.DEFAULT_GODOT_VERSION }}"
+          Write-Host "Configuring Godot Engine version: $godotVer"
+
+          # 1. Download & extract headless/console Godot editor binary
+          $godotZipUrl = "https://github.com/godotengine/godot/releases/download/${godotVer}-stable/Godot_v${godotVer}-stable_win64.exe.zip"
+          Write-Host "Downloading Godot from $godotZipUrl..."
+          curl.exe -L --fail --retry 3 -o "godot.zip" "$godotZipUrl"
+          Expand-Archive -Path "godot.zip" -DestinationPath "godot_engine" -Force
+
+          $consoleExe = Get-ChildItem -Path "godot_engine" -Filter "*console.exe" -Recurse | Select-Object -First 1
+          if (-not $consoleExe) {
+              $consoleExe = Get-ChildItem -Path "godot_engine" -Filter "*.exe" -Recurse | Select-Object -First 1
+          }
+          if (-not $consoleExe) {
+              throw "Failed to locate Godot executable in extracted package."
+          }
+
+          # Place godot_console.exe inside client/ as expected by tools/package_release.py
+          New-Item -ItemType Directory -Force -Path "client"
+          Copy-Item $consoleExe.FullName -Destination "client/godot_console.exe" -Force
+          Copy-Item $consoleExe.FullName -Destination "client/godot.exe" -Force
+          "$($consoleExe.DirectoryName)" >> $env:GITHUB_PATH
+
+          Write-Host "Godot console binary placed at client/godot_console.exe"
+          & "client/godot_console.exe" --version
+
+          # 2. Download & configure official export templates
+          $templatesUrl = "https://github.com/godotengine/godot/releases/download/${godotVer}-stable/Godot_v${godotVer}-stable_export_templates.tpz"
+          Write-Host "Downloading Export Templates from $templatesUrl..."
+          curl.exe -L --fail --retry 3 -o "templates.tpz" "$templatesUrl"
+          Expand-Archive -Path "templates.tpz" -DestinationPath "templates_extracted" -Force
+
+          $templateDest = "$env:APPDATA\Godot\export_templates\${godotVer}.stable"
+          New-Item -ItemType Directory -Force -Path $templateDest
+          Copy-Item -Path "templates_extracted/templates/*" -Destination $templateDest -Recurse -Force
+          Write-Host "Export templates installed to $templateDest"
+          Get-ChildItem -Path $templateDest
+
+      # -----------------------------------------------------------------------
+      # Ensure Signing Certificate for Auto-Update Packaging
+      # -----------------------------------------------------------------------
+      - name: Provision Updater Signing Key
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "backend/certs"
+          if ("${{ secrets.UPDATER_PRIVATE_KEY }}" -ne "") {
+              Write-Host "Writing UPDATER_PRIVATE_KEY secret to backend/certs/updater_private_key.pem..."
+              Set-Content -Path "backend/certs/updater_private_key.pem" -Value "${{ secrets.UPDATER_PRIVATE_KEY }}" -NoNewline
+          } else {
+              Write-Host "No UPDATER_PRIVATE_KEY secret found. Generating temporary RSA key for package validation..."
+              python -c "from cryptography.hazmat.primitives.asymmetric import rsa; from cryptography.hazmat.primitives import serialization; key = rsa.generate_private_key(public_exponent=65537, key_size=2048); open('backend/certs/updater_private_key.pem', 'wb').write(key.private_bytes(encoding=serialization.Encoding.PEM, format=serialization.PrivateFormat.PKCS8, encryption_algorithm=serialization.NoEncryption()))"
+          }
+
+      # -----------------------------------------------------------------------
+      # Run Release Packaging Pipeline
+      # -----------------------------------------------------------------------
+      - name: Run Build and Release Pipeline
+        shell: pwsh
+        run: |
+          $ver = "${{ steps.version.outputs.clean_version }}"
+          Write-Host "Executing package_release.py for version $ver..."
+          python tools/package_release.py --version $ver --notes "Automated release build v$ver"
+
+      # -----------------------------------------------------------------------
+      # SignPath Authenticode Code Signing (Optional / Uncomment when configured)
+      # -----------------------------------------------------------------------
+      # To enable automated code signing via SignPath:
+      # 1. Register at https://signpath.io and configure an Organization and Project.
+      # 2. Add repository secrets: SIGNPATH_API_TOKEN and SIGNPATH_ORGANIZATION_ID.
+      # 3. Uncomment the steps below.
+      #
+      # - name: Submit Signing Request to SignPath
+      #   uses: SignPath/github-action-submit-signing-request@v1.1
+      #   with:
+      #     api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
+      #     organization-id: '${{ secrets.SIGNPATH_ORGANIZATION_ID }}'
+      #     project-slug: 'lodestone'
+      #     signing-policy-slug: 'release-signing'
+      #     artifact-configuration-slug: 'installer'
+      #     wait-for-completion: true
+      #     output-artifact-directory: 'dist/signed'
+      #     github-token: '${{ secrets.GITHUB_TOKEN }}'
+      #
+      # - name: Use Signed Installer
+      #   shell: pwsh
+      #   run: |
+      #     if (Test-Path "dist/signed") {
+      #         Copy-Item "dist/signed/*.exe" -Destination "dist/" -Force
+      #         Write-Host "Replaced installer with SignPath digitally signed binary."
+      #     }
+
+      # -----------------------------------------------------------------------
+      # Stage Windows Release Assets & Generate Checksums
+      # -----------------------------------------------------------------------
+      - name: Prepare Windows Release Assets & SHA-256 Checksums
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "release_assets"
+
+          # 1. Inno Setup compiled installer
+          $setupExe = Get-ChildItem -Path "dist" -Filter "*_Setup_v*.exe" | Select-Object -First 1
+          if (-not $setupExe) {
+              $setupExe = Get-ChildItem -Path "backend/public/downloads" -Filter "Lodestone_Setup.exe" | Select-Object -First 1
+          }
+          if ($setupExe) {
+              Copy-Item $setupExe.FullName -Destination "release_assets/" -Force
+              Write-Host "Staged installer: $($setupExe.Name)"
+          } else {
+              throw "Could not locate compiled Inno Setup installer executable."
+          }
+
+          # 2. Portable client ZIP
+          $portableZip = Get-ChildItem -Path "backend/public/downloads" -Filter "*_Windows.zip" | Select-Object -First 1
+          if ($portableZip) {
+              Copy-Item $portableZip.FullName -Destination "release_assets/" -Force
+              Write-Host "Staged portable archive: $($portableZip.Name)"
+          } else {
+              throw "Could not locate portable Windows ZIP package."
+          }
+
+          # 3. Generate SHA-256 Checksums for Windows artifacts
+          Get-ChildItem -Path "release_assets" -File | Where-Object { $_.Name -ne "checksums.txt" } | ForEach-Object {
+              $hash = (Get-FileHash -Path $_.FullName -Algorithm SHA256).Hash.ToLower()
+              "$hash  $($_.Name)"
+          } | Set-Content -Path "release_assets/checksums-windows.txt" -Encoding utf8
+
+          Get-Content "release_assets/checksums-windows.txt"
+
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: release_assets/*
+          retention-days: 7
+
+  # =========================================================================
+  # Linux Desktop Client Build
+  # =========================================================================
+  build-linux:
+    name: Build Linux (Godot x86_64)
+    if: ${{ github.event.inputs.build_linux != false && github.event.inputs.build_linux != 'false' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Resolve Release Version
+        id: version
+        run: |
+          RAW_VER="${{ github.event.inputs.version }}"
+          if [ -z "$RAW_VER" ]; then
+              RAW_VER="${{ github.ref_name }}"
+          fi
+          CLEAN_VER="${RAW_VER#v}"
+          echo "clean_version=$CLEAN_VER" >> $GITHUB_OUTPUT
+          echo "tag_name=v$CLEAN_VER" >> $GITHUB_OUTPUT
+
+      - name: Install Linux Runtime & Build Libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libgl1 \
+            libglx-mesa0 \
+            libx11-6 \
+            libxcursor1 \
+            libxinerama1 \
+            libxrandr2 \
+            libxi6 \
+            curl \
+            unzip \
+            tar
+
+      - name: Download Godot 4.x Headless & Export Templates for Linux
+        run: |
+          GODOT_VER="${{ github.event.inputs.godot_version || env.DEFAULT_GODOT_VERSION }}"
+          echo "Downloading Godot Linux binary (v$GODOT_VER)..."
+
+          # 1. Download and install Godot engine binary
+          curl -sSL --retry 3 "https://github.com/godotengine/godot/releases/download/${GODOT_VER}-stable/Godot_v${GODOT_VER}-stable_linux.x86_64.zip" -o godot_linux.zip
+          unzip -q godot_linux.zip -d godot_bin
+          sudo install -m 755 godot_bin/Godot_v* /usr/local/bin/godot
+          godot --version
+
+          # 2. Download and configure official export templates
+          curl -sSL --retry 3 "https://github.com/godotengine/godot/releases/download/${GODOT_VER}-stable/Godot_v${GODOT_VER}-stable_export_templates.tpz" -o templates.tpz
+          unzip -q templates.tpz -d templates_extracted
+          DEST="$HOME/.local/share/godot/export_templates/${GODOT_VER}.stable"
+          mkdir -p "$DEST"
+          cp -r templates_extracted/templates/* "$DEST/"
+
+      - name: Export Linux Desktop Client
+        run: |
+          VER="${{ steps.version.outputs.clean_version }}"
+          mkdir -p client/.export
+          mkdir -p release_assets
+
+          # Ensure a Linux export preset exists in client/export_presets.cfg
+          if ! grep -q 'name="Linux"' client/export_presets.cfg && ! grep -q 'name="Linux/X11"' client/export_presets.cfg; then
+              echo "Injecting Linux export preset into client/export_presets.cfg..."
+              cat << 'EOF' >> client/export_presets.cfg
+
+              [preset.1]
+
+              name="Linux"
+              platform="Linux"
+              runnable=true
+              dedicated_server=false
+              custom_features=""
+              export_filter="all_resources"
+              include_filter=""
+              exclude_filter="Archipelago/*, custom_worlds/*, custom_templates/*, data/*, profiles/*, "
+              export_path=".export/Lodestone.x86_64"
+              binary_format/embed_pck=false
+              binary_format/architecture="x86_64"
+              EOF
+              sed -i 's/^ *//' client/export_presets.cfg
+          fi
+
+          # Export Linux release
+          PRESET_NAME="Linux"
+          if ! grep -q 'name="Linux"' client/export_presets.cfg; then
+              PRESET_NAME="Linux/X11"
+          fi
+
+          godot --headless --path client --export-release "$PRESET_NAME" .export/Lodestone.x86_64
+
+          # Package portable Linux archive
+          chmod +x client/.export/Lodestone.x86_64
+          tar -czvf "release_assets/Lodestone_v${VER}_Linux.tar.gz" -C client/.export Lodestone.x86_64 Lodestone.pck
+          zip -j "release_assets/Lodestone_v${VER}_Linux.zip" client/.export/Lodestone.x86_64 client/.export/Lodestone.pck
+
+          # Compute Linux SHA-256 Checksums
+          cd release_assets
+          sha256sum Lodestone_v${VER}_Linux.tar.gz Lodestone_v${VER}_Linux.zip > checksums-linux.txt
+          cat checksums-linux.txt
+
+      - name: Upload Linux Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-linux
+          path: release_assets/*
+          retention-days: 7
+
+  # =========================================================================
+  # GitHub Release Creation & Consolidation
+  # =========================================================================
+  release:
+    name: Create GitHub Release
+    needs: [build-windows, build-linux]
+    if: always() && needs.build-windows.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Windows Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-windows
+          path: final_assets
+
+      - name: Download Linux Artifacts (if available)
+        if: ${{ needs.build-linux.result == 'success' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: release-linux
+          path: final_assets
+
+      - name: Consolidate Checksums File
+        run: |
+          cd final_assets
+          # Combine checksum files and remove partial files
+          cat checksums-*.txt | sort -u > checksums.txt
+          rm -f checksums-*.txt
+          echo "=== Consolidated SHA-256 Checksums ==="
+          cat checksums.txt
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.build-windows.outputs.tag_name }}
+          name: "Lodestone ${{ needs.build-windows.outputs.clean_version }}"
+          files: final_assets/*
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,269 @@
+{
+  "game_title": "Luigi's Mansion",
+  "default_config": {
+    "game_mode": 0,
+    "rank_requirement": 0,
+    "walk_speed": 0,
+    "vacuum_upgrades": 1,
+    "vacuum_start": 0,
+    "boo_radar": 1,
+    "hidden_mansion": false,
+    "boosanity": false,
+    "furnisanity": false,
+    "portrification": false,
+    "silver_ghosts": false,
+    "gold_ghosts": false,
+    "speedy_spirits": false,
+    "gold_mice": false,
+    "toadsanity": false,
+    "lightsanity": false,
+    "walksanity": false,
+    "door_rando": 0,
+    "boo_gates": false,
+    "balcony_boo_count": 20,
+    "final_boo_count": 40,
+    "luigi_max_health": 100,
+    "king_boo_health": 500,
+    "death_link": false,
+    "trap_percentage": 0,
+    "trap_link": 0,
+    "energy_link": false
+  },
+  "required_schema_keys": [
+    "game_mode",
+    "rank_requirement",
+    "boosanity",
+    "furnisanity",
+    "portrification"
+  ],
+  "steps": [
+    {
+      "num": 1,
+      "title": "1. Goal & Mansion Mode",
+      "description": "Step 1: Choose Mansion Game Mode, End Rank & Movement",
+      "controls": [
+        {
+          "type": "card_grid",
+          "option_key": "game_mode",
+          "columns": 2,
+          "items": [
+            {
+              "id": 0,
+              "title": "🏰 Default Mansion",
+              "desc": "Standard exploration. Defeat King Boo to win."
+            },
+            {
+              "id": 1,
+              "title": "🧹 Poltergust Hunt",
+              "desc": "Short game mode: doors unlocked, find the Poltergust in furniture first."
+            }
+          ]
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "choice",
+          "option_key": "rank_requirement",
+          "label": "Required Mansion Ending Rank:",
+          "options": [
+            { "id": 0, "name": "Rank H (Any amount of treasure)" },
+            { "id": 1, "name": "Rank G" },
+            { "id": 2, "name": "Rank F" },
+            { "id": 3, "name": "Rank E" },
+            { "id": 4, "name": "Rank D" },
+            { "id": 5, "name": "Rank C" },
+            { "id": 6, "name": "Rank B" },
+            { "id": 7, "name": "Rank A (Top Rank - $100M+)" }
+          ]
+        },
+        {
+          "type": "choice",
+          "option_key": "walk_speed",
+          "label": "Luigi Walk Speed:",
+          "options": [
+            { "id": 0, "name": "Normal Walk Speed" },
+            { "id": 1, "name": "Kinda Fast" },
+            { "id": 2, "name": "Schmoovin (Fast)" }
+          ]
+        },
+        {
+          "type": "checkbox",
+          "option_key": "hidden_mansion",
+          "label": "Start in Hidden Mansion (Tougher mansion variant)"
+        }
+      ]
+    },
+    {
+      "num": 2,
+      "title": "2. Sanity Checks & Pool",
+      "description": "Step 2: Choose which mansion entities & events are randomized locations",
+      "controls": [
+        {
+          "type": "checkbox",
+          "option_key": "boosanity",
+          "label": "Boosanity: Shuffle Boos into location pool and item checks"
+        },
+        {
+          "type": "checkbox",
+          "option_key": "furnisanity",
+          "label": "Furnisanity: Shuffle interactable furniture checks (drawers, cabinets, etc.)"
+        },
+        {
+          "type": "checkbox",
+          "option_key": "portrification",
+          "label": "Portrification: Shuffle Portrait Ghosts into the item pool"
+        },
+        {
+          "type": "checkbox",
+          "option_key": "silver_ghosts",
+          "label": "Silver Portrait Rank Checks"
+        },
+        {
+          "type": "checkbox",
+          "option_key": "gold_ghosts",
+          "label": "Gold Portrait Rank Checks"
+        },
+        {
+          "type": "checkbox",
+          "option_key": "speedy_spirits",
+          "label": "Speedy Spirits (Blue Ghosts) as checks"
+        },
+        {
+          "type": "checkbox",
+          "option_key": "gold_mice",
+          "label": "Gold Mice as checks"
+        },
+        {
+          "type": "checkbox",
+          "option_key": "toadsanity",
+          "label": "Toadsanity: Talking to Toads gives checks"
+        },
+        {
+          "type": "checkbox",
+          "option_key": "lightsanity",
+          "label": "Lightsanity: Lighting up rooms rewards checks"
+        },
+        {
+          "type": "checkbox",
+          "option_key": "walksanity",
+          "label": "Walksanity: Visiting rooms rewards checks"
+        }
+      ]
+    },
+    {
+      "num": 3,
+      "title": "3. Logic & Equipment",
+      "description": "Step 3: Door Randomization, Boo Gates & Upgrades",
+      "controls": [
+        {
+          "type": "choice",
+          "option_key": "door_rando",
+          "label": "Door Randomization:",
+          "options": [
+            { "id": 0, "name": "Vanilla Doors" },
+            { "id": 1, "name": "Basic Door Randomizer" },
+            { "id": 2, "name": "Chaos Door Randomizer" }
+          ]
+        },
+        {
+          "type": "choice",
+          "option_key": "boo_radar",
+          "label": "Boo Radar Starting State:",
+          "options": [
+            { "id": 0, "name": "Start with Boo Radar" },
+            { "id": 1, "name": "Shuffle Boo Radar into Pool" },
+            { "id": 2, "name": "Exclude Boo Radar (No radar in game)" }
+          ]
+        },
+        {
+          "type": "slider",
+          "option_key": "vacuum_upgrades",
+          "label": "Poltergust Vacuum Upgrades in Pool:",
+          "min": 0,
+          "max": 5,
+          "step": 1,
+          "suffix": " Upgrades"
+        },
+        {
+          "type": "checkbox",
+          "option_key": "boo_gates",
+          "label": "Boo Gates: Gates require specific Boo counts to pass"
+        },
+        {
+          "type": "slider",
+          "option_key": "balcony_boo_count",
+          "label": "Balcony Boo Requirement:",
+          "min": 0,
+          "max": 50,
+          "step": 1,
+          "suffix": " Boos"
+        },
+        {
+          "type": "slider",
+          "option_key": "final_boo_count",
+          "label": "Secret Altar (Final Boss) Boo Requirement:",
+          "min": 0,
+          "max": 50,
+          "step": 1,
+          "suffix": " Boos"
+        }
+      ]
+    },
+    {
+      "num": 4,
+      "title": "4. Health, Multiworld & Links",
+      "description": "Step 4: Multiworld interactivity, traps, and death link",
+      "controls": [
+        {
+          "type": "slider",
+          "option_key": "luigi_max_health",
+          "label": "Luigi Max Health:",
+          "min": 10,
+          "max": 300,
+          "step": 10,
+          "suffix": " HP"
+        },
+        {
+          "type": "slider",
+          "option_key": "king_boo_health",
+          "label": "King Boo Health:",
+          "min": 50,
+          "max": 1000,
+          "step": 50,
+          "suffix": " HP"
+        },
+        {
+          "type": "slider",
+          "option_key": "trap_percentage",
+          "label": "Filler Trap Percentage:",
+          "min": 0,
+          "max": 100,
+          "step": 5,
+          "suffix": "%"
+        },
+        {
+          "type": "checkbox",
+          "option_key": "death_link",
+          "label": "Death Link: When Luigi faints, all players faint"
+        },
+        {
+          "type": "choice",
+          "option_key": "trap_link",
+          "label": "Trap Link:",
+          "options": [
+            { "id": 0, "name": "Disabled" },
+            { "id": 1, "name": "Send Only" },
+            { "id": 2, "name": "Receive Only" },
+            { "id": 3, "name": "Send & Receive Traps" }
+          ]
+        },
+        {
+          "type": "checkbox",
+          "option_key": "energy_link",
+          "label": "Energy Link: Send and receive mansion currency as shared team energy"
+        }
+      ]
+    }
+  ]
+}

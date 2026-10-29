@@ -66,7 +66,24 @@ func _run_test() -> void:
 	if slot_str != "Alice (CSW)":
 		_fail("Expected slot name 'Alice (CSW)', got '" + slot_str + "'")
 		
-	print("[Test] Dynamic acronyms and slot names verified: ", [tag1, tag2, slot_str])
+	# Canonical short tags for known titles
+	var tag_bw = lobby.YamlBuilder.get_short_game_tag("Pokemon Black and White")
+	if tag_bw != "BW":
+		_fail("Expected 'BW', got '" + tag_bw + "'")
+	var tag_lm = lobby.YamlBuilder.get_short_game_tag("Luigi's Mansion")
+	if tag_lm != "LM1":
+		_fail("Expected 'LM1', got '" + tag_lm + "'")
+	var tag_fusion = lobby.YamlBuilder.get_short_game_tag("Metroid Fusion")
+	if tag_fusion != "Fusion":
+		_fail("Expected 'Fusion', got '" + tag_fusion + "'")
+
+	var multi_yaml = lobby.YamlBuilder.compile_yaml(["Pokemon Black and White", "Luigi's Mansion"], "", "Test", "ROOM", {}, lobby.launcher.launcher_presets)
+	if not "name: Test (BW)" in multi_yaml:
+		_fail("compile_yaml missing 'name: Test (BW)' in: " + multi_yaml)
+	if not "name: Test (LM1)" in multi_yaml:
+		_fail("compile_yaml missing 'name: Test (LM1)' in: " + multi_yaml)
+
+	print("[Test] Dynamic acronyms and slot names verified: ", [tag1, tag2, slot_str, tag_bw, tag_lm, tag_fusion])
 
 	# Test 3: Declarative Packages Pipeline Schema
 	print("[Test] 3. Testing packages array parsing in lobby...")

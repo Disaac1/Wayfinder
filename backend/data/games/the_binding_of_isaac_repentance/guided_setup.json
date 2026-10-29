@@ -1,0 +1,133 @@
+{
+  "game_title": "The Binding of Isaac Repentance",
+  "default_config": {
+    "goals": [
+      "Isaac",
+      "Satan",
+      "The Beast",
+      "Mother"
+    ],
+    "goal_amount": 3,
+    "item_location_percentage": 100,
+    "progressive_mapping_upgrades": true,
+    "progressive_inventory_upgrades": true,
+    "permanent_stat_upgrades": 3,
+    "bad_rng_protection": true,
+    "floor_variations": true,
+    "death_link": false,
+    "death_link_severity": "normal"
+  },
+  "required_schema_keys": [
+    "goals",
+    "goal_amount",
+    "item_location_percentage",
+    "death_link"
+  ],
+  "steps": [
+    {
+      "num": 1,
+      "title": "1. Boss Goals & Win Condition",
+      "description": "Step 1: Choose which endgame bosses qualify as goals and how many are required to win",
+      "controls": [
+        {
+          "type": "card_grid",
+          "option_key": "goal_amount",
+          "columns": 3,
+          "items": [
+            {
+              "id": 1,
+              "title": "⚡ Quick Run (1 Goal)",
+              "desc": "Shortest session. Defeat any 1 target boss to clear the seed."
+            },
+            {
+              "id": 3,
+              "title": "🎯 Standard Multiworld (3 Goals)",
+              "desc": "Balanced progression. Complete 3 boss goals across your runs."
+            },
+            {
+              "id": 5,
+              "title": "🏆 Long Campaign (5+ Goals)",
+              "desc": "Extended run covering paths to most major endgame encounters."
+            }
+          ]
+        },
+        {
+          "type": "separator"
+        },
+        {
+          "type": "slider",
+          "option_key": "goal_amount",
+          "label": "Custom Required Goal Count (1 - 11):",
+          "min": 1,
+          "max": 11,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "num": 2,
+      "title": "2. Item Pool & Progression",
+      "description": "Step 2: Customize check density, permanent stat increases, and persistent upgrades",
+      "controls": [
+        {
+          "type": "slider",
+          "option_key": "item_location_percentage",
+          "label": "Item Location Percentage (% of item checks randomized):",
+          "min": 10,
+          "max": 100,
+          "step": 5
+        },
+        {
+          "type": "slider",
+          "option_key": "permanent_stat_upgrades",
+          "label": "Permanent Stat Upgrades in Pool (Retained across runs):",
+          "min": 0,
+          "max": 5,
+          "step": 1
+        },
+        {
+          "type": "checkbox",
+          "option_key": "progressive_mapping_upgrades",
+          "label": "Progressive Map Upgrades (Map -> Compass -> Blue Map in pool)"
+        },
+        {
+          "type": "checkbox",
+          "option_key": "progressive_inventory_upgrades",
+          "label": "Progressive Pocket / Inventory Upgrades (Polydactyly -> Belly Button -> Deep Pockets -> Schoolbag)"
+        }
+      ]
+    },
+    {
+      "num": 3,
+      "title": "3. Quality of Life & DeathLink",
+      "description": "Step 3: Configure RNG protections, alternate floor unlocks, and DeathLink severity",
+      "controls": [
+        {
+          "type": "checkbox",
+          "option_key": "bad_rng_protection",
+          "label": "Bad RNG Protection (Ensures critical progression isn't blocked by bad room RNG)"
+        },
+        {
+          "type": "checkbox",
+          "option_key": "floor_variations",
+          "label": "Alternate Floor Variations (Cellar, Catacombs, Necropolis, Utero, etc. require unlocks)"
+        },
+        {
+          "type": "checkbox",
+          "option_key": "death_link",
+          "label": "Enable DeathLink (Share death events with other players in the multiworld)"
+        },
+        {
+          "type": "choice",
+          "option_key": "death_link_severity",
+          "label": "DeathLink Severity (When DeathLink triggers):",
+          "options": [
+            { "id": "mild", "name": "Mild (Receive 4 hits of damage; run continues if HP remains)" },
+            { "id": "normal", "name": "Normal (Fatal blow, but extra lives and revives trigger)" },
+            { "id": "severe", "name": "Severe (Immediate unavoidable death regardless of revives)" }
+          ]
+        }
+      ]
+    }
+  ]
+}

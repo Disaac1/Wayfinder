@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 echo =======================================================
-echo          Wayfinder Windows Installer Builder
+echo          Lodestone Windows Installer Builder
 echo =======================================================
 
 cd /d "%~dp0\.."
@@ -46,15 +46,11 @@ if "%ISCC_PATH%"=="" (
     exit /b 1
 )
 
-echo [1/2] Compressing executable with UPX if available...
-if exist "tools\w64devkit\bin\upx.exe" (
-    tools\w64devkit\bin\upx.exe --best client\.export\Build.exe >nul 2>nul
-)
-
-echo [2/2] Compiling Inno Setup installer...
+REM Note: UPX packing is intentionally skipped to avoid heuristic false positives in Windows Smart App Control and SmartScreen.
+echo Compiling Inno Setup installer...
 if not exist "dist" mkdir dist
 
-"%ISCC_PATH%" "installer\wayfinder.iss"
+"%ISCC_PATH%" "installer\lodestone.iss"
 if %errorlevel% neq 0 (
     echo [ERROR] Inno Setup compilation failed!
     pause

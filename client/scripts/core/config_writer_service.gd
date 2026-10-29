@@ -17,7 +17,7 @@ func apply(preset_config: Dictionary, context: Dictionary) -> bool:
 		return false
 	var target_path: String = str(interpolate_callback.call(file_template, context))
 	DirAccess.make_dir_recursive_absolute(target_path.get_base_dir())
-	var backup_path: String = target_path + ".wayfinder.bak"
+	var backup_path: String = target_path + ".lodestone.bak"
 	if FileAccess.file_exists(target_path) and not FileAccess.file_exists(backup_path):
 		DirAccess.copy_absolute(target_path, backup_path)
 		print("[Launcher] Created config backup at: ", backup_path)

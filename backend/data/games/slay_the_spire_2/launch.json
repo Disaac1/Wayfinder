@@ -1,0 +1,44 @@
+{
+  "game_name": "Slay the Spire II",
+  "aliases": [
+    "Slay the Spire 2",
+    "slay_the_spire_2",
+    "sts2",
+    "slaythespire2",
+    "Slay the Spire II"
+  ],
+  "short_tag": "StS2",
+  "support_tier": 1,
+  "launch_mode": "direct",
+  "client_executable": "SlayTheSpire2.exe",
+  "executable_aliases": [
+    "SlayTheSpire2.exe",
+    "slaythespire2.exe",
+    "Slay The Spire 2.exe"
+  ],
+  "sub_folders": [
+    "SlayTheSpire2",
+    "Slay the Spire 2",
+    "Slay the Spire II",
+    "slaythespire2"
+  ],
+  "steam_appid": "2868840",
+  "prefer_steam_protocol": true,
+  "auto_connect": true,
+  "clipboard_action": "copy_server_address",
+  "packages": [
+    {
+      "name": "Slay the Spire 2 Archipelago Mod",
+      "download_url": "https://github.com/dlueben1/Slay-the-Spire-2-Archipelago/releases/download/2.0.0/Archipelago.zip",
+      "check_file": "mods/Archipelago/Archipelago.dll",
+      "extract_target": "mods/Archipelago"
+    }
+  ],
+  "tracker": {
+    "supported": true,
+    "pack_name": "In-Game Archipelago Tracker Overlay",
+    "notes": "Slay the Spire 2 features a comprehensive in-game multiworld HUD and inventory tracker.",
+    "auto_tracking": true
+  },
+  "install_instructions": "Tier 1 Support: Ensure RitsuLib is subscribed on Steam Workshop (ID: 3747602295). Wayfinder automatically provisions the Archipelago mod into mods/Archipelago, copies connection details to clipboard, and launches Slay the Spire 2. Use 'Connect to Archipelago' on the main menu to connect."
+}

@@ -66,10 +66,11 @@ export function normalizeGameSlugKey(key: string): string {
   return key.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
+export function invalidateSlugMapCache(): void {
+  gameSlugMapCache = null;
+}
+
 export function getGameSlugMap(): Record<string, string> {
-  if (gameSlugMapCache) {
-    return gameSlugMapCache;
-  }
   const slugMap: Record<string, string> = {};
   if (fs.existsSync(GAMES_DIR)) {
     for (const entry of fs.readdirSync(GAMES_DIR, { withFileTypes: true })) {
@@ -117,7 +118,13 @@ gamesRouter.get('/', async (req: Request, res: Response) => {
   const force = req.query.force === 'true';
   try {
     const games = await getAvailableGames(force);
-    res.json({ games });
+    const config = getLauncherConfig();
+    const gameSet = new Set(games);
+    for (const gName of Object.keys(config.games)) {
+      gameSet.add(gName);
+    }
+    const mergedGames = Array.from(gameSet).sort((a, b) => a.localeCompare(b));
+    res.json({ games: mergedGames });
   } catch (error: any) {
     res.status(500).json({ error: error.message || 'Failed to fetch games list' });
   }

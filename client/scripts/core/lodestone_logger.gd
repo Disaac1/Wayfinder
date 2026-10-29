@@ -1,7 +1,7 @@
 extends Node
 
 const LOG_DIR: String = "user://logs"
-const LOG_FILE: String = "user://logs/wayfinder.log"
+const LOG_FILE: String = "user://logs/lodestone.log"
 const MAX_LOG_SIZE: int = 2 * 1024 * 1024  # 2 MB before rotation
 const MAX_ROTATED_FILES: int = 3
 const MAX_BUFFER_LINES: int = 500
@@ -38,7 +38,7 @@ func _rotate_if_needed() -> void:
 
 func _write_header() -> void:
 	var header: String = "\n=========================================\n"
-	header += "Wayfinder Client Session Started\n"
+	header += "Lodestone Client Session Started\n"
 	header += "Timestamp: " + Time.get_datetime_string_from_system() + "\n"
 	header += "OS: " + OS.get_name() + " (" + OS.get_distribution_name() + ")\n"
 	header += "Godot Engine: " + Engine.get_version_info().string + "\n"

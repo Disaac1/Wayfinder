@@ -1,13 +1,13 @@
 
 pokemon_emerald_options:
-  rom_file: "C:/Users/hompc/AppData/Roaming/Godot/app_userdata/Wayfinder/games/metroid_fusion/Metroid Fusion (USA).gba"
+  rom_file: "C:/Users/hompc/AppData/Roaming/Godot/app_userdata/Wayfinder/games/pokemon_emerald/Pokemon - Emerald Version (USA, Europe).gba"
 
 bizhawkclient_options:
   emuhawk_path: "C:/Users/hompc/AppData/Roaming/Godot/app_userdata/Wayfinder/tools/BizHawk/EmuHawk.exe"
   rom_start: true
 
 metroid_fusion_options:
-  rom_file: "C:/Users/hompc/AppData/Roaming/Godot/app_userdata/Wayfinder/games/metroid_fusion/Metroid Fusion (USA).gba"
+  rom_file: "C:/Users/hompc/AppData/Roaming/Godot/app_userdata/Wayfinder/games/pokemon_emerald/Pokemon - Emerald Version (USA, Europe).gba"
 
 sotn_options:
   rom_file: ""
@@ -21,10 +21,35 @@ pokemon_black_and_white_options:
   rom_file: "C:/Users/disaa/AppData/Roaming/Godot/app_userdata/Wayfinder/games/pokemon_black_and_white/Pokemon - Black Version (USA, Europe) (NDSi Enhanced).nds"
 
 pokemon_bw_options:
-  rom_file: "C:/Users/disaa/AppData/Roaming/Godot/app_userdata/Wayfinder/games/pokemon_black_and_white/Pokemon - Black Version (USA, Europe) (NDSi Enhanced).nds"
+  rom_file: "C:/Users/hompc/AppData/Roaming/Godot/app_userdata/Wayfinder/games/pokemon_black_and_white/Pokemon - Black Version (USA, Europe) (NDSi Enhanced).nds"
 
+  enable_encounter_plando: true
+  enable_stats_plando: true
+  enable_move_data_plando: true
+  dump_patched_files: false
+  enable_arm7_expansion_test: false
+  extract_text: false
+  extended_spoiler: false
+  dynamic_rom: "C:/Users/hompc/AppData/Roaming/Godot/app_userdata/Wayfinder/games/pokemon_black_and_white/Pokemon - Black Version (USA, Europe) (NDSi Enhanced).nds"
+  black_rom: "C:/Users/hompc/AppData/Roaming/Godot/app_userdata/Wayfinder/games/pokemon_black_and_white/Pokemon - Black Version (USA, Europe) (NDSi Enhanced).nds"
 pokemon_black_white_options:
   rom_file: "C:/Users/disaa/AppData/Roaming/Godot/app_userdata/Wayfinder/games/pokemon_black_and_white/Pokemon - Black Version (USA, Europe) (NDSi Enhanced).nds"
 
 pokemon_bw_settings:
-  rom_file: "C:/Users/disaa/AppData/Roaming/Godot/app_userdata/Wayfinder/games/pokemon_black_and_white/Pokemon - Black Version (USA, Europe) (NDSi Enhanced).nds"
+  rom_file: "C:/Users/hompc/AppData/Roaming/Godot/app_userdata/Wayfinder/games/pokemon_black_and_white/Pokemon - Black Version (USA, Europe) (NDSi Enhanced).nds"
+
+  enable_encounter_plando: true
+  enable_stats_plando: true
+  enable_move_data_plando: true
+  dump_patched_files: false
+  enable_arm7_expansion_test: false
+  extract_text: false
+  extended_spoiler: false
+  dynamic_rom: "C:/Users/hompc/AppData/Roaming/Godot/app_userdata/Wayfinder/games/pokemon_black_and_white/Pokemon - Black Version (USA, Europe) (NDSi Enhanced).nds"
+  black_rom: "C:/Users/hompc/AppData/Roaming/Godot/app_userdata/Wayfinder/games/pokemon_black_and_white/Pokemon - Black Version (USA, Europe) (NDSi Enhanced).nds"
+luigismansion_options:
+  iso_file: "C:/Infastructure/wayfinder/sandbox_userdata/Godot/app_userdata/Wayfinder/games/luigis_mansion/Luigi's Mansion (USA).iso"
+
+  dolphin_settings:
+    path: "C:/Users/hompc/Desktop/Dolphin-x64/Dolphin.exe"
+    auto_start: true

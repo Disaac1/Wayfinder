@@ -1,0 +1,47 @@
+{
+  "game_name": "Luigi's Mansion",
+  "short_tag": "LM1",
+  "support_tier": 1,
+  "launch_mode": "ap_client",
+  "patch_extension": ".aplm",
+  "patch_extension_aliases": [
+    ".aplm"
+  ],
+  "client_tool": "archipelago_client",
+  "client_component": "LM Client",
+  "emulator_tool": "dolphin",
+  "required_rom": "Luigi's Mansion (USA).iso",
+  "rom_aliases": [
+    "Luigi's Mansion (USA).iso",
+    "Luigi's Mansion (USA, Australia).iso",
+    "Luigi's Mansion (NTSC-U).iso",
+    "Luigis Mansion (USA).iso",
+    "Luigis Mansion.iso",
+    "GLME01.iso",
+    "Luigi's Mansion (USA).rvz",
+    "Luigi's Mansion (USA, Australia).rvz",
+    "Luigi's Mansion (NTSC-U).rvz",
+    "Luigis Mansion (USA).rvz",
+    "Luigis Mansion.rvz",
+    "GLME01.rvz"
+  ],
+  "rom_hashes": {
+    "md5": "6e3d9ae0ed2fbd2f77fa1ca09a60c494"
+  },
+  "host_yaml": {
+    "section": "luigismansion_options",
+    "rom_file_key": "iso_file"
+  },
+  "auto_connect": true,
+  "tracker": {
+    "supported": true,
+    "pack_name": "Luigi's Mansion",
+    "package_uid": "lm_poptracker",
+    "pack_version": "0.1.1",
+    "pack_download_url": "https://github.com/DevinLB/Luigis_Mansion_Poptracker/releases/download/v0.1.1/lmpt.zip",
+    "pack_sha256": "27e936443c03210acda046a31776c5c805f12d6d4be61fcee90350a219b8bebe",
+    "source_url": "https://github.com/DevinLB/Luigis_Mansion_Poptracker/releases/tag/v0.1.1",
+    "auto_tracking": true
+  },
+  "install_instructions": "Tier 1 Full Support: Click Launch to automatically configure your ISO, prepare Dolphin settings, and start the Luigi's Mansion Client. If Dolphin is missing, Wayfinder can auto-provision it."
+}

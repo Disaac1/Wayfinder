@@ -81,7 +81,7 @@ text = "✕"
 layout_mode = 2
 theme_override_colors/font_color = Color(0.55, 0.6, 0.68, 1)
 theme_override_font_sizes/font_size = 12
-text = "Wayfinder uses rom.json to automatically download, verify, and launch clean base ROMs for supported games."
+text = "Lodestone uses rom.json to automatically download, verify, and launch clean base ROMs for supported games."
 autowrap_mode = 2
 
 [node name="PathRow" type="HBoxContainer" parent="Center/PopupPanel/Margin/VBox"]

@@ -63,3 +63,7 @@ production secrets through environment variables or an untracked `.env` file.
 ## CI
 
 Pull requests and pushes to `main` build the backend and check Python syntax.
+
+## Adding New Games
+
+For a comprehensive step-by-step playbook, support tiers definition, and troubleshooting reference for adding new games, refer to [Game Integration Playbook](docs/game_integration_playbook.md).

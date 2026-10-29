@@ -175,44 +175,145 @@ static func get_custom_world_destinations(tools_dir: String = USER_TOOLS_DIR) ->
 			dests.append(home_dest)
 	return dests
 
-## Updates an individual key in a YAML section cleanly
-static func update_yaml_section_key(yaml_content: String, section_key: String, option_key: String, option_val: String, extra_lines: Array[String] = []) -> String:
+## Updates an individual key in a YAML section or subsection cleanly
+## option_path can be a simple key ("rom_file") or dot-separated ("dolphin_settings.path")
+## val can be a String, bool, int, float, or Array/Dictionary.
+static func update_yaml_value(yaml_content: String, section_key: String, option_path: String, val: Variant, extra_lines: Array[String] = []) -> String:
+	var keys: PackedStringArray = option_path.split(".")
+	var formatted_val: String = _format_yaml_value(val)
 	var section_header: String = section_key + ":"
-	var is_bool: bool = (option_val == "true" or option_val == "false")
-	var formatted_val: String = option_val if is_bool else "\"" + option_val + "\""
-	if section_header in yaml_content:
-		var lines: PackedStringArray = yaml_content.split("\n")
-		var new_lines: Array[String] = []
-		var in_section: bool = false
-		var option_set: bool = false
-		for line in lines:
-			var stripped: String = line.strip_edges()
-			if stripped.begins_with(section_header):
-				in_section = true
-				new_lines.append(line)
-				continue
-			if in_section and stripped.begins_with(option_key + ":"):
-				new_lines.append("  " + option_key + ": " + formatted_val)
-				option_set = true
-				in_section = false
-				continue
-			if in_section and not line.begins_with(" ") and stripped != "":
-				if not option_set:
-					new_lines.append("  " + option_key + ": " + formatted_val)
-					option_set = true
-				in_section = false
-			new_lines.append(line)
-		if in_section and not option_set:
-			new_lines.append("  " + option_key + ": " + formatted_val)
-		return "\n".join(new_lines)
-	else:
-		var appended: String = yaml_content + "\n" + section_header + "\n  " + option_key + ": " + formatted_val + "\n"
+	
+	if not section_header in yaml_content:
+		var appended: String = yaml_content
+		if appended != "" and not appended.ends_with("\n"):
+			appended += "\n"
+		appended += section_header + "\n"
+		for k in range(keys.size()):
+			var indent: String = "  ".repeat(k + 1)
+			if k == keys.size() - 1:
+				appended += indent + keys[k] + ": " + formatted_val + "\n"
+			else:
+				appended += indent + keys[k] + ":\n"
 		for extra in extra_lines:
 			appended += "  " + extra + "\n"
 		return appended
 
+	var lines: PackedStringArray = yaml_content.split("\n")
+	var new_lines: Array[String] = []
+	var in_section: bool = false
+	var key_idx: int = 0
+	var patched: bool = false
+	
+	var i: int = 0
+	while i < lines.size():
+		var line: String = lines[i]
+		var stripped: String = line.strip_edges()
+		
+		if not in_section:
+			if stripped.begins_with(section_header) and (line.begins_with(section_header) or line.strip_edges() == section_header):
+				in_section = true
+				new_lines.append(line)
+				i += 1
+				continue
+			new_lines.append(line)
+			i += 1
+			continue
+		
+		if not line.begins_with(" ") and not line.begins_with("\t") and stripped != "":
+			if not patched:
+				_insert_nested_yaml_lines(new_lines, keys, key_idx, formatted_val)
+				patched = true
+			in_section = false
+			new_lines.append(line)
+			i += 1
+			continue
+		
+		if patched:
+			new_lines.append(line)
+			i += 1
+			continue
+		
+		var expected_indent: int = (key_idx + 1) * 2
+		var current_key: String = keys[key_idx]
+		var key_header: String = current_key + ":"
+		
+		var leading_spaces: int = 0
+		while leading_spaces < line.length() and line[leading_spaces] == " ":
+			leading_spaces += 1
+		
+		if stripped.begins_with(key_header):
+			if key_idx == keys.size() - 1:
+				var indent_str: String = " ".repeat(leading_spaces if leading_spaces > 0 else expected_indent)
+				new_lines.append(indent_str + current_key + ": " + formatted_val)
+				patched = true
+				i += 1
+				continue
+			else:
+				key_idx += 1
+				new_lines.append(line)
+				i += 1
+				continue
+		else:
+			if leading_spaces < expected_indent and stripped != "" and key_idx > 0:
+				_insert_nested_yaml_lines(new_lines, keys, key_idx, formatted_val)
+				patched = true
+				new_lines.append(line)
+				i += 1
+				continue
+		
+		new_lines.append(line)
+		i += 1
+	
+	if in_section and not patched:
+		_insert_nested_yaml_lines(new_lines, keys, key_idx, formatted_val)
+		patched = true
+	
+	return "\n".join(new_lines)
+
+static func _insert_nested_yaml_lines(dest: Array[String], keys: PackedStringArray, start_idx: int, formatted_val: String) -> void:
+	for k in range(start_idx, keys.size()):
+		var indent: String = "  ".repeat(k + 1)
+		if k == keys.size() - 1:
+			dest.append(indent + keys[k] + ": " + formatted_val)
+		else:
+			dest.append(indent + keys[k] + ":")
+
+static func _format_yaml_value(val: Variant) -> String:
+	if typeof(val) == TYPE_BOOL:
+		return "true" if val else "false"
+	if typeof(val) == TYPE_INT or typeof(val) == TYPE_FLOAT:
+		return str(val)
+	if typeof(val) == TYPE_DICTIONARY:
+		if (val as Dictionary).is_empty():
+			return "{}"
+		return JSON.stringify(val)
+	if typeof(val) == TYPE_ARRAY:
+		if (val as Array).is_empty():
+			return "[]"
+		return JSON.stringify(val)
+	var s: String = str(val)
+	if s == "true" or s == "false":
+		return s
+	return "\"" + s + "\""
+
+## Updates an individual key in a YAML section cleanly (backwards-compatible wrapper)
+static func update_yaml_section_key(yaml_content: String, section_key: String, option_key: String, option_val: String, extra_lines: Array[String] = []) -> String:
+	return update_yaml_value(yaml_content, section_key, option_key, option_val, extra_lines)
+
+## Applies a dictionary of key-value patches to a given section
+static func patch_yaml_section(yaml_content: String, section_key: String, patches: Dictionary) -> String:
+	for opt_path in patches.keys():
+		yaml_content = update_yaml_value(yaml_content, section_key, str(opt_path), patches[opt_path])
+	return yaml_content
+
 ## Updates bizhawkclient_options block in host.yaml
 static func update_yaml_bizhawk_block(yaml_content: String, absolute_bizhawk_path: String) -> String:
-	yaml_content = update_yaml_section_key(yaml_content, "bizhawkclient_options", "emuhawk_path", absolute_bizhawk_path, ["rom_start: true"])
-	yaml_content = update_yaml_section_key(yaml_content, "bizhawkclient_options", "rom_start", "true")
+	yaml_content = update_yaml_value(yaml_content, "bizhawkclient_options", "emuhawk_path", absolute_bizhawk_path, ["rom_start: true"])
+	yaml_content = update_yaml_value(yaml_content, "bizhawkclient_options", "rom_start", true)
+	return yaml_content
+
+## Updates Dolphin settings in host.yaml for Luigi's Mansion and GameCube titles
+static func update_yaml_dolphin_block(yaml_content: String, absolute_dolphin_path: String) -> String:
+	yaml_content = update_yaml_value(yaml_content, "luigismansion_options", "dolphin_settings.path", absolute_dolphin_path)
+	yaml_content = update_yaml_value(yaml_content, "luigismansion_options", "dolphin_settings.auto_start", true)
 	return yaml_content

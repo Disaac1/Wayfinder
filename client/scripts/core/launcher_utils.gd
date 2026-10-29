@@ -27,7 +27,7 @@ static func resolve_download_url(raw_url: String) -> String:
 	return trimmed
 
 ## Decrypts an AES-256 CBC encrypted file with SHA-256 derived passphrase
-static func decrypt_file_aes256(encrypted_path: String, output_path: String, passphrase: String) -> bool:
+static func decrypt_file_aes256(encrypted_path: String, output_path: String, passphrase: String, progress_callback: Callable = Callable()) -> bool:
 	print("[LauncherUtils Crypto] Decrypting AES-256 archive: ", encrypted_path)
 	var in_file: FileAccess = FileAccess.open(encrypted_path, FileAccess.READ)
 	if not in_file:
@@ -56,8 +56,10 @@ static func decrypt_file_aes256(encrypted_path: String, output_path: String, pas
 		return false
 		
 	var CHUNK_SIZE: int = 1024 * 1024
-	var remaining: int = total_len - 16
+	var payload_size: int = total_len - 16
+	var remaining: int = payload_size
 	var prev_decrypted: PackedByteArray = PackedByteArray()
+	var last_reported_pct: int = -1
 	
 	while remaining > 0:
 		var to_read: int = min(remaining, CHUNK_SIZE)
@@ -87,6 +89,13 @@ static func decrypt_file_aes256(encrypted_path: String, output_path: String, pas
 					if valid_pad:
 						dec_chunk = dec_chunk.slice(0, dec_chunk.size() - pad_len)
 				out_file.store_buffer(dec_chunk)
+		
+		if progress_callback.is_valid():
+			var done_bytes: int = payload_size - remaining
+			var pct: int = int((float(done_bytes) / float(max(payload_size, 1))) * 100.0)
+			if pct != last_reported_pct:
+				last_reported_pct = pct
+				progress_callback.call(pct, done_bytes, payload_size)
 				
 	aes.finish()
 	in_file.close()
@@ -222,6 +231,7 @@ static func get_platform_search_roots() -> Array[String]:
 			roots.append(local_appdata.path_join("Programs/Archipelago"))
 			roots.append(local_appdata.path_join("Archipelago"))
 			roots.append(local_appdata.path_join("BizHawk"))
+			roots.append(local_appdata.path_join("Dolphin"))
 			
 		var user_profile: String = OS.get_environment("USERPROFILE")
 		if user_profile != "":
@@ -234,6 +244,10 @@ static func get_platform_search_roots() -> Array[String]:
 		roots.append("C:/BizHawk")
 		roots.append("C:/Emulators/BizHawk")
 		roots.append("C:/Program Files/BizHawk")
+		roots.append("C:/Dolphin")
+		roots.append("C:/Emulators/Dolphin")
+		roots.append("C:/Program Files/Dolphin")
+		roots.append("C:/Program Files (x86)/Dolphin")
 		roots.append("C:/Program Files/Steam/steamapps/common")
 		roots.append("C:/Program Files (x86)/Steam/steamapps/common")
 		roots.append("C:/Program Files/Epic Games")

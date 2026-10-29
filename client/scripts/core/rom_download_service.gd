@@ -141,7 +141,10 @@ func _process_downloaded_file(
 	var working_path: String = temp_download_path
 	if decryption_key != "" or working_path.ends_with(".enc"):
 		var decrypted_path: String = working_path.get_basename() + "_decrypted.tmp"
-		var decrypted_ok: bool = bool(decrypt_callback.call(working_path, decrypted_path, decryption_key))
+		var dec_progress_callback: Callable = func(pct: int, done_bytes: int, total_bytes: int):
+			_update_decrypt_progress(node, rom_name, pct, done_bytes, total_bytes)
+		_update_decrypt_progress(node, rom_name, 0, 0, 1)
+		var decrypted_ok: bool = bool(decrypt_callback.call(working_path, decrypted_path, decryption_key, dec_progress_callback))
 		_cleanup(working_path)
 		if not decrypted_ok:
 			callback.call(false, "Failed to decrypt game archive with provided key.")
@@ -149,14 +152,12 @@ func _process_downloaded_file(
 		working_path = decrypted_path
 
 	var finish_callback: Callable = func(final_path: String):
-		for countdown_index in range(5, 0, -1):
-			if is_instance_valid(node) and "launch_instructions" in node and is_instance_valid(node.launch_instructions):
-				node.launch_instructions.text = "Base ROM Ready: " + rom_name + "!\n" + str(progress_bar_callback.call(100)) + "\n\nContinuing automatically in " + str(countdown_index) + " seconds..."
-			if is_instance_valid(node) and node.get_tree():
-				await node.get_tree().create_timer(1.0).timeout
+		if is_instance_valid(node) and "launch_instructions" in node and is_instance_valid(node.launch_instructions):
+			node.launch_instructions.text = "Base ROM Ready: " + rom_name + "!"
 		callback.call(true, final_path)
 
-	if is_zip_url or _has_zip_header(working_path):
+	var has_zip: bool = _has_zip_header(working_path)
+	if is_zip_url and has_zip:
 		unpack_callback.call(working_path, rom_name, func(unpack_success: bool, unpack_result: String):
 			if unpack_success:
 				finish_callback.call(unpack_result)
@@ -165,14 +166,27 @@ func _process_downloaded_file(
 		)
 		return
 
-	DirAccess.make_dir_recursive_absolute(target_rom_path.get_base_dir())
-	var copy_error: Error = DirAccess.copy_absolute(working_path, target_rom_path)
+	# If target is an uncompressed ISO but downloaded file has RVZ magic (RVZ\x01), save as .rvz
+	var final_dest_path: String = target_rom_path
+	if _has_rvz_header(working_path) and target_rom_path.to_lower().ends_with(".iso"):
+		final_dest_path = target_rom_path.get_basename() + ".rvz"
+
+	DirAccess.make_dir_recursive_absolute(final_dest_path.get_base_dir())
+	var copy_error: Error = DirAccess.copy_absolute(working_path, final_dest_path)
 	_cleanup(working_path)
 	if copy_error != OK:
-		callback.call(false, "Failed to store downloaded ROM at: " + target_rom_path + " (Error: " + str(copy_error) + ")")
+		callback.call(false, "Failed to store downloaded ROM at: " + final_dest_path + " (Error: " + str(copy_error) + ")")
 		return
-	print("[Launcher] Base ROM stored successfully at: ", target_rom_path)
-	finish_callback.call(target_rom_path)
+	print("[Launcher] Base ROM stored successfully at: ", final_dest_path)
+	finish_callback.call(final_dest_path)
+
+func _has_rvz_header(path: String) -> bool:
+	var file: FileAccess = FileAccess.open(path, FileAccess.READ)
+	if not file:
+		return false
+	var header: PackedByteArray = file.get_buffer(4)
+	file.close()
+	return header.size() >= 4 and header[0] == 0x52 and header[1] == 0x56 and header[2] == 0x5A and header[3] == 0x01
 
 func _has_zip_header(path: String) -> bool:
 	var file: FileAccess = FileAccess.open(path, FileAccess.READ)
@@ -191,3 +205,25 @@ func _get_redirect_location(headers: PackedStringArray) -> String:
 func _cleanup(path: String) -> void:
 	if FileAccess.file_exists(path):
 		DirAccess.remove_absolute(path)
+
+func _update_decrypt_progress(node: Node, rom_name: String, pct: int, done_bytes: int, total_bytes: int) -> void:
+	if not is_instance_valid(node):
+		return
+	var dl_card: Node = null
+	if node.has_node("%DownloadProgressCard"):
+		dl_card = node.get_node("%DownloadProgressCard")
+	elif node.has_node("DownloadProgressCard"):
+		dl_card = node.get_node("DownloadProgressCard")
+	elif node.has_node("%LaunchOverlay") and node.get_node("%LaunchOverlay").has_node("%DownloadProgressCard"):
+		dl_card = node.get_node("%LaunchOverlay").get_node("%DownloadProgressCard")
+
+	if is_instance_valid(dl_card):
+		dl_card.visible = true
+		dl_card.set_task("Decrypting Game Archive")
+		dl_card.set_message("Decrypting " + rom_name + " (" + str(pct) + "%)...")
+		dl_card.update_progress(pct, done_bytes, total_bytes, 0.0)
+
+	if "launch_instructions" in node and is_instance_valid(node.launch_instructions):
+		var done_mb: float = float(done_bytes) / (1024.0 * 1024.0)
+		var tot_mb: float = float(total_bytes) / (1024.0 * 1024.0)
+		node.launch_instructions.text = "Decrypting Base ROM (" + rom_name + ")...\n" + str(progress_bar_callback.call(pct)) + "\n" + String.num(done_mb, 1) + " MB / " + String.num(tot_mb, 1) + " MB"

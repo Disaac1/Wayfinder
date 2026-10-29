@@ -1,0 +1,77 @@
+{
+  "game_name": "Hades",
+  "aliases": [
+    "hades",
+    "Hades 1",
+    "hades1",
+    "Polycosmos"
+  ],
+  "short_tag": "Hades",
+  "support_tier": 1,
+  "launch_mode": "ap_client",
+  "client_tool": "archipelago_client",
+  "client_component": "Hades Client",
+  "client_executable": "Hades.exe",
+  "executable_aliases": [
+    "Hades.exe",
+    "hades.exe"
+  ],
+  "sub_folders": [
+    "Hades",
+    "Hades/x64",
+    "Hades/x86"
+  ],
+  "steam_appid": "1145360",
+  "auto_connect": true,
+  "clipboard_action": "copy_server_address",
+  "host_yaml": {
+    "section": "hades_options",
+    "mappings": [
+      {
+        "key": "styx_scribe_path",
+        "value": "{game_dir}/StyxScribe.py"
+      }
+    ]
+  },
+  "packages": [
+    {
+      "name": "ModImporter",
+      "download_url": "https://github.com/SGG-Modding/ModImporter/releases/download/1.5.2/modimporter-windows.zip",
+      "check_file": "Content/modimporter.exe",
+      "extract_target": "Content"
+    },
+    {
+      "name": "ModUtil",
+      "download_url": "https://github.com/SGG-Modding/ModUtil/releases/download/2.10.1/SGG_Modding-ModUtil-2.10.1.zip",
+      "check_file": "Content/Mods/ModUtil/modfile.txt",
+      "extract_target": "Content/Mods/ModUtil"
+    },
+    {
+      "name": "StyxScribe",
+      "download_url": "https://github.com/NaixGames/StyxScribeWithoutREPL/releases/download/1.0.0/StyxScribeWTREPL.zip",
+      "check_file": "StyxScribe.py",
+      "extract_target": ""
+    },
+    {
+      "name": "Polycosmos AP Mod",
+      "download_url": "https://github.com/NaixGames/Polycosmos/releases/download/0.16.3/Polycosmos.zip",
+      "check_file": "Content/Mods/Polycosmos/modfile.txt",
+      "extract_target": "Content/Mods"
+    }
+  ],
+  "mod_importer": {
+    "executable": "Content/modimporter.exe",
+    "working_dir": "Content"
+  },
+  "tracker": {
+    "supported": true,
+    "pack_name": "Hades AP PopTracker Pack",
+    "package_uid": "hades_ap",
+    "pack_version": "3.0.3",
+    "pack_download_url": "https://github.com/OmegaZeron/Hades-AP-Poptracker-Pack/releases/download/v3.0.3/hades_ap.zip",
+    "pack_sha256": "1267876c4033c911ca2d2b2a77a07429c69bbe67a5104a0e2fc7f617831c0031",
+    "source_url": "https://github.com/OmegaZeron/Hades-AP-Poptracker-Pack/releases/tag/v3.0.3",
+    "auto_tracking": true
+  },
+  "install_instructions": "Tier 1 Support: Wayfinder will automatically install ModImporter, ModUtil, StyxScribe, and Polycosmos into your Hades directory, synchronize host.yaml with your StyxScribe path, launch the Hades Client and game, and start PopTracker with autotracking."
+}

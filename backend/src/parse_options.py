@@ -24,6 +24,13 @@ def main():
     # Inject Archipelago core repository in system path
     sys.path.insert(0, archipelago_path)
 
+    # Disable interactive ModuleUpdate prompt in non-interactive CLI runner
+    try:
+        import ModuleUpdate
+        ModuleUpdate.update_ran = True
+    except Exception:
+        pass
+
     # Note: Archipelago core's worlds package already automatically scans both worlds/
     # and custom_worlds/ (or user_folder) as apworld containers under worlds.<pkg_name>.
     # If custom_worlds_dir is provided and distinct from user_folder, we ensure sys.path includes it.

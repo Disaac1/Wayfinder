@@ -1,7 +1,7 @@
 {
-  "name": "wayfinder-backend",
-  "version": "1.0.0",
-  "description": "Lobby and matchmaking backend for Archipelago multiworld sessions",
+  "name": "lodestone-backend",
+  "version": "1.2.0",
+  "description": "Lobby and matchmaking backend for Lodestone Archipelago multiworld sessions",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
@@ -9,6 +9,7 @@
     "build": "tsc",
     "setup": "tsx src/setup.ts",
     "start": "node dist/index.js",
+    "test": "python -m unittest discover tests \"*test*.py\"",
     "test:fresh-install": "python ../tools/test_fresh_install.py"
   },
   "keywords": [],

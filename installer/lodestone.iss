@@ -1,16 +1,16 @@
 ; =====================================================================
-; Wayfinder Inno Setup Script
+; Lodestone Inno Setup Script
 ; =====================================================================
 ; Builds a lightweight, per-user Windows installer.
 ; Requires NO administrative privileges (installs to %LocalAppData%\Programs).
 
-#define MyAppName "Wayfinder"
+#define MyAppName "Lodestone"
 #ifndef MyAppVersion
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.2.0"
 #endif
-#define MyAppPublisher "Wayfinder"
-#define MyAppExeName "Wayfinder.exe"
-#define MyAppPckName "Wayfinder.pck"
+#define MyAppPublisher "Lodestone"
+#define MyAppExeName "Lodestone.exe"
+#define MyAppPckName "Lodestone.pck"
 
 [Setup]
 AppId={{D37E880B-30C5-4A3C-926B-952F372E9A68}
@@ -22,7 +22,7 @@ DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 OutputDir=..\dist
-OutputBaseFilename=Wayfinder_Setup_v{#MyAppVersion}
+OutputBaseFilename=Lodestone_Setup_v{#MyAppVersion}
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
@@ -30,6 +30,13 @@ SetupIconFile=icon.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 CloseApplications=yes
 RestartApplications=no
+VersionInfoVersion={#MyAppVersion}.0
+VersionInfoCompany={#MyAppPublisher}
+VersionInfoDescription={#MyAppName} Setup
+VersionInfoTextVersion={#MyAppVersion}
+VersionInfoCopyright=Copyright (C) 2026 {#MyAppPublisher}
+VersionInfoProductName={#MyAppName}
+VersionInfoProductVersion={#MyAppVersion}
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -58,6 +65,16 @@ var
 begin
   if CurStep = ssPostInstall then
   begin
+    UserDataPath := ExpandConstant('{userappdata}\Godot\app_userdata\Lodestone');
+    if FileExists(UserDataPath + '\update.pck') then
+    begin
+      DeleteFile(UserDataPath + '\update.pck');
+    end;
+    if FileExists(UserDataPath + '\update_meta.json') then
+    begin
+      DeleteFile(UserDataPath + '\update_meta.json');
+    end;
+
     UserDataPath := ExpandConstant('{userappdata}\Godot\app_userdata\Wayfinder');
     if FileExists(UserDataPath + '\update.pck') then
     begin

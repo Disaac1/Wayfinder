@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="Wayfinder"
+config/name="Lodestone"
 run/main_scene="res://scenes/main_menu.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 run/low_processor_mode=true
@@ -19,7 +19,7 @@ config/windows_native_icon="res://icon.ico"
 
 [autoload]
 
-WayfinderLogger="*res://scripts/core/wayfinder_logger.gd"
+LodestoneLogger="*res://scripts/core/lodestone_logger.gd"
 NetworkManager="*res://scripts/core/network_manager.gd"
 
 [display]

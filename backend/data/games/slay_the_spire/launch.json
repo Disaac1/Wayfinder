@@ -1,0 +1,41 @@
+{
+  "game_name": "Slay the Spire",
+  "aliases": [
+    "slay_the_spire",
+    "sts",
+    "sts1",
+    "slaythespire",
+    "Slay The Spire"
+  ],
+  "short_tag": "StS",
+  "support_tier": 1,
+  "launch_mode": "direct",
+  "client_executable": "SlayTheSpire.exe",
+  "executable_aliases": [
+    "SlayTheSpire.exe",
+    "ModTheSpire.exe",
+    "ModTheSpire.jar",
+    "slaythespire.exe"
+  ],
+  "sub_folders": [
+    "SlayTheSpire",
+    "Slay the Spire",
+    "slaythespire"
+  ],
+  "steam_appid": "646570",
+  "prefer_steam_protocol": true,
+  "auto_connect": true,
+  "clipboard_action": "copy_server_address",
+  "config_writer": {
+    "file_path": "{game_dir}/preferences/ArchipelagoMW-2.0_archipelagoConfig",
+    "format": "cfg",
+    "template": "PlayerFilter=RECENT\nConnectAddress={server_clean_url}\nConnectSlot={slot_name}\nmakeReceiveNoise=true\nnoColorWords=false\nroomRelease=false\n"
+  },
+  "tracker": {
+    "supported": true,
+    "pack_name": "In-Game Archipelago Tracker Overlay",
+    "notes": "Slay the Spire includes built-in real-time HUD overlays for multiworld items, relics, and deck progression.",
+    "auto_tracking": true
+  },
+  "install_instructions": "Tier 1 Support: Subscribe to 'ModTheSpire', 'BaseMod', and 'Archipelago Multiworld Randomizer' on the Steam Workshop (ID: 3488453081). Wayfinder automatically populates server credentials into your mod preferences, copies connection info to clipboard, and launches Slay the Spire."
+}

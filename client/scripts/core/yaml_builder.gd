@@ -35,13 +35,17 @@ static func get_short_game_tag(game_name: String, custom_tag: String = "") -> St
 		"Hollow Knight":
 			return "HK"
 		"Metroid Fusion":
-			return "Metroid"
+			return "Fusion"
+		"Pokemon Black and White", "Pokemon Black & White", "Pokemon Black and White Version", "Pokemon Black", "Pokemon White":
+			return "BW"
+		"Luigi's Mansion", "Luigis Mansion":
+			return "LM1"
 		"Stardew Valley":
 			return "Stardew"
 		"The Legend of Zelda: A Link to the Past", "A Link to the Past":
 			return "ALTTP"
 		"The Legend of Zelda: Ocarina of Time", "Ocarina of Time":
-			return "OoT"
+			return "OoT" 
 		_:
 			if clean_name.length() <= 8 and not clean_name.contains(" "):
 				return clean_name
@@ -67,7 +71,7 @@ static func get_slot_name(player_name: String, game_name: String, total_games: i
 	var tag: String = get_short_game_tag(game_name, custom_tag)
 	return player_name + " (" + tag + ")"
 
-static func compile_yaml(selected_games: Array, active_config_game: String, player_name: String, _room_code: String, config_states: Dictionary) -> String:
+static func compile_yaml(selected_games: Array, active_config_game: String, player_name: String, _room_code: String, config_states: Dictionary, game_presets: Dictionary = {}) -> String:
 	if selected_games.is_empty():
 		return ""
 		
@@ -81,7 +85,15 @@ static func compile_yaml(selected_games: Array, active_config_game: String, play
 	var documents: Array[String] = []
 	for game_title in selected_games:
 		var g_str: String = str(game_title)
-		var slot_name: String = get_slot_name(player_name, g_str, selected_games.size())
+		var custom_tag: String = ""
+		if game_presets.has(g_str) and game_presets[g_str] is Dictionary:
+			custom_tag = str(game_presets[g_str].get("short_tag", ""))
+		else:
+			for k in game_presets.keys():
+				if str(k).to_lower() == g_str.to_lower() and game_presets[k] is Dictionary:
+					custom_tag = str(game_presets[k].get("short_tag", ""))
+					break
+		var slot_name: String = get_slot_name(player_name, g_str, selected_games.size(), custom_tag)
 		var doc: String = _build_yaml_header(slot_name, g_str)
 		var game_options: Dictionary = config_states.get(g_str, {})
 		doc += _build_game_options_block(g_str, game_options)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Wayfinder Update Publisher & Pack Signer
+Lodestone Update Publisher & Pack Signer
 =========================================
 Signs an exported Godot .pck file with our private RSA key and deploys
 it along with version.json to the backend public updates directory.
@@ -12,6 +12,7 @@ import json
 import base64
 import hashlib
 import argparse
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from cryptography.hazmat.primitives import hashes
@@ -23,9 +24,10 @@ DEFAULT_PCK = WORKSPACE_ROOT / "client" / ".export" / "Build.pck"
 BACKEND_DIR = WORKSPACE_ROOT / "backend"
 UPDATES_DIR = BACKEND_DIR / "public" / "updates"
 VERSION_FILE = UPDATES_DIR / "version.json"
-TARGET_PCK = UPDATES_DIR / "Wayfinder.pck"
+TARGET_PCK = UPDATES_DIR / "Lodestone.pck"
+LEGACY_TARGET_PCK = UPDATES_DIR / "Wayfinder.pck"
 BRIDGE_VERSION_FILE = UPDATES_DIR / "bridge-version.json"
-BRIDGE_TARGET_PCK = UPDATES_DIR / "Wayfinder-bridge.pck"
+BRIDGE_TARGET_PCK = UPDATES_DIR / "Lodestone-bridge.pck"
 PRIV_KEY_FILE = BACKEND_DIR / "certs" / "updater_private_key.pem"
 
 
@@ -39,7 +41,6 @@ def sign_file(file_path: Path, priv_key_path: Path):
             sha256.update(chunk)
     digest_hex = sha256.hexdigest()
 
-    # Re-read or stream to sign the complete payload
     with open(file_path, "rb") as f:
         file_bytes = f.read()
 
@@ -49,19 +50,18 @@ def sign_file(file_path: Path, priv_key_path: Path):
         hashes.SHA256()
     )
     sig_b64 = base64.b64encode(signature).decode("ascii")
-
     return digest_hex, sig_b64, len(file_bytes)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Sign and publish a Wayfinder client update package.")
-    parser.add_argument("--pck", type=str, default=str(DEFAULT_PCK), help="Path to exported .pck file")
-    parser.add_argument("--version", type=str, required=True, help="New version string (e.g., 1.0.1)")
-    parser.add_argument("--min-version", type=str, default="1.0.0", help="Minimum required client version")
-    parser.add_argument("--notes", type=str, default="Maintenance update", help="Release notes")
-    parser.add_argument("--bridge", action="store_true", help="Publish the legacy-client bridge package")
-    parser.add_argument("--target-version", type=str, help="Final version the bridge installs")
-    parser.add_argument("--key", type=str, default=str(PRIV_KEY_FILE), help="Private key PEM path")
+    parser = argparse.ArgumentParser(description="Sign and publish a Godot .pck release update")
+    parser.add_argument("--pck", type=str, default=str(DEFAULT_PCK), help="Path to exported Build.pck")
+    parser.add_argument("--version", type=str, required=True, help="Semantic version string (e.g., 1.2.0)")
+    parser.add_argument("--notes", type=str, default="Maintenance and balance updates", help="Changelog release notes")
+    parser.add_argument("--min-version", type=str, default="1.0.0", help="Minimum required base client version")
+    parser.add_argument("--key", type=str, default=str(PRIV_KEY_FILE), help="Path to updater_private_key.pem")
+    parser.add_argument("--bridge", action="store_true", help="Publish as an intermediate bridge update")
+    parser.add_argument("--target-version", type=str, default="", help="Target final version when bridge=True")
 
     args = parser.parse_args()
 
@@ -69,8 +69,7 @@ def main():
     key_path = Path(args.key).resolve()
 
     if not pck_path.exists():
-        print(f"[Error] Source .pck file not found: {pck_path}")
-        print("Please export the project in Godot (.export/Build.pck) first.")
+        print(f"[Error] Target pack file not found: {pck_path}")
         sys.exit(1)
 
     if not key_path.exists():
@@ -88,10 +87,12 @@ def main():
     UPDATES_DIR.mkdir(parents=True, exist_ok=True)
 
     # Copy .pck
-    import shutil
     target_pck = BRIDGE_TARGET_PCK if args.bridge else TARGET_PCK
     target_version_file = BRIDGE_VERSION_FILE if args.bridge else VERSION_FILE
     shutil.copy2(pck_path, target_pck)
+    # Also maintain legacy filename so older clients receive it seamlessly
+    if not args.bridge:
+        shutil.copy2(pck_path, LEGACY_TARGET_PCK)
     print(f"[Deploy] Copied .pck to: {target_pck}")
 
     # Write version.json
@@ -100,7 +101,7 @@ def main():
         "min_version": args.min_version,
         "release_date": datetime.now(timezone.utc).isoformat(),
         "notes": args.notes,
-        "pck_filename": "Wayfinder.pck",
+        "pck_filename": target_pck.name,
         "pck_size": file_size,
         "sha256": digest_hex,
         "signature": sig_b64

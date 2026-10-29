@@ -246,7 +246,7 @@ func _load_launcher_catalogs() -> void:
 	launcher.load_paths_config()
 	launcher.load_roms_catalog()
 	launcher.load_launcher_config()
-	launcher.sync_custom_worlds_from_server(self, func(success: bool):
+	launcher.sync_custom_worlds_from_server(self, [], func(success: bool):
 		if success:
 			print("[Lobby] Custom Archipelago worlds synchronized from backend.")
 		else:
@@ -371,6 +371,8 @@ func _fetch_games_list() -> void:
 				file.store_string(JSON.stringify(all_games))
 				file.close()
 			print("[Lobby] Successfully loaded %d games from backend /api/games" % all_games.size())
+			if is_instance_valid(add_game_modal):
+				add_game_modal.update_games(all_games, _is_game_supported)
 
 
 # =====================================================================
@@ -874,12 +876,14 @@ func _on_config_remove_pressed() -> void:
 
 func _sync_state_to_server() -> void:
 	var is_ready_state: bool = local_selected_games.size() > 0
+	var presets_map: Dictionary = launcher.launcher_presets if is_instance_valid(launcher) else {}
 	var compiled_yaml_str: String = YamlBuilder.compile_yaml(
 		local_selected_games, 
 		active_config_game, 
 		NetworkManager.player_name, 
 		NetworkManager.room_code, 
-		config_states
+		config_states,
+		presets_map
 	)
 	NetworkManager.update_player_state(local_selected_games, is_ready_state, compiled_yaml_str)
 
@@ -983,7 +987,7 @@ func _on_poptracker_pressed(game_name: String) -> void:
 		status_label.text = "The Archipelago server address is not ready yet."
 		return
 	var total_games: int = maxi(local_selected_games.size(), 1)
-	var preset := launcher.get_preset(game_name)
+	var preset: Dictionary = launcher.get_preset(game_name)
 	var slot_name := YamlBuilder.get_slot_name(
 		NetworkManager.player_name,
 		game_name,
@@ -1052,7 +1056,7 @@ func _on_launch_game_pressed() -> void:
 func _check_and_launch_game(game_name: String) -> void:
 	print("[Lobby] User initiated launch for game: '", game_name, "'")
 	_show_launch_preparing_overlay(game_name)
-	launcher.sync_custom_worlds_from_server(self, func(success: bool):
+	launcher.sync_custom_worlds_from_server(self, [], func(success: bool):
 		if not success:
 			print("[Lobby] Custom Archipelago world refresh failed before launch; using local worlds.")
 		launcher.launch_game(self, game_name)

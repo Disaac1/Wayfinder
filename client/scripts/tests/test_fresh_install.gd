@@ -154,12 +154,15 @@ func _run_fresh_install_test() -> void:
 	var found_migrated = launcher.find_existing_base_rom(legacy_rom_name)
 	assert(FileAccess.file_exists(em_unified_path), "Legacy ROM was not migrated to unified game directory: " + em_unified_path)
 	assert(ProjectSettings.globalize_path(found_migrated) == ProjectSettings.globalize_path(em_unified_path), "find_existing_base_rom path mismatch: " + found_migrated + " vs " + em_unified_path)
+	assert(!FileAccess.file_exists(legacy_rom_path), "Legacy ROM was not removed from base_roms after migration: " + legacy_rom_path)
 	print("  -> Legacy ROM in base_roms successfully auto-migrated to: ", found_migrated)
+	print("  -> Legacy ROM in base_roms was cleanly deleted after migration.")
 	
 	# Cleanup test files
 	DirAccess.remove_absolute(track1_path)
 	DirAccess.remove_absolute(track2_path)
-	DirAccess.remove_absolute(legacy_rom_path)
+	if FileAccess.file_exists(legacy_rom_path):
+		DirAccess.remove_absolute(legacy_rom_path)
 	DirAccess.remove_absolute(em_unified_path)
 	
 	# -------------------------------------------------------------

@@ -236,11 +236,8 @@ func _get_common_root(files: PackedStringArray) -> String:
 	return candidate
 
 func _show_completion(node: Node, tool_name: String, path: String, callback: Callable, generation: int) -> void:
-	for countdown in range(5, 0, -1):
-		if not _is_current(generation):
-			return
-		_set_progress(node, "Installation Complete for " + tool_name + "!\n" + _progress_bar(100) + "\n\nContinuing automatically in " + str(countdown) + " seconds...")
-		if is_instance_valid(node) and node.get_tree():
-			await node.get_tree().create_timer(1.0).timeout
+	if not _is_current(generation):
+		return
+	_set_progress(node, "Installation Complete for " + tool_name + "!\n" + _progress_bar(100))
 	if _is_current(generation):
 		callback.call(true, path)

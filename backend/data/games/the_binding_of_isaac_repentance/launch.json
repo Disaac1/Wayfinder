@@ -1,0 +1,49 @@
+{
+  "game_name": "The Binding of Isaac Repentance",
+  "aliases": [
+    "The Binding of Isaac: Repentance",
+    "The Binding of Isaac",
+    "Binding of Isaac",
+    "Binding of Isaac: Repentance",
+    "tboir",
+    "isaac"
+  ],
+  "short_tag": "TBOIR",
+  "support_tier": 1,
+  "launch_mode": "direct",
+  "client_executable": "isaac-ng.exe",
+  "executable_aliases": [
+    "isaac-ng.exe",
+    "isaac.exe"
+  ],
+  "sub_folders": [
+    "The Binding of Isaac Rebirth",
+    "Binding of Isaac Rebirth",
+    "The Binding of Isaac",
+    "The Binding of Isaac Repentance",
+    "Binding of Isaac",
+    "tboi"
+  ],
+  "steam_appid": "250900",
+  "prefer_steam_protocol": true,
+  "client_tool": "archipelago_client",
+  "client_component": "Isaac Client",
+  "auto_connect": true,
+  "clipboard_action": "copy_server_address",
+  "host_yaml": {
+    "section": "tboir_options",
+    "mappings": [
+      {
+        "key": "game_folder",
+        "value": "{game_dir}"
+      }
+    ]
+  },
+  "tracker": {
+    "supported": true,
+    "pack_name": "Isaac Client Map Tracker",
+    "notes": "Isaac Client includes a built-in real-time Map Tracker tab with floor progression and goal tracking.",
+    "auto_tracking": true
+  },
+  "install_instructions": "Tier 1 Support: Subscribe to 'The Archipelago of Isaac' on the Steam Workshop (https://steamcommunity.com/sharedfiles/filedetails/?id=3640861678). Wayfinder will automatically sync host.yaml with your game directory, launch the game, and open the Isaac Client connected to your multiworld server."
+}

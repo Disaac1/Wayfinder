@@ -1,7 +1,7 @@
 class_name Updater
 extends RefCounted
 
-const BASE_VERSION: String = "1.1.1"
+const BASE_VERSION: String = "1.2.0"
 static var active_version: String = BASE_VERSION
 static var pending_base_pck_path: String = ""
 static var pending_base_pck_target: String = ""
@@ -9,26 +9,33 @@ static var pending_base_pck_target: String = ""
 static func is_bridge_version() -> bool:
 	return BASE_VERSION == "1.0.9"
 
-static func _diagnostic(message: String) -> void:
-	print("[Updater] ", message)
+static func _get_logger() -> Node:
 	if Engine.get_main_loop() and Engine.get_main_loop() is SceneTree:
 		var tree := Engine.get_main_loop() as SceneTree
-		var logger := tree.root.get_node_or_null("WayfinderLogger")
-		if logger and logger.has_method("log_message"):
-			logger.log_message("UPDATER", message)
+		var logger := tree.root.get_node_or_null("LodestoneLogger")
+		if not logger:
+			logger = tree.root.get_node_or_null("WayfinderLogger")
+		return logger
+	return null
+
+static func _diagnostic(message: String) -> void:
+	print("[Updater] ", message)
+	var logger := _get_logger()
+	if logger and logger.has_method("log_message"):
+		logger.log_message("UPDATER", message)
 
 static func log_message(source: String, message: String) -> void:
 	print("[", source, "] ", message)
 	if Engine.get_main_loop() and Engine.get_main_loop() is SceneTree:
 		var tree := Engine.get_main_loop() as SceneTree
-		var logger := tree.root.get_node_or_null("WayfinderLogger")
+		var logger := _get_logger()
 		if logger and logger.has_method("log_message"):
 			logger.log_message(source, message)
 
 static func generate_diagnostic_report(custom_context: Dictionary = {}) -> String:
 	if Engine.get_main_loop() and Engine.get_main_loop() is SceneTree:
 		var tree := Engine.get_main_loop() as SceneTree
-		var logger := tree.root.get_node_or_null("WayfinderLogger")
+		var logger := _get_logger()
 		if logger and logger.has_method("generate_diagnostic_report"):
 			return logger.generate_diagnostic_report(custom_context)
 	return JSON.stringify(custom_context, "  ")
@@ -36,7 +43,7 @@ static func generate_diagnostic_report(custom_context: Dictionary = {}) -> Strin
 static func send_logs_to_server(http_node: Node, server_base_url: String, error_summary: String = "", callback: Callable = Callable()) -> void:
 	if Engine.get_main_loop() and Engine.get_main_loop() is SceneTree:
 		var tree := Engine.get_main_loop() as SceneTree
-		var logger := tree.root.get_node_or_null("WayfinderLogger")
+		var logger := _get_logger()
 		if logger and logger.has_method("send_logs_to_server"):
 			logger.send_logs_to_server(http_node, server_base_url, error_summary, callback)
 			return
@@ -83,14 +90,60 @@ static func is_dev_environment() -> bool:
 	if OS.has_feature("editor"):
 		return true
 	# 2. Explicit environment variable override for local development
-	if OS.has_environment("WAYFINDER_DEV") and OS.get_environment("WAYFINDER_DEV") == "1":
+	if (OS.has_environment("LODESTONE_DEV") and OS.get_environment("LODESTONE_DEV") == "1") or \
+	   (OS.has_environment("WAYFINDER_DEV") and OS.get_environment("WAYFINDER_DEV") == "1"):
 		return true
-	if OS.has_environment("WAYFINDER_DISABLE_UPDATES") and OS.get_environment("WAYFINDER_DISABLE_UPDATES") == "1":
+	if (OS.has_environment("LODESTONE_DISABLE_UPDATES") and OS.get_environment("LODESTONE_DISABLE_UPDATES") == "1") or \
+	   (OS.has_environment("WAYFINDER_DISABLE_UPDATES") and OS.get_environment("WAYFINDER_DISABLE_UPDATES") == "1"):
 		return true
 	return false
 
+# Migrates user data (profiles, saves, cached ROMs) from Wayfinder to Lodestone
+static func migrate_legacy_userdata() -> void:
+	var new_dir := ProjectSettings.globalize_path("user://")
+	var old_dir := new_dir.replace("Lodestone", "Wayfinder")
+	if old_dir == new_dir:
+		return
+
+	var marker_file := new_dir.path_join(".migrated_from_wayfinder")
+	if FileAccess.file_exists(marker_file):
+		return
+
+	if not DirAccess.dir_exists_absolute(old_dir):
+		return
+
+	print("[Migration] Detected legacy Wayfinder userdata directory at: ", old_dir)
+	print("[Migration] Migrating existing saves, profiles, and data to Lodestone...")
+	_copy_directory_recursive(old_dir, new_dir)
+
+	var marker := FileAccess.open(marker_file, FileAccess.WRITE)
+	if marker:
+		marker.store_string("Migration completed on " + Time.get_datetime_string_from_system() + "\n")
+		marker.close()
+	print("[Migration] Migration to Lodestone complete.")
+
+static func _copy_directory_recursive(src: String, dst: String) -> void:
+	DirAccess.make_dir_recursive_absolute(dst)
+	var dir := DirAccess.open(src)
+	if not dir:
+		return
+	dir.list_dir_begin()
+	var item_name := dir.get_next()
+	while item_name != "":
+		if item_name != "." and item_name != "..":
+			var src_item := src.path_join(item_name)
+			var dst_item := dst.path_join(item_name)
+			if dir.current_is_dir():
+				_copy_directory_recursive(src_item, dst_item)
+			else:
+				if not FileAccess.file_exists(dst_item):
+					DirAccess.copy_absolute(src_item, dst_item)
+		item_name = dir.get_next()
+	dir.list_dir_end()
+
 # Early boot verification: mounts verified updates on engine startup
 static func bootstrap_early_updates() -> void:
+	migrate_legacy_userdata()
 	if is_dev_environment():
 		print("[Updater] Update bootstrap disabled by development guard.")
 		return
