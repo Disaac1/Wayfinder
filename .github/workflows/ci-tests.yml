@@ -1,0 +1,210 @@
+name: CI Test Suite
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: '4.7.2'
+  NODE_VERSION: '22'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # =========================================================================
+  # Job 1: Backend Node.js Service & Python Regression Tests
+  # =========================================================================
+  backend-tests:
+    name: Backend Service & Regression Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install Python test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install websockets requests cryptography PyYAML
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Build backend TypeScript
+        working-directory: backend
+        run: npm run build
+
+      - name: Configure environment and initialize database
+        working-directory: backend
+        run: |
+          if [ ! -f .env ] && [ -f ../.env.example ]; then
+            cp ../.env.example .env
+          fi
+          mkdir -p temp_seeds failed_generations logs public/downloads public/updates
+          echo "Environment and data directories initialized."
+
+      - name: Start backend service (daemon)
+        working-directory: backend
+        run: |
+          echo "Starting Wayfinder backend service in background..."
+          nohup node dist/index.js > backend.log 2>&1 &
+          echo $! > backend.pid
+          echo "Backend started with PID $(cat backend.pid)"
+
+      - name: Wait for backend service health
+        run: |
+          echo "Waiting for http://localhost:8080/api/games to respond..."
+          for i in {1..30}; do
+            if curl -sSf http://localhost:8080/api/games > /dev/null 2>&1; then
+              echo "✅ Backend service is healthy and responding (attempt $i)."
+              break
+            fi
+            echo "Waiting for backend service to spin up ($i/30)..."
+            sleep 1
+          done
+
+      - name: Run Python backend regression test suite
+        id: run_tests
+        run: |
+          python tools/run_backend_tests.py \
+            --server-url http://localhost:8080 \
+            --summary-file backend_test_summary.md
+
+      - name: Publish test results to Job Summary
+        if: always()
+        run: |
+          if [ -f backend_test_summary.md ]; then
+            cat backend_test_summary.md >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Backend Test Suite Failed to Generate Summary" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload backend logs and database on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-logs
+          path: |
+            backend/backend.log
+            backend/database.db
+            backend/logs/
+
+  # =========================================================================
+  # Job 2: Godot 4.x Headless Engine & GDScript Test Runner
+  # =========================================================================
+  godot-tests:
+    name: Godot 4.x GDScript Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Linux runtime libraries for Godot
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libgl1 \
+            libglx-mesa0 \
+            libx11-6 \
+            libxcursor1 \
+            libxinerama1 \
+            libxrandr2 \
+            libxi6 \
+            curl \
+            unzip
+
+      - name: Cache Godot ${{ env.GODOT_VERSION }} engine binary
+        id: cache-godot
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/bin/godot
+          key: godot-${{ env.GODOT_VERSION }}-linux-x86_64
+
+      - name: Download Godot ${{ env.GODOT_VERSION }} Headless Engine
+        if: steps.cache-godot.outputs.cache-hit != 'true'
+        run: |
+          echo "Downloading Godot v${GODOT_VERSION} Linux binary..."
+          curl -sSL --retry 3 \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" \
+            -o godot_linux.zip
+          unzip -q godot_linux.zip -d godot_bin
+          sudo install -m 755 godot_bin/Godot_v* /usr/local/bin/godot
+          rm -rf godot_linux.zip godot_bin
+
+      - name: Verify Godot binary installation
+        run: godot --version
+
+      - name: Set up Node.js & local backend for live integration tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Start local backend for Godot network tests
+        working-directory: backend
+        run: |
+          npm ci
+          npm run build
+          if [ ! -f .env ] && [ -f ../.env.example ]; then
+            cp ../.env.example .env
+          fi
+          mkdir -p temp_seeds failed_generations logs public/downloads public/updates
+          nohup node dist/index.js > backend.log 2>&1 &
+          echo $! > backend.pid
+          for i in {1..30}; do
+            if curl -sSf http://localhost:8080/api/games > /dev/null 2>&1; then
+              echo "✅ Local backend ready on port 8080 (attempt $i)."
+              break
+            fi
+            sleep 1
+          done
+
+      - name: Run Godot GDScript Test Runner
+        id: run_godot_tests
+        run: |
+          godot --headless --path client -s res://scripts/tests/test_runner.gd --summary-file=godot_test_summary.md
+
+      - name: Publish Godot test results to Job Summary
+        if: always()
+        run: |
+          if [ -f client/godot_test_summary.md ]; then
+            cat client/godot_test_summary.md >> $GITHUB_STEP_SUMMARY
+          elif [ -f godot_test_summary.md ]; then
+            cat godot_test_summary.md >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Godot Test Suite Failed to Generate Summary" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload Godot and backend logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: godot-test-logs
+          path: |
+            backend/backend.log
+            ~/.local/share/godot/app_userdata/Lodestone/logs/

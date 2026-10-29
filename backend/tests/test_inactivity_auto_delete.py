@@ -4,8 +4,15 @@ import urllib.request
 import json
 import shutil
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "backend", "database.db")
-SEEDS_DIR = os.path.join(os.path.dirname(__file__), "backend", "temp_seeds")
+def _find_path(n):
+    for b in [os.path.dirname(__file__), os.path.join(os.path.dirname(__file__), ".."), os.getcwd(), os.path.join(os.getcwd(), "backend")]:
+        c = os.path.abspath(os.path.join(b, n))
+        if os.path.exists(c):
+            return c
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), "..", n))
+
+DB_PATH = _find_path("database.db")
+SEEDS_DIR = _find_path("temp_seeds")
 ADMIN_HOUSEKEEPING_URL = "http://localhost:8080/api/admin/housekeeping"
 
 def main():

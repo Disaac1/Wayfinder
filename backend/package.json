@@ -10,6 +10,7 @@
     "setup": "tsx src/setup.ts",
     "start": "node dist/index.js",
     "test": "python -m unittest discover tests \"*test*.py\"",
+    "test:regression": "python ../tools/run_backend_tests.py",
     "test:fresh-install": "python ../tools/test_fresh_install.py"
   },
   "keywords": [],
