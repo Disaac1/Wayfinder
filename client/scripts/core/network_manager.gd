@@ -20,7 +20,7 @@ var _ping_timer: float = 0.0
 const PING_INTERVAL: float = 20.0
 var is_reconnecting: bool = false
 
-var server_url: String = "wss://wayfinder.disaac1.com"
+var server_url: String = "wss://lodestone.disaac1.com"
 var player_name: String = ""
 var room_code: String = ""
 var user_id: String = ""
@@ -327,7 +327,7 @@ func get_http_url() -> String:
 		return base.replace("ws://", "http://")
 	elif base.begins_with("wss://"):
 		return base.replace("wss://", "https://")
-	return "https://wayfinder.disaac1.com"
+	return "https://lodestone.disaac1.com"
 
 func get_ap_server_url() -> String:
 	if hosting_server_url != "":

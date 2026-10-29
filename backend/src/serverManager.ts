@@ -179,7 +179,7 @@ export async function startCentralServer(roomCode: string, zipName: string): Pro
   let tunnelUrl = `ws://${publicHost}:${port}`;
   const publicDomain = process.env.PUBLIC_DOMAIN || 
     (process.env.PUBLIC_URL ? new URL(process.env.PUBLIC_URL.includes('://') ? process.env.PUBLIC_URL : `https://${process.env.PUBLIC_URL}`).host : null) || 
-    (process.env.CLOUDFLARE_TUNNEL_TOKEN ? 'wayfinder.disaac1.com' : null);
+    (process.env.CLOUDFLARE_TUNNEL_TOKEN ? 'lodestone.disaac1.com' : null);
 
   const isCI = process.env.CI === 'true' || process.env.NODE_ENV === 'test';
   const hostingMode = isCI ? 'direct' : (process.env.HOSTING_MODE || 'tunnel').trim().toLowerCase();

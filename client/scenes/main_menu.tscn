@@ -91,7 +91,7 @@ text = "SERVER ADDRESS"
 [node name="ServerInput" type="LineEdit" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form" unique_id=248123163]
 unique_name_in_owner = true
 layout_mode = 2
-text = "wss://wayfinder.disaac1.com"
+text = "wss://lodestone.disaac1.com"
 placeholder_text = "ws://..."
 
 
@@ -125,7 +125,7 @@ theme_override_constants/separation = 6
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-placeholder_text = "https://wayfinder.disaac1.com/roms.json"
+placeholder_text = "https://lodestone.disaac1.com/roms.json"
 
 [node name="RomDownloadBtn" type="Button" parent="CenterContainer/HBox/CardPanel/Margin/VBox/Form/RomCatalogBox/RomUrlRow" unique_id=1622085505]
 unique_name_in_owner = true

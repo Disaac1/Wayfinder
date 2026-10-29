@@ -273,7 +273,7 @@ func _fetch_banner_from_backend(slug: String) -> void:
 	_pending_requests[slug] = true
 
 	var net_mgr = get_node_or_null("/root/NetworkManager")
-	var base_url: String = "https://wayfinder.disaac1.com"
+	var base_url: String = "https://lodestone.disaac1.com"
 	if is_instance_valid(net_mgr) and net_mgr.has_method("get_http_url"):
 		base_url = net_mgr.get_http_url()
 

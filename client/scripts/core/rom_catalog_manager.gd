@@ -3,7 +3,7 @@ extends RefCounted
 
 const ROM_JSON_PATH: String = "user://rom.json"
 const ROMS_JSON_PATH: String = "user://roms.json"
-const DEFAULT_FALLBACK_URL: String = "https://wayfinder.disaac1.com/roms.json"
+const DEFAULT_FALLBACK_URL: String = "https://lodestone.disaac1.com/roms.json"
 
 static func get_catalog_path() -> String:
 	if FileAccess.file_exists(ROM_JSON_PATH):

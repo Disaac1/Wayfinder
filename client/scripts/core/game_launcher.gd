@@ -1219,7 +1219,7 @@ func build_launch_context(game_path: String, patch_path: String = "", rom_path: 
 			server_host = host_parts[0]
 			server_port = host_parts[1]
 		else:
-			server_host = clean_host_part if clean_host_part != "" else "wayfinder.disaac1.com"
+			server_host = clean_host_part if clean_host_part != "" else "lodestone.disaac1.com"
 			server_port = "443" if server_url.begins_with("wss://") else "80"
 	elif server_clean_url.contains(":"):
 		var parts: PackedStringArray = server_clean_url.split(":")

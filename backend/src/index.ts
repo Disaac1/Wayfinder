@@ -225,7 +225,7 @@ async function startServer() {
     });
 
     const listenCallback = () => {
-      const publicDomain = process.env.PUBLIC_DOMAIN || 'wayfinder.disaac1.com';
+      const publicDomain = process.env.PUBLIC_DOMAIN || 'lodestone.disaac1.com';
       console.log(`===============================================`);
       console.log(`  Lodestone Lobby Backend running on port ${PORT}`);
       console.log(`  Local WebSocket:  ws://localhost:${PORT}`);

@@ -244,7 +244,7 @@ static func get_server_base_url(node: Node = null) -> String:
 		var nm = node.get_tree().root.get_node_or_null("NetworkManager")
 		if nm and nm.has_method("get_http_url"):
 			return nm.get_http_url()
-	return "https://wayfinder.disaac1.com"
+	return "https://lodestone.disaac1.com"
 
 # Check if an update is available on the backend server
 static func check_for_update(node: Node, callback: Callable) -> void:
