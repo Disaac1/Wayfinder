@@ -32,6 +32,52 @@ if (!fs.existsSync(DOWNLOADS_DIR)) {
   fs.mkdirSync(DOWNLOADS_DIR, { recursive: true });
 }
 
+
+interface GitHubAsset {
+  name: string;
+  browser_download_url: string;
+  size: number;
+}
+
+interface GitHubRelease {
+  tag_name: string;
+  name: string;
+  html_url: string;
+  published_at: string;
+  assets: GitHubAsset[];
+}
+
+let cachedRelease: { release: GitHubRelease; timestamp: number } | null = null;
+const GITHUB_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+export async function fetchLatestGitHubRelease(): Promise<GitHubRelease | null> {
+  const now = Date.now();
+  if (cachedRelease && (now - cachedRelease.timestamp) < GITHUB_CACHE_TTL_MS) {
+    return cachedRelease.release;
+  }
+
+  try {
+    const res = await fetch('https://api.github.com/repos/Disaac1/Wayfinder/releases/latest', {
+      headers: {
+        'User-Agent': 'Wayfinder-Lodestone-Backend',
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+
+    if (!res.ok) {
+      console.warn(`[GitHub Releases] API returned HTTP ${res.status}`);
+      return cachedRelease ? cachedRelease.release : null;
+    }
+
+    const data = await res.json() as GitHubRelease;
+    cachedRelease = { release: data, timestamp: now };
+    return data;
+  } catch (err: any) {
+    console.warn('[GitHub Releases] Error fetching latest release:', err.message);
+    return cachedRelease ? cachedRelease.release : null;
+  }
+}
+
 export function signBuffer(buffer: Buffer): { sha256: string; signature: string } | null {
   if (!fs.existsSync(PRIV_KEY_FILE)) {
     console.warn(`[Update Signer] Private key not found at ${PRIV_KEY_FILE}. Updates will be unsigned.`);
@@ -155,10 +201,77 @@ function isVersionAtOrBelow(version: string, maximum: string): boolean {
 }
 
 /**
- * GET /api/client/download-client
- * Streams the latest Windows installer (.exe) or portable archive (.zip)
+ * GET /api/client/download-info
+ * Returns metadata and direct download URLs for the latest GitHub release
  */
-router.get('/download-client', (req: Request, res: Response) => {
+router.get('/download-info', async (req: Request, res: Response) => {
+  const release = await fetchLatestGitHubRelease();
+  if (release) {
+    const setupAsset = release.assets.find(a => /setup.*\.exe$/i.test(a.name)) ||
+                       release.assets.find(a => /\.exe$/i.test(a.name));
+    const zipAsset = release.assets.find(a => /windows.*\.zip$/i.test(a.name));
+    const linuxAsset = release.assets.find(a => /linux.*\.(tar\.gz|zip)$/i.test(a.name));
+
+    return res.json({
+      tag: release.tag_name,
+      version: release.tag_name.replace(/^v/, ''),
+      name: release.name,
+      html_url: release.html_url,
+      published_at: release.published_at,
+      installer_url: setupAsset?.browser_download_url || 'https://github.com/Disaac1/Wayfinder/releases/latest',
+      portable_url: zipAsset?.browser_download_url || null,
+      linux_url: linuxAsset?.browser_download_url || null,
+      assets: release.assets.map(a => ({ name: a.name, size: a.size, url: a.browser_download_url }))
+    });
+  }
+
+  res.json({
+    tag: 'latest',
+    version: 'latest',
+    html_url: 'https://github.com/Disaac1/Wayfinder/releases/latest',
+    installer_url: 'https://github.com/Disaac1/Wayfinder/releases/latest',
+    portable_url: null,
+    linux_url: null,
+    assets: []
+  });
+});
+
+/**
+ * GET /api/client/download-client
+ * Redirects directly to the latest executable installer on GitHub Releases
+ * Supports query parameters: ?type=zip or ?platform=linux
+ */
+router.get('/download-client', async (req: Request, res: Response) => {
+  const platform = String(req.query.platform || '').toLowerCase();
+  const format = String(req.query.format || req.query.type || '').toLowerCase();
+
+  // 1. Resolve matching binary from latest GitHub Release
+  try {
+    const release = await fetchLatestGitHubRelease();
+    if (release && Array.isArray(release.assets) && release.assets.length > 0) {
+      let matchedAsset: GitHubAsset | undefined;
+
+      if (platform === 'linux') {
+        matchedAsset = release.assets.find(a => /linux.*\.tar\.gz$/i.test(a.name)) ||
+                       release.assets.find(a => /linux.*\.zip$/i.test(a.name));
+      } else if (format === 'zip' || format === 'portable') {
+        matchedAsset = release.assets.find(a => /windows.*\.zip$/i.test(a.name));
+      } else {
+        // Default: Windows installer .exe
+        matchedAsset = release.assets.find(a => /setup.*\.exe$/i.test(a.name)) ||
+                       release.assets.find(a => /\.exe$/i.test(a.name)) ||
+                       release.assets.find(a => /windows.*\.zip$/i.test(a.name));
+      }
+
+      if (matchedAsset && matchedAsset.browser_download_url) {
+        return res.redirect(302, matchedAsset.browser_download_url);
+      }
+    }
+  } catch (err: any) {
+    console.warn('[Download Client] GitHub redirect resolution failed:', err.message);
+  }
+
+  // 2. Fall back to local downloads if present on server disk
   const installerCandidates = ['Lodestone_Setup.exe', 'Wayfinder_Setup.exe'];
   const zipCandidates = ['Lodestone_Windows.zip', 'Wayfinder_Windows.zip'];
 
@@ -192,7 +305,8 @@ router.get('/download-client', (req: Request, res: Response) => {
     return res.redirect('/api/client/download-pck');
   }
 
-  res.status(404).json({ error: 'No client package or installer currently available' });
+  // 3. Fallback redirect to GitHub Releases latest page
+  return res.redirect(302, 'https://github.com/Disaac1/Wayfinder/releases/latest');
 });
 
 /**

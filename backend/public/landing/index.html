@@ -47,6 +47,13 @@
         <span>Tools & Apworlds</span>
       </a>
     </div>
+    <div style="margin-top: 10px; font-size: 0.9rem; opacity: 0.85;">
+      <span>Latest Release on <a href="https://github.com/Disaac1/Wayfinder/releases/latest" target="_blank" rel="noopener noreferrer" id="latestReleaseLink" style="color: #60a5fa; text-decoration: underline;">GitHub Releases</a></span>
+      <span style="margin: 0 8px;">&bull;</span>
+      <a href="/api/client/download-client?type=zip" style="color: #cbd5e1; text-decoration: underline;">Portable (.ZIP)</a>
+      <span style="margin: 0 8px;">&bull;</span>
+      <a href="/api/client/download-client?platform=linux" style="color: #cbd5e1; text-decoration: underline;">Linux Package</a>
+    </div>
 
     <!-- Features -->
     <div class="feature-grid">
@@ -131,12 +138,14 @@
 
     async function checkVersion() {
       try {
-        const res = await fetch('/api/client/version');
+        const res = await fetch('/api/client/download-info');
         if (res.ok) {
           const data = await res.json();
-          if (data && data.version) {
+          if (data && data.version && data.version !== 'latest') {
             const btnText = document.getElementById('downloadBtnText');
             if (btnText) btnText.textContent = `Download for Windows (v${data.version})`;
+            const releaseLink = document.getElementById('latestReleaseLink');
+            if (releaseLink) releaseLink.textContent = `GitHub Releases (${data.tag})`;
           }
         }
       } catch (e) {}

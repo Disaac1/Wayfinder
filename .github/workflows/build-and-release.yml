@@ -206,7 +206,8 @@ jobs:
           }
           if ($setupExe) {
               Copy-Item $setupExe.FullName -Destination "release_assets/" -Force
-              Write-Host "Staged installer: $($setupExe.Name)"
+              Copy-Item $setupExe.FullName -Destination "release_assets/Lodestone_Setup.exe" -Force
+              Write-Host "Staged installer: $($setupExe.Name) and Lodestone_Setup.exe"
           } else {
               throw "Could not locate compiled Inno Setup installer executable."
           }
@@ -215,7 +216,8 @@ jobs:
           $portableZip = Get-ChildItem -Path "backend/public/downloads" -Filter "*_Windows.zip" | Select-Object -First 1
           if ($portableZip) {
               Copy-Item $portableZip.FullName -Destination "release_assets/" -Force
-              Write-Host "Staged portable archive: $($portableZip.Name)"
+              Copy-Item $portableZip.FullName -Destination "release_assets/Lodestone_Windows.zip" -Force
+              Write-Host "Staged portable archive: $($portableZip.Name) and Lodestone_Windows.zip"
           } else {
               throw "Could not locate portable Windows ZIP package."
           }
