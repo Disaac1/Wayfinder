@@ -43,6 +43,27 @@ export function patchMultiServerKeepalive(): void {
 }
 
 /**
+ * Patches Generate.py to include detailed failed_world_loads diagnostics if a world fails to load.
+ */
+export function patchGenerateDiagnostics(): void {
+  try {
+    const generatePath = path.join(ARCHIPELAGO_PATH, 'Generate.py');
+    if (!fs.existsSync(generatePath)) return;
+    let content = fs.readFileSync(generatePath, 'utf-8');
+    if (content.includes('If so, it appears the world failed to initialize correctly.') && !content.includes('Reason:')) {
+      content = content.replace(
+        'f"If so, it appears the world failed to initialize correctly.")',
+        'f"If so, it appears the world failed to initialize correctly. Reason: {failed_world_loads.get(picks[0])}")'
+      );
+      fs.writeFileSync(generatePath, content, 'utf-8');
+      console.log('[Archipelago Core] Patched Generate.py with failed_world_loads diagnostics');
+    }
+  } catch (err: any) {
+    console.warn('[Archipelago Core] Warning patching Generate diagnostics:', err.message);
+  }
+}
+
+/**
  * Ensures the Archipelago core repository is cloned locally.
  * Clones a lightweight/shallow copy from GitHub if missing.
  */
@@ -51,6 +72,7 @@ export function ensureArchipelagoCore(): Promise<void> {
     if (fs.existsSync(path.join(ARCHIPELAGO_PATH, 'worlds', '__init__.py'))) {
       console.log('Archipelago core package detected.');
       patchMultiServerKeepalive();
+      patchGenerateDiagnostics();
       return resolve();
     }
 
@@ -343,6 +365,7 @@ export function generateSeed(
       }
     };
 
+    patchGenerateDiagnostics();
     console.log(`Running seed generation for room ${roomCode}...`);
     const child = spawn(pythonExe, args, options);
     child.stdin.end(); // Close stdin immediately so atexit input() prompts fail fast with EOFError
@@ -393,14 +416,18 @@ export function generateSeed(
       logStream.end();
       if (code !== 0) {
         console.error(`Archipelago generation exited with code ${code} for room ${roomCode}`);
+        if (stderrBuffer.trim()) console.error('[Archipelago stderr]:\n', stderrBuffer.trim());
+        if (stdoutBuffer.trim()) console.error('[Archipelago stdout]:\n', stdoutBuffer.trim());
         
         // Find clean error message from logs
         let cleanError = '';
-        const lines = (stderrBuffer + '\n' + stdoutBuffer).split('\n');
+        const combined = (stderrBuffer + '\n' + stdoutBuffer);
+        const lines = combined.split('\n');
         for (let i = lines.length - 1; i >= 0; i--) {
           const line = lines[i].trim();
           if (line.includes('Exception:') || line.includes('ValueError:') || line.includes('Error:')) {
-            cleanError = line;
+            // Include subsequent lines if they provide detail
+            cleanError = lines.slice(i, i + 10).map(l => l.trim()).filter(Boolean).join(' ');
             break;
           }
         }

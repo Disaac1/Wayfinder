@@ -64,8 +64,9 @@ jobs:
           fi
           echo "HOST=0.0.0.0" >> .env
           echo "PORT=8080" >> .env
+          echo "PYTHON_BIN=$(which python)" >> .env
           mkdir -p temp_seeds failed_generations logs public/downloads public/updates
-          echo "Environment and data directories initialized."
+          echo "Environment and data directories initialized with PYTHON_BIN=$(which python)."
 
       - name: Start backend service (daemon)
         working-directory: backend
@@ -213,6 +214,7 @@ jobs:
           fi
           echo "HOST=0.0.0.0" >> .env
           echo "PORT=8080" >> .env
+          echo "PYTHON_BIN=$(which python)" >> .env
           mkdir -p temp_seeds failed_generations logs public/downloads public/updates
           nohup node dist/index.js > backend.log 2>&1 &
           echo $! > backend.pid
