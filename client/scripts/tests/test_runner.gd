@@ -17,9 +17,7 @@ extends SceneTree
 
 const TESTS_DIR: String = "res://scripts/tests"
 const KNOWN_NETWORK_TESTS: Array[String] = [
-	"checkout_test.gd",
-	"integration_test.gd",
-	"launch_test.gd"
+	"test_network_integration.gd"
 ]
 
 var tests_to_run: Array[String] = []

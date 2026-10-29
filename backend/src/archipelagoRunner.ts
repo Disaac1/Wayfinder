@@ -57,13 +57,18 @@ export function ensureArchipelagoCore(): Promise<void> {
     console.log('Archipelago core package not found. Shallow cloning repository...');
     
     // We clone headlessly. It takes only ~20-30MB.
-    const gitCmd = `git clone --depth 1 https://github.com/ArchipelagoMW/Archipelago.git "${ARCHIPELAGO_PATH}"`;
-    
-    exec(gitCmd, (error, stdout, stderr) => {
-      if (error) {
-        console.error(`Failed to clone Archipelago core repository: ${error.message}`);
-        console.error(stderr);
-        return reject(error);
+    const child = spawn('git', ['clone', '--depth', '1', 'https://github.com/ArchipelagoMW/Archipelago.git', ARCHIPELAGO_PATH], {
+      stdio: 'inherit'
+    });
+
+    child.on('error', (err) => {
+      console.error(`Failed to start git clone for Archipelago core: ${err.message}`);
+      reject(err);
+    });
+
+    child.on('close', (code) => {
+      if (code !== 0) {
+        return reject(new Error(`git clone for Archipelago core failed with exit code ${code}`));
       }
       console.log('Archipelago core repository cloned successfully.');
       patchMultiServerKeepalive();

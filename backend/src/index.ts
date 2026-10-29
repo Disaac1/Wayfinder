@@ -241,11 +241,8 @@ async function startServer() {
       });
     };
 
-    if (HOST) {
-      server.listen(PORT, HOST, listenCallback);
-    } else {
-      server.listen(PORT, listenCallback);
-    }
+    const bindHost = HOST || '0.0.0.0';
+    server.listen(PORT, bindHost, listenCallback);
   } catch (err) {
     console.error('Failed to initialize Archipelago core repository, aborting startup:', err);
     process.exit(1);

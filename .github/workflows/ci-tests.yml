@@ -42,6 +42,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install websockets requests cryptography PyYAML
 
+      - name: Shallow clone Archipelago core
+        run: |
+          if [ ! -d "backend/archipelago_core/worlds" ]; then
+            git clone --depth 1 https://github.com/ArchipelagoMW/Archipelago.git backend/archipelago_core
+          fi
+
       - name: Install backend dependencies
         working-directory: backend
         run: npm ci
@@ -53,9 +59,11 @@ jobs:
       - name: Configure environment and initialize database
         working-directory: backend
         run: |
-          if [ ! -f .env ] && [ -f ../.env.example ]; then
+          if [ -f ../.env.example ]; then
             cp ../.env.example .env
           fi
+          echo "HOST=0.0.0.0" >> .env
+          echo "PORT=8080" >> .env
           mkdir -p temp_seeds failed_generations logs public/downloads public/updates
           echo "Environment and data directories initialized."
 
@@ -68,16 +76,32 @@ jobs:
           echo "Backend started with PID $(cat backend.pid)"
 
       - name: Wait for backend service health
+        working-directory: backend
         run: |
-          echo "Waiting for http://localhost:8080/api/games to respond..."
-          for i in {1..30}; do
+          PID=$(cat backend.pid)
+          echo "Waiting for backend service (PID $PID) at http://localhost:8080/api/games..."
+          READY=0
+          for i in {1..35}; do
+            if ! kill -0 $PID 2>/dev/null; then
+              echo "❌ Backend process (PID $PID) died unexpectedly!"
+              echo "=== backend.log ==="
+              cat backend.log
+              exit 1
+            fi
             if curl -sSf http://localhost:8080/api/games > /dev/null 2>&1; then
               echo "✅ Backend service is healthy and responding (attempt $i)."
+              READY=1
               break
             fi
-            echo "Waiting for backend service to spin up ($i/30)..."
+            echo "Waiting for backend service ($i/35)..."
             sleep 1
           done
+          if [ $READY -ne 1 ]; then
+            echo "❌ Backend service failed to respond within 35 seconds."
+            echo "=== backend.log ==="
+            cat backend.log
+            exit 1
+          fi
 
       - name: Run Python backend regression test suite
         id: run_tests
@@ -168,20 +192,36 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
+      - name: Shallow clone Archipelago core for local backend
+        run: |
+          if [ ! -d "backend/archipelago_core/worlds" ]; then
+            git clone --depth 1 https://github.com/ArchipelagoMW/Archipelago.git backend/archipelago_core
+          fi
+
       - name: Start local backend for Godot network tests
         working-directory: backend
         run: |
           npm ci
           npm run build
-          if [ ! -f .env ] && [ -f ../.env.example ]; then
+          if [ -f ../.env.example ]; then
             cp ../.env.example .env
           fi
+          echo "HOST=0.0.0.0" >> .env
+          echo "PORT=8080" >> .env
           mkdir -p temp_seeds failed_generations logs public/downloads public/updates
           nohup node dist/index.js > backend.log 2>&1 &
           echo $! > backend.pid
-          for i in {1..30}; do
+          PID=$(cat backend.pid)
+          READY=0
+          for i in {1..35}; do
+            if ! kill -0 $PID 2>/dev/null; then
+              echo "❌ Backend process died!"
+              cat backend.log
+              exit 1
+            fi
             if curl -sSf http://localhost:8080/api/games > /dev/null 2>&1; then
               echo "✅ Local backend ready on port 8080 (attempt $i)."
+              READY=1
               break
             fi
             sleep 1
