@@ -101,28 +101,30 @@ jobs:
           $godotVer = "${{ github.event.inputs.godot_version || env.DEFAULT_GODOT_VERSION }}"
           Write-Host "Configuring Godot Engine version: $godotVer"
 
-          # 1. Download & extract headless/console Godot editor binary
+          # 1. Download & extract Godot editor binary
           $godotZipUrl = "https://github.com/godotengine/godot/releases/download/${godotVer}-stable/Godot_v${godotVer}-stable_win64.exe.zip"
           Write-Host "Downloading Godot from $godotZipUrl..."
           curl.exe -L --fail --retry 3 -o "godot.zip" "$godotZipUrl"
           Expand-Archive -Path "godot.zip" -DestinationPath "godot_engine" -Force
 
-          $consoleExe = Get-ChildItem -Path "godot_engine" -Filter "*console.exe" -Recurse | Select-Object -First 1
-          if (-not $consoleExe) {
-              $consoleExe = Get-ChildItem -Path "godot_engine" -Filter "*.exe" -Recurse | Select-Object -First 1
+          # Locate the main Godot engine executable (not the console wrapper)
+          $mainExe = Get-ChildItem -Path "godot_engine" -Filter "*.exe" -Recurse | Where-Object { $_.Name -notmatch "console" } | Select-Object -First 1
+          if (-not $mainExe) {
+              $mainExe = Get-ChildItem -Path "godot_engine" -Filter "*.exe" -Recurse | Select-Object -First 1
           }
-          if (-not $consoleExe) {
+          if (-not $mainExe) {
               throw "Failed to locate Godot executable in extracted package."
           }
 
-          # Place godot_console.exe inside client/ as expected by tools/package_release.py
+          # Place Godot engine binary inside client/ as expected by tools/package_release.py
           New-Item -ItemType Directory -Force -Path "client"
-          Copy-Item $consoleExe.FullName -Destination "client/godot_console.exe" -Force
-          Copy-Item $consoleExe.FullName -Destination "client/godot.exe" -Force
-          "$($consoleExe.DirectoryName)" >> $env:GITHUB_PATH
+          Copy-Item $mainExe.FullName -Destination "client/godot.exe" -Force
+          Copy-Item $mainExe.FullName -Destination "client/godot_console.exe" -Force
+          "$($mainExe.DirectoryName)" >> $env:GITHUB_PATH
+          "GODOT_BIN=$((Get-Item 'client/godot.exe').FullName)" >> $env:GITHUB_ENV
 
-          Write-Host "Godot console binary placed at client/godot_console.exe"
-          & "client/godot_console.exe" --version
+          Write-Host "Godot engine binary placed at client/godot.exe"
+          & "client/godot.exe" --version
 
           # 2. Download & configure official export templates
           $templatesUrl = "https://github.com/godotengine/godot/releases/download/${godotVer}-stable/Godot_v${godotVer}-stable_export_templates.tpz"

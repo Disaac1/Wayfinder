@@ -30,9 +30,21 @@ BACKEND_DIR = WORKSPACE_ROOT / "backend"
 UPDATES_DIR = BACKEND_DIR / "public" / "updates"
 DOWNLOADS_DIR = BACKEND_DIR / "public" / "downloads"
 TOOLS_DIR = WORKSPACE_ROOT / "tools"
-GODOT_EXE = CLIENT_DIR / "godot_console.exe"
 PUBLISH_SCRIPT = TOOLS_DIR / "publish_update.py"
 INSTALLER_ISS = WORKSPACE_ROOT / "installer" / "lodestone.iss"
+
+
+def get_godot_executable() -> Path:
+    if os.environ.get("GODOT_BIN") and Path(os.environ["GODOT_BIN"]).exists():
+        return Path(os.environ["GODOT_BIN"])
+    if (CLIENT_DIR / "godot.exe").exists():
+        return CLIENT_DIR / "godot.exe"
+    if (CLIENT_DIR / "godot_console.exe").exists():
+        return CLIENT_DIR / "godot_console.exe"
+    which_godot = shutil.which("godot") or shutil.which("godot_console")
+    if which_godot:
+        return Path(which_godot)
+    return CLIENT_DIR / "godot.exe"
 
 
 def update_updater_base_version(version: str):
@@ -70,8 +82,10 @@ def export_godot():
     print("\n[1/4] Exporting Godot Windows Desktop Release...")
     EXPORT_DIR.mkdir(parents=True, exist_ok=True)
     
+    godot_exe = get_godot_executable()
+    print(f"  -> Using Godot executable: {godot_exe}")
     cmd = [
-        str(GODOT_EXE),
+        str(godot_exe),
         "--headless",
         "--path", str(CLIENT_DIR),
         "--export-release", "Windows Desktop",
