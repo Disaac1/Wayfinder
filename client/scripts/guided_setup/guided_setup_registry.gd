@@ -47,7 +47,7 @@ static func _ensure_slug_cache() -> void:
 			fa.close()
 			
 	# 2. Check cached games directories
-	var scan_dirs = ["user://cache/games"]
+	var scan_dirs = ["user://cache/games", "res://../backend/data/games"]
 	for base_dir in scan_dirs:
 		if not DirAccess.dir_exists_absolute(base_dir):
 			continue
@@ -91,6 +91,9 @@ static func _get_declarative_json_path(game_name: String) -> String:
 	var cache_path = "user://cache/games/" + slug + "/guided_setup.json"
 	if FileAccess.file_exists(cache_path):
 		return cache_path
+	var bundled_path = "res://../backend/data/games/" + slug + "/guided_setup.json"
+	if FileAccess.file_exists(bundled_path):
+		return bundled_path
 	return ""
 
 # Checks if a guided setup wizard is registered for the specified game

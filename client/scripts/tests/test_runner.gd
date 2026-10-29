@@ -192,15 +192,30 @@ func _check_backend_online() -> bool:
 	
 	var start = Time.get_ticks_msec()
 	while tcp.get_status() == StreamPeerTCP.STATUS_CONNECTING:
+		if Time.get_ticks_msec() - start > 500:
+			tcp.disconnect_from_host()
+			return false
+		OS.delay_msec(20)
+		tcp.poll()
+		
+	if tcp.get_status() != StreamPeerTCP.STATUS_CONNECTED:
+		tcp.disconnect_from_host()
+		return false
+
+	# Send minimal HTTP request to verify a live server is actually responding
+	var req = "GET /api/games HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n"
+	tcp.put_data(req.to_utf8_buffer())
+	start = Time.get_ticks_msec()
+	while tcp.get_available_bytes() == 0:
 		if Time.get_ticks_msec() - start > 600:
 			tcp.disconnect_from_host()
 			return false
-		OS.delay_msec(25)
+		OS.delay_msec(20)
 		tcp.poll()
 		
-	var is_connected = (tcp.get_status() == StreamPeerTCP.STATUS_CONNECTED)
+	var resp = tcp.get_utf8_string(tcp.get_available_bytes())
 	tcp.disconnect_from_host()
-	return is_connected
+	return resp.begins_with("HTTP/1.1 200") or resp.begins_with("HTTP/1.0 200")
 
 func _print_log_tail(log_str: String, line_count: int = 15) -> void:
 	var lines = log_str.split("\n")

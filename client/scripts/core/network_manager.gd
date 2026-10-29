@@ -1,5 +1,7 @@
 extends Node
 
+const Updater = preload("res://scripts/core/updater.gd")
+
 signal connected_to_server
 signal connection_closed
 signal room_created(room_code: String, user_id: String)

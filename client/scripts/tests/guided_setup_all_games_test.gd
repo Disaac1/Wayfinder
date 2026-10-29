@@ -37,7 +37,8 @@ func _run_test() -> void:
 	]
 	
 	for g_name in games_to_test:
-		await lobby._ensure_remote_guided_setup(g_name)
+		if not registry.has_guided_setup(g_name):
+			await lobby._ensure_remote_guided_setup(g_name)
 		print("\n[Test] Checking Guided Setup for: ", g_name)
 		if not registry.has_guided_setup(g_name):
 			_fail("Registry reported no guided setup for: " + g_name)

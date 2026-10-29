@@ -26,6 +26,9 @@ func _run_test() -> void:
 	network_manager.error_received.connect(_on_error)
 	network_manager.connection_closed.connect(_on_closed)
 	
+	create_timer(25.0).timeout.connect(func():
+		_fail("Test timed out waiting for backend connection or completion after 25s")
+	)
 	var err = network_manager.connect_to_server("ws://localhost:8080")
 	if err != OK:
 		_fail("Failed to connect: " + error_string(err))
