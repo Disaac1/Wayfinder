@@ -137,6 +137,22 @@ func _run_suite() -> void:
 	DirAccess.remove_absolute(test_yaml_path)
 
 	_assert_true("C:/Steam/Hades/StyxScribe.py" in synced, "host.yaml missing synced styx_scribe_path")
+
+	# Luigi's Mansion nested host_yaml sync
+	var lm_yaml_path = ProjectSettings.globalize_path("res://test_suite_lm_host.yaml")
+	var lm_initial = "luigismansion_options:\n  iso_file: \"\"\n"
+	var lm_fa = FileAccess.open("res://test_suite_lm_host.yaml", FileAccess.WRITE)
+	lm_fa.store_string(lm_initial)
+	lm_fa.close()
+
+	launcher._write_synced_host_yaml_file(lm_yaml_path, "C:/Games/Luigi.iso", "", "C:/Tools/Dolphin/Dolphin.exe", "localhost:38000")
+	var lm_rfa = FileAccess.open("res://test_suite_lm_host.yaml", FileAccess.READ)
+	var lm_synced = lm_rfa.get_as_text()
+	lm_rfa.close()
+	DirAccess.remove_absolute(lm_yaml_path)
+
+	_assert_true("C:/Games/Luigi.iso" in lm_synced, "host.yaml missing synced Luigi iso_file")
+	_assert_true("C:/Tools/Dolphin/Dolphin.exe" in lm_synced, "host.yaml missing synced Dolphin path")
 	print("  -> Passed: Config template interpolation and host.yaml synchronization verified.")
 
 	# -------------------------------------------------------------

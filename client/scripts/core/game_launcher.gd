@@ -3,6 +3,7 @@ extends RefCounted
 
 const LauncherUtils = preload("res://scripts/core/launcher_utils.gd")
 const ArchipelagoConfig = preload("res://scripts/core/archipelago_config.gd")
+const HostYamlEditorScript = preload("res://scripts/core/host_yaml_editor.gd")
 const LauncherConfigStoreScript = preload("res://scripts/core/launcher_config_store.gd")
 const GameIdentityResolverScript = preload("res://scripts/core/game_identity_resolver.gd")
 const RomCatalogServiceScript = preload("res://scripts/core/rom_catalog_service.gd")
@@ -849,123 +850,117 @@ func _write_synced_host_yaml_file(target_yaml_path: String, absolute_rom_path: S
 			yaml_content = file_access.get_as_text()
 			file_access.close()
 
+	# Initialize our dedicated, comment-preserving YAML editor
+	var editor = HostYamlEditorScript.new(yaml_content)
+
 	var rom_ext: String = absolute_rom_path.get_extension().to_lower()
 	var rom_filename_lower: String = absolute_rom_path.get_file().to_lower()
 	var clean_server_addr: String = server_url.replace("wss://", "").replace("ws://", "").trim_suffix("/")
 	if clean_server_addr == "" and Engine.has_singleton("NetworkManager"):
 		clean_server_addr = NetworkManager.get_ap_server_url().replace("wss://", "").replace("ws://", "").trim_suffix("/")
 
+	var matched_dolphin: bool = false
+	var matched_bizhawk: bool = false
+
+	# Match against launcher presets to apply data-driven host_yaml configurations
 	for game_key in launcher_presets.keys():
 		var preset: Dictionary = launcher_presets[game_key]
-		if preset.has("host_yaml") and preset["host_yaml"] is Dictionary:
-			var host_cfg: Dictionary = preset["host_yaml"]
-			var section: String = host_cfg.get("section", "")
-			var req_rom: String = preset.get("required_rom", "")
-			var req_ext: String = req_rom.get_extension().to_lower()
-			var is_matching_rom: bool = false
-			
-			if req_ext != "" and req_ext == rom_ext:
+		if not (preset.has("host_yaml") and preset["host_yaml"] is Dictionary):
+			continue
+
+		var req_rom: String = preset.get("required_rom", "")
+		var req_ext: String = req_rom.get_extension().to_lower()
+		var is_matching_rom: bool = false
+
+		if req_ext != "" and req_ext == rom_ext:
+			is_matching_rom = true
+		else:
+			for alias in preset.get("rom_aliases", []):
+				if str(alias).get_extension().to_lower() == rom_ext:
+					is_matching_rom = true
+					break
+
+		if not is_matching_rom and rom_ext == "exe":
+			var client_exec: String = preset.get("client_executable", preset.get("executable_name", "")).to_lower()
+			if client_exec != "" and (rom_filename_lower == client_exec or client_exec.get_file() == rom_filename_lower):
 				is_matching_rom = true
 			else:
-				for alias in preset.get("rom_aliases", []):
-					if str(alias).get_extension().to_lower() == rom_ext:
+				for exec_alias in preset.get("executable_aliases", []):
+					if str(exec_alias).to_lower() == rom_filename_lower:
 						is_matching_rom = true
 						break
-			if not is_matching_rom and rom_ext == "exe":
-				var client_exec: String = preset.get("client_executable", preset.get("executable_name", "")).to_lower()
-				if client_exec != "" and (rom_filename_lower == client_exec or client_exec.get_file() == rom_filename_lower):
-					is_matching_rom = true
-				else:
-					for exec_alias in preset.get("executable_aliases", []):
-						if str(exec_alias).to_lower() == rom_filename_lower:
-							is_matching_rom = true
-							break
+
+		if is_matching_rom:
+			var host_cfg: Dictionary = preset["host_yaml"]
+			var req_audio: String = preset.get("required_audio_rom", "")
 			
-			if is_matching_rom and section != "":
-				var sections_to_update: Array[String] = [section]
-				for extra_sec in host_cfg.get("extra_sections", []):
-					if not str(extra_sec) in sections_to_update:
-						sections_to_update.append(str(extra_sec))
-				
-				var audio_opt_key: String = host_cfg.get("audio_file_key", "")
-				var req_audio: String = preset.get("required_audio_rom", "")
-				var audio_path: String = ""
-				if audio_opt_key != "" and req_audio != "":
-					audio_path = _find_supplemental_rom_path(absolute_rom_path, req_audio)
-				
-				# Dictionary of patches for this section
-				var patches: Dictionary = {}
-				
-				# 1. Generic data-driven static options/patches dict
-				var raw_options: Dictionary = host_cfg.get("options", host_cfg.get("patches", {}))
-				for opt_k in raw_options.keys():
-					var raw_val = raw_options[opt_k]
-					if typeof(raw_val) == TYPE_STRING:
-						patches[opt_k] = _evaluate_yaml_template(str(raw_val), absolute_rom_path, absolute_bizhawk_path, absolute_dolphin_path, server_url, clean_server_addr)
-					else:
-						patches[opt_k] = raw_val
-				
-				# 2. Generic data-driven mappings list
-				var mappings: Array = host_cfg.get("mappings", [])
-				for m in mappings:
-					if not m is Dictionary:
-						continue
-					var map_key: String = str(m.get("key", ""))
-					if map_key == "":
-						continue
-					
-					# Check optional conditions
-					var when_matches: String = str(m.get("when_filename_matches", "")).to_lower()
-					if when_matches != "":
-						var pattern: String = when_matches.trim_prefix("*").trim_suffix("*")
-						if pattern != "" and not rom_filename_lower.contains(pattern):
-							continue
-					
-					var raw_v = m.get("value", "{rom_path}")
-					if typeof(raw_v) == TYPE_STRING:
-						patches[map_key] = _evaluate_yaml_template(str(raw_v), absolute_rom_path, absolute_bizhawk_path, absolute_dolphin_path, server_url, clean_server_addr)
-					else:
-						patches[map_key] = raw_v
-				
-				# 3. Backwards compatibility for rom_file_key / audio_file_key / dynamic_rom_key
-				var option_key: String = host_cfg.get("rom_file_key", "rom_file")
-				if option_key != "" and not patches.has(option_key):
-					patches[option_key] = absolute_rom_path
-				if audio_opt_key != "" and audio_path != "" and not patches.has(audio_opt_key):
-					patches[audio_opt_key] = audio_path
-				var dyn_rom_key: String = host_cfg.get("dynamic_rom_key", "")
-				if dyn_rom_key != "" and not patches.has(dyn_rom_key):
-					patches[dyn_rom_key] = absolute_rom_path
-				
-				for sec in sections_to_update:
-					yaml_content = ArchipelagoConfig.patch_yaml_section(yaml_content, sec, patches)
+			# Resolve nested configuration tree (evaluating templates & conditions)
+			var resolved_cfg: Dictionary = _resolve_host_yaml_tree(
+				host_cfg,
+				absolute_rom_path,
+				absolute_bizhawk_path,
+				absolute_dolphin_path,
+				server_url,
+				clean_server_addr,
+				rom_filename_lower,
+				req_audio
+			)
+			editor.apply_dictionary(resolved_cfg)
 
-	if absolute_dolphin_path != "":
-		yaml_content = _update_yaml_dolphin_block(yaml_content, absolute_dolphin_path)
+			if resolved_cfg.has("luigismansion_options") or resolved_cfg.has("dolphin_settings"):
+				matched_dolphin = true
+			if resolved_cfg.has("bizhawkclient_options"):
+				matched_bizhawk = true
 
-	if absolute_bizhawk_path != "":
-		yaml_content = _update_yaml_bizhawk_block(yaml_content, absolute_bizhawk_path)
-		# Clean up any residual mock test paths in host.yaml
-		if yaml_content.contains("mock_test_tools"):
-			var lines_cleaned: PackedStringArray = yaml_content.split("\n")
-			for i in range(lines_cleaned.size()):
-				if lines_cleaned[i].contains("mock_test_tools"):
-					lines_cleaned[i] = "  emuhawk_path: \"" + absolute_bizhawk_path + "\""
-			yaml_content = "\n".join(lines_cleaned)
+	# Fallback emulator injections if not explicitly declared in launch.json
+	if absolute_dolphin_path != "" and not matched_dolphin:
+		editor.set_value_at_path("luigismansion_options.dolphin_settings.path", absolute_dolphin_path)
+		editor.set_value_at_path("luigismansion_options.dolphin_settings.auto_start", true)
+
+	if absolute_bizhawk_path != "" and not matched_bizhawk:
+		editor.set_value_at_path("bizhawkclient_options.emuhawk_path", absolute_bizhawk_path)
+		editor.set_value_at_path("bizhawkclient_options.rom_start", true)
 
 	var writer_file: FileAccess = FileAccess.open(target_yaml_path, FileAccess.WRITE)
 	if writer_file:
-		writer_file.store_string(yaml_content)
+		writer_file.store_string(editor.to_string_content())
 		writer_file.close()
 		print("[Launcher] Synced Archipelago host.yaml at: ", target_yaml_path)
 
+## Resolves template placeholders and conditional nodes inside a host_yaml dictionary
+func _resolve_host_yaml_tree(node: Variant, rom_path: String, bizhawk_path: String, dolphin_path: String, server_url: String, clean_server_addr: String, rom_filename_lower: String, req_audio: String) -> Variant:
+	if typeof(node) == TYPE_DICTIONARY:
+		var dict: Dictionary = node as Dictionary
+		# Check if this node represents a conditional value with `when_filename_matches`
+		if dict.has("when_filename_matches"):
+			var pattern: String = str(dict["when_filename_matches"]).to_lower().trim_prefix("*").trim_suffix("*")
+			if pattern != "" and not rom_filename_lower.contains(pattern):
+				return null
+			return _resolve_host_yaml_tree(dict.get("value", "{rom_path}"), rom_path, bizhawk_path, dolphin_path, server_url, clean_server_addr, rom_filename_lower, req_audio)
 
-func _evaluate_yaml_template(raw_str: String, rom_path: String, bizhawk_path: String, dolphin_path: String, server_url: String, clean_server_addr: String) -> String:
+		var resolved_dict: Dictionary = {}
+		for k in dict.keys():
+			var child_res = _resolve_host_yaml_tree(dict[k], rom_path, bizhawk_path, dolphin_path, server_url, clean_server_addr, rom_filename_lower, req_audio)
+			if child_res != null:
+				resolved_dict[k] = child_res
+		return resolved_dict
+
+	if typeof(node) == TYPE_STRING:
+		var audio_path: String = ""
+		if req_audio != "":
+			audio_path = _find_supplemental_rom_path(rom_path, req_audio)
+		return _evaluate_yaml_template(str(node), rom_path, bizhawk_path, dolphin_path, server_url, clean_server_addr, audio_path)
+
+	# Primitive types (bool, int, float, Array) are returned as-is
+	return node
+
+func _evaluate_yaml_template(raw_str: String, rom_path: String, bizhawk_path: String, dolphin_path: String, server_url: String, clean_server_addr: String, audio_path: String = "") -> String:
 	var res: String = raw_str
 	res = res.replace("{rom_path}", rom_path)
 	res = res.replace("{game_dir}", rom_path.get_base_dir() if rom_path.get_extension() != "" else rom_path)
 	res = res.replace("{bizhawk_path}", bizhawk_path)
 	res = res.replace("{dolphin_path}", dolphin_path)
+	res = res.replace("{audio_path}", audio_path)
 	res = res.replace("{server_url}", server_url)
 	res = res.replace("{server_address}", clean_server_addr)
 	res = res.replace("{server_host}", clean_server_addr.split(":")[0] if clean_server_addr.contains(":") else clean_server_addr)
@@ -977,15 +972,6 @@ func update_yaml_value(yaml_content: String, section_key: String, option_path: S
 
 func patch_yaml_section(yaml_content: String, section_key: String, patches: Dictionary) -> String:
 	return ArchipelagoConfig.patch_yaml_section(yaml_content, section_key, patches)
-
-func _update_yaml_section_key(yaml_content: String, section_key: String, option_key: String, option_val: String, extra_lines: Array[String] = []) -> String:
-	return ArchipelagoConfig.update_yaml_section_key(yaml_content, section_key, option_key, option_val, extra_lines)
-
-func _update_yaml_bizhawk_block(yaml_content: String, absolute_bizhawk_path: String) -> String:
-	return ArchipelagoConfig.update_yaml_bizhawk_block(yaml_content, absolute_bizhawk_path)
-
-func _update_yaml_dolphin_block(yaml_content: String, absolute_dolphin_path: String) -> String:
-	return ArchipelagoConfig.update_yaml_dolphin_block(yaml_content, absolute_dolphin_path)
 
 
 # =====================================================================

@@ -29,8 +29,13 @@
     "md5": "6e3d9ae0ed2fbd2f77fa1ca09a60c494"
   },
   "host_yaml": {
-    "section": "luigismansion_options",
-    "rom_file_key": "iso_file"
+    "luigismansion_options": {
+      "iso_file": "{rom_path}",
+      "dolphin_settings": {
+        "path": "{dolphin_path}",
+        "auto_start": true
+      }
+    }
   },
   "auto_connect": true,
   "tracker": {

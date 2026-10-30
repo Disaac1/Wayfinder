@@ -2,7 +2,7 @@
   "game_name": "Pokemon Emerald",
   "short_tag": "Emerald",
   "aliases": [
-    "Pokémon Emerald",
+    "Pok\u00e9mon Emerald",
     "Pokemon Emerald Version",
     "pokemon_emerald"
   ],
@@ -26,13 +26,14 @@
     "sha1": "f3ae088681bfb26410d2255737503761a298533b"
   },
   "host_yaml": {
-    "section": "pokemon_emerald_options",
-    "rom_file_key": "rom_file"
+    "pokemon_emerald_settings": {
+      "rom_file": "{rom_path}"
+    }
   },
   "auto_connect": true,
   "tracker": {
     "supported": true,
-    "pack_name": "Pokémon Emerald AP Tracker",
+    "pack_name": "Pok\u00e9mon Emerald AP Tracker",
     "package_uid": "ap_emerald",
     "pack_version": "2.1.1",
     "pack_download_url": "https://github.com/seto10987/Archipelago-Emerald-AP-Tracker/archive/refs/tags/v.2.1.1.zip",
@@ -41,4 +42,4 @@
     "auto_tracking": true
   },
   "install_instructions": "Tier 1 Full Support: Click Launch to automatically prepare the ROM, update client settings, and auto-start the game connected to the server. If Archipelago Client or BizHawk are missing, click Auto-Install below."
-}
+}

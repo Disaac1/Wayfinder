@@ -2,7 +2,7 @@
   "game_name": "Pokemon Black and White",
   "short_tag": "BW",
   "aliases": [
-    "Pokémon Black and White",
+    "Pok\u00e9mon Black and White",
     "Pokemon Black",
     "Pokemon White",
     "Pokemon Black Version",
@@ -31,27 +31,16 @@
     "Pokemon White.nds"
   ],
   "host_yaml": {
-    "section": "pokemon_bw_settings",
-    "extra_sections": [
-      "pokemon_bw_options"
-    ],
-    "mappings": [
-      {
-        "key": "dynamic_rom",
-        "value": "{rom_path}"
-      },
-      {
-        "key": "black_rom",
+    "pokemon_bw_settings": {
+      "dynamic_rom": "{rom_path}",
+      "black_rom": {
         "value": "{rom_path}",
         "when_filename_matches": "*black*"
       },
-      {
-        "key": "white_rom",
+      "white_rom": {
         "value": "{rom_path}",
         "when_filename_matches": "*white*"
-      }
-    ],
-    "options": {
+      },
       "enable_encounter_plando": true,
       "enable_stats_plando": true,
       "enable_move_data_plando": true,
@@ -68,5 +57,5 @@
     "package_uid": "ap_pokemon_bw",
     "auto_tracking": true
   },
-  "install_instructions": "Tier 1 Full Support: Select your clean Pokémon Black or White (.nds) base ROM. Wayfinder will configure BizHawk, sync your host settings, launch the Archipelago Client, and connect your game to the multiworld."
-}
+  "install_instructions": "Tier 1 Full Support: Select your clean Pok\u00e9mon Black or White (.nds) base ROM. Wayfinder will configure BizHawk, sync your host settings, launch the Archipelago Client, and connect your game to the multiworld."
+}

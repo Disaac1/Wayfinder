@@ -43,12 +43,10 @@
     "sha1": "9ec9e1d8cd3b98c56fa6c568f6bfb8e97f26ce5a"
   },
   "host_yaml": {
-    "section": "sotn_settings",
-    "extra_sections": [
-      "sotn_options"
-    ],
-    "rom_file_key": "rom_file",
-    "audio_file_key": "audio_file"
+    "sotn_settings": {
+      "rom_file": "{rom_path}",
+      "audio_file": "{audio_path}"
+    }
   },
   "patch_progress_tracking": {
     "completion_extension": ".cue",
@@ -58,14 +56,14 @@
   },
   "auto_connect": true,
   "install_instructions": "Tier 1 Full Support: Select your vanilla Castlevania: Symphony of the Night Track 1 .bin file. Wayfinder will automatically detect Track 2 and configure BizHawk, sync host settings, open the .apsotn patch in the Archipelago Client, and launch the game.",
-  "tracker":{
-	"supported": true,
-	"pack_name": "Symphony of the Night Randomizer Map Tracker",
-	"package_uid": "sotn_ap_maptracker",
-	"pack_version": "0.2.15",
-	"pack_download_url": "https://github.com/Michpem/SOTN-AP-MapTracker/releases/download/0.2.15/SOTN-AP-MapTracker.zip",
-	"pack_sha256": "7460eb2aab1508919450f6d4bc48391777cbe479f3f02172ba7da14d1ac6a0f9",
-	"source_url": "https://github.com/Michpem/SOTN-AP-MapTracker/releases/tag/0.2.15",
-	"auto_tracking": true
+  "tracker": {
+    "supported": true,
+    "pack_name": "Symphony of the Night Randomizer Map Tracker",
+    "package_uid": "sotn_ap_maptracker",
+    "pack_version": "0.2.15",
+    "pack_download_url": "https://github.com/Michpem/SOTN-AP-MapTracker/releases/download/0.2.15/SOTN-AP-MapTracker.zip",
+    "pack_sha256": "7460eb2aab1508919450f6d4bc48391777cbe479f3f02172ba7da14d1ac6a0f9",
+    "source_url": "https://github.com/Michpem/SOTN-AP-MapTracker/releases/tag/0.2.15",
+    "auto_tracking": true
   }
-}
+}

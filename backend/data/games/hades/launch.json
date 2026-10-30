@@ -25,13 +25,9 @@
   "auto_connect": true,
   "clipboard_action": "copy_server_address",
   "host_yaml": {
-    "section": "hades_options",
-    "mappings": [
-      {
-        "key": "styx_scribe_path",
-        "value": "{game_dir}/StyxScribe.py"
-      }
-    ]
+    "hades_options": {
+      "styx_scribe_path": "{game_dir}/StyxScribe.py"
+    }
   },
   "packages": [
     {

@@ -31,13 +31,9 @@
   "auto_connect": true,
   "clipboard_action": "copy_server_address",
   "host_yaml": {
-    "section": "tboir_options",
-    "mappings": [
-      {
-        "key": "game_folder",
-        "value": "{game_dir}"
-      }
-    ]
+    "tboir_options": {
+      "game_folder": "{game_dir}"
+    }
   },
   "tracker": {
     "supported": true,
@@ -46,4 +42,4 @@
     "auto_tracking": true
   },
   "install_instructions": "Tier 1 Support: Subscribe to 'The Archipelago of Isaac' on the Steam Workshop (https://steamcommunity.com/sharedfiles/filedetails/?id=3640861678). Wayfinder will automatically sync host.yaml with your game directory, launch the game, and open the Isaac Client connected to your multiworld server."
-}
+}
