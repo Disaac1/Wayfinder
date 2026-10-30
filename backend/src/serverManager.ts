@@ -174,22 +174,22 @@ export async function startCentralServer(roomCode: string, zipName: string): Pro
   const serverHost = (roomServerIp && roomServerIp.trim()) ? roomServerIp.trim() : publicHost;
   let serverAddress = `${serverHost}:${port}`;
 
-  // Determine tunnel_url: if public domain or cloudflare tunnel is active, route through WSS proxy on port 443
+  // Determine tunnel_url: if AP domain or public domain is active, route through WSS proxy on port 443
   // If HOSTING_MODE=direct or custom roomServerIp is specified, route directly to host IP & port (dedicated server mode)
   let tunnelUrl = `ws://${publicHost}:${port}`;
-  const publicDomain = process.env.PUBLIC_DOMAIN || 
-    (process.env.PUBLIC_URL ? new URL(process.env.PUBLIC_URL.includes('://') ? process.env.PUBLIC_URL : `https://${process.env.PUBLIC_URL}`).host : null) || 
-    (process.env.CLOUDFLARE_TUNNEL_TOKEN ? 'lodestone.disaac1.com' : null);
+  const apDomain = process.env.AP_DOMAIN || 
+    (process.env.PUBLIC_HOST && !process.env.PUBLIC_HOST.includes('localhost') && !process.env.PUBLIC_HOST.includes('127.0.0.1') ? process.env.PUBLIC_HOST : null) || 
+    'ap.disaac1.com';
 
   const isCI = process.env.CI === 'true' || process.env.NODE_ENV === 'test';
   const hostingMode = isCI ? 'direct' : (process.env.HOSTING_MODE || 'tunnel').trim().toLowerCase();
   const isDirectMode = isCI || hostingMode === 'direct' || Boolean(roomServerIp && roomServerIp.trim());
 
-  if (!isDirectMode && publicDomain && !publicDomain.includes('localhost') && !publicDomain.includes('127.0.0.1')) {
-    const isSsl = process.env.USE_SSL === 'true' || Boolean(process.env.CLOUDFLARE_TUNNEL_TOKEN) || publicDomain.includes(':443');
+  if (!isDirectMode && apDomain && !apDomain.includes('localhost') && !apDomain.includes('127.0.0.1')) {
+    const isSsl = process.env.USE_SSL === 'true' || Boolean(process.env.CLOUDFLARE_TUNNEL_TOKEN) || apDomain.includes(':443');
     const scheme = isSsl ? 'wss' : 'ws';
-    const portSuffix = publicDomain.includes(':') ? '' : (isSsl ? ':443' : '');
-    tunnelUrl = `${scheme}://${publicDomain}${portSuffix}/ap/${roomCode}`;
+    const portSuffix = apDomain.includes(':') ? '' : (isSsl ? ':443' : '');
+    tunnelUrl = `${scheme}://${apDomain}${portSuffix}/ap/${roomCode}`;
     serverAddress = tunnelUrl;
   } else {
     tunnelUrl = `ws://${serverHost}:${port}`;
