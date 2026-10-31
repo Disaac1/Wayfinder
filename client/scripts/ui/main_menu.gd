@@ -16,11 +16,13 @@ extends Control
 @onready var rom_folder_btn: Button = %RomFolderBtn
 @onready var rom_catalog_modal: Control = %RomCatalogModal
 @onready var rom_file_dialog: FileDialog = %RomFileDialog
+@onready var update_overlay: Control = %UpdateOverlay
 @onready var subtitle_label: Label = get_node("CenterContainer/HBox/CardPanel/Margin/VBox/Subtitle")
 
 const SETTINGS_PATH = "user://settings.json"
 const Updater = preload("res://scripts/core/updater.gd")
 const RomCatalogManager = preload("res://scripts/core/rom_catalog_manager.gd")
+const UpdateOverlayScene = preload("res://scenes/modals/update_overlay.tscn")
 
 var pending_action: String = "" # "create" or "join"
 var pending_user_id: String = ""
@@ -127,88 +129,31 @@ func _check_for_updates() -> void:
 				)
 	)
 
+func _get_update_overlay() -> Control:
+	if is_instance_valid(update_overlay):
+		return update_overlay
+	var existing = get_node_or_null("%UpdateOverlay")
+	if is_instance_valid(existing):
+		update_overlay = existing
+		return update_overlay
+	existing = get_node_or_null("UpdateOverlay")
+	if is_instance_valid(existing):
+		update_overlay = existing
+		return update_overlay
+	var instance = UpdateOverlayScene.instantiate()
+	instance.name = "UpdateOverlay"
+	add_child(instance)
+	update_overlay = instance
+	return update_overlay
+
 func _start_manual_update(update_info: Dictionary) -> void:
-	var overlay := ColorRect.new()
-	overlay.name = "ManualUpdateOverlay"
-	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	overlay.color = Color(0.035, 0.04, 0.06, 1.0)
-	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	overlay.z_index = 100
-	add_child(overlay)
-
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	overlay.add_child(center)
-
-	var panel := VBoxContainer.new()
-	panel.custom_minimum_size = Vector2(560, 0)
-	panel.add_theme_constant_override("separation", 14)
-	center.add_child(panel)
-
-	var message := Label.new()
-	message.text = "Update required\n\nThis version of Wayfinder must be updated manually.\nInstall v" + str(update_info.get("version", "")) + " to continue."
-	message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	message.add_theme_font_size_override("font_size", 22)
-	panel.add_child(message)
-
-	var download_button := Button.new()
-	download_button.text = "Download latest version"
-	download_button.custom_minimum_size = Vector2(0, 44)
-	panel.add_child(download_button)
-	download_button.pressed.connect(func():
-		var url := Updater.get_server_base_url(self) + str(update_info.get("download_url", "/api/client/download-client"))
-		OS.shell_open(url)
-	)
+	_get_update_overlay().start_manual_update(update_info)
 
 func _start_forced_update_failure(message: String) -> void:
-	var overlay := ColorRect.new()
-	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	overlay.color = Color(0.035, 0.04, 0.06, 1.0)
-	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	overlay.z_index = 100
-	add_child(overlay)
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	overlay.add_child(center)
-	var label := Label.new()
-	label.text = "Update required\n" + message + "\nPlease restart Wayfinder and try again."
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size", 22)
-	center.add_child(label)
+	_get_update_overlay().start_forced_update_failure(message)
 
 func _start_forced_update(update_info: Dictionary) -> void:
-	Updater.log_message("UPDATER", "Forced update download started: " + str(update_info))
-	var overlay := ColorRect.new()
-	overlay.name = "ForcedUpdateOverlay"
-	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	overlay.color = Color(0.035, 0.04, 0.06, 1.0)
-	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	overlay.z_index = 100
-	add_child(overlay)
-
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	overlay.add_child(center)
-
-	var message := Label.new()
-	message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	message.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	message.add_theme_font_size_override("font_size", 22)
-	center.add_child(message)
-	message.text = "Updating Wayfinder...\nDownloading required update..."
-
-	Updater.apply_update(self, update_info, Callable(), func(success: bool, error_message: String):
-		Updater.log_message("UPDATER", "Forced update download completed: success=" + str(success) + " message=" + error_message)
-		if not success:
-			message.text = "Update failed:\n" + error_message
-			return
-		for seconds in range(5, 0, -1):
-			message.text = "Updating Wayfinder...\nRestarting in " + str(seconds) + "..."
-			await get_tree().create_timer(1.0).timeout
-		if not Updater.restart_application(self):
-			message.text = "Update staged, but automatic restart failed.\nPlease close and reopen Wayfinder."
-	)
+	_get_update_overlay().start_forced_update(update_info)
 
 func _on_name_text_changed(new_text: String) -> void:
 	_update_recent_lobbies_ui(recent_lobbies, _cached_server_rooms_map)

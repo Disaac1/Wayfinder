@@ -16,7 +16,7 @@
   ],
   "steps": [
     {
-      "num": 1.0,
+      "num": 1,
       "title": "1. Goal & Structure",
       "description": "Step 1: Choose your primary goal and gym badge gates",
       "controls": [
@@ -60,7 +60,7 @@
       ]
     },
     {
-      "num": 2.0,
+      "num": 2,
       "title": "2. Encounters & Pokémon",
       "description": "Step 2: Configure encounter randomization in the full options editor",
       "controls": [
@@ -70,7 +70,7 @@
       ]
     },
     {
-      "num": 3.0,
+      "num": 3,
       "title": "3. Quality of Life & Combat",
       "description": "Step 3: EXP modifiers and reusable TMs",
       "controls": [

@@ -45,12 +45,6 @@
       "extract_target": "hollow_knight_Data/Managed/Mods"
     }
   ],
-  "modding_api_url": "https://github.com/hk-modding/api/releases/download/1.5.78.11833-77/moddingapi.v77.windows.zip",
-  "modding_api_check_file": "hollow_knight_Data/Managed/MMHOOK_Assembly-CSharp.dll",
-  "modding_api_extract_target": "hollow_knight_Data/Managed",
-  "mods_url": "{backend_url}/tools/hk_archipelago_mods.zip",
-  "mods_check_file": "hollow_knight_Data/Managed/Mods/Archipelago/Archipelago.HollowKnight.dll",
-  "mods_extract_target": "hollow_knight_Data/Managed/Mods",
   "clipboard_action": "copy_server_address",
   "config_writer": {
     "file_path": "{appdata_locallow}/Team Cherry/Hollow Knight/ArchipelagoMod.GlobalSettings.json",

@@ -2,7 +2,6 @@
   "name": "Archipelago Client",
   "executable": "ArchipelagoLauncher.exe",
   "executable_aliases": [
-    "ArchipelagoLauncher.exe",
     "ArchipelagoBizHawkClient.exe",
     "ArchipelagoGBAClient.exe"
   ],

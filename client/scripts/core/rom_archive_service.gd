@@ -73,3 +73,65 @@ func unpack(zip_file_path: String, rom_name: String, callback: Callable) -> void
 		callback.call(true, target_path)
 	else:
 		callback.call(false, "No valid ROM file found inside downloaded ZIP archive.")
+
+var find_exec_callback: Callable
+
+func set_find_executable_callback(p_find_exec_callback: Callable) -> void:
+	find_exec_callback = p_find_exec_callback
+
+func find_dolphin_tool_path(dolphin_exe_path: String) -> String:
+	if dolphin_exe_path != "":
+		var dolphin_dir: String = dolphin_exe_path.get_base_dir()
+		var tool_candidate: String = dolphin_dir.path_join("DolphinTool.exe")
+		if FileAccess.file_exists(tool_candidate):
+			return tool_candidate
+			
+	if find_exec_callback.is_valid():
+		var discovered: String = str(find_exec_callback.call("DolphinTool.exe", ["Dolphin", "Dolphin-x64", "dolphin-master"], [], true))
+		if discovered != "" and FileAccess.file_exists(discovered):
+			return discovered
+	return ""
+
+func convert_rvz_to_iso(rvz_path: String, output_iso_path: String, dolphin_tool_path: String, delete_source: bool = false) -> Dictionary:
+	if dolphin_tool_path == "" or not FileAccess.file_exists(dolphin_tool_path):
+		return {"success": false, "error": "DolphinTool.exe not found for RVZ conversion."}
+	if not FileAccess.file_exists(rvz_path):
+		return {"success": false, "error": "Input RVZ file not found: " + rvz_path}
+		
+	var abs_rvz: String = ProjectSettings.globalize_path(rvz_path)
+	var abs_iso: String = ProjectSettings.globalize_path(output_iso_path)
+	
+	DirAccess.make_dir_recursive_absolute(output_iso_path.get_base_dir())
+	print("[RomArchiveService] Converting RVZ to uncompressed ISO via DolphinTool...")
+	print("[RomArchiveService] Command: ", dolphin_tool_path, " convert -i ", abs_rvz, " -o ", abs_iso, " -f iso")
+	
+	var args: Array = ["convert", "-i", abs_rvz, "-o", abs_iso, "-f", "iso"]
+	var pipe_data: Dictionary = OS.execute_with_pipe(dolphin_tool_path, args)
+	if not pipe_data.has("pid") or pipe_data["pid"] <= 0:
+		var output: Array = []
+		var exit_code: int = OS.execute(dolphin_tool_path, args, output, true)
+		if exit_code != 0:
+			var err_msg: String = " ".join(output)
+			return {"success": false, "error": "DolphinTool conversion failed: " + err_msg}
+	else:
+		var pid: int = pipe_data["pid"]
+		while OS.is_process_running(pid):
+			OS.delay_msec(100)
+		var stdout_pipe: FileAccess = pipe_data.get("stdout")
+		if stdout_pipe and stdout_pipe.is_open():
+			stdout_pipe.close()
+		var stderr_pipe: FileAccess = pipe_data.get("stderr")
+		if stderr_pipe and stderr_pipe.is_open():
+			stderr_pipe.close()
+		
+	if not FileAccess.file_exists(output_iso_path):
+		return {"success": false, "error": "DolphinTool finished with 0 but ISO was not generated."}
+		
+	print("[RomArchiveService] RVZ converted to ISO successfully: ", output_iso_path)
+	if delete_source:
+		var global_user_dir: String = ProjectSettings.globalize_path("user://").replace("\\", "/").trim_suffix("/")
+		var global_rvz: String = ProjectSettings.globalize_path(rvz_path).replace("\\", "/")
+		if rvz_path.begins_with("user://") or global_rvz.begins_with(global_user_dir):
+			DirAccess.remove_absolute(rvz_path)
+			print("[RomArchiveService] Deleted source RVZ after successful conversion: ", rvz_path)
+	return {"success": true, "path": output_iso_path}

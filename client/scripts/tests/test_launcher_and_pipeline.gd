@@ -212,6 +212,34 @@ func _run_suite() -> void:
 	DirAccess.remove_absolute(mock_cue)
 	print("  -> Passed: Directory completion detection verified.")
 
+	# -------------------------------------------------------------
+	# 6. Structured Signal Decoupling & LaunchModal Reaction
+	# -------------------------------------------------------------
+	print("\n[Test 6] Verifying GameLauncher structured signals and LaunchModal decoupling...")
+	_assert_true(launcher.has_signal("download_progress_updated"), "Missing download_progress_updated signal")
+	_assert_true(launcher.has_signal("modding_status_updated"), "Missing modding_status_updated signal")
+	_assert_true(launcher.has_signal("overlay_dismiss_requested"), "Missing overlay_dismiss_requested signal")
+
+	_assert_true(not "%LaunchOverlay" in launcher_code, "game_launcher.gd must not contain %LaunchOverlay lookups")
+	_assert_true(not "has_node(\"%DownloadProgressCard\")" in launcher_code, "game_launcher.gd must not contain scene tree lookups for DownloadProgressCard")
+
+	var launch_overlay = lobby.launch_overlay
+	_assert_true(launch_overlay != null, "launch_overlay should exist on lobby")
+
+	# Test download_progress_updated signal reaction
+	launcher.download_progress_updated.emit("Core Asset", 50.0, 5000000, 10000000, 1048576.0)
+	_assert_true(launch_overlay.visible == true, "launch_overlay should be visible after download_progress_updated")
+	_assert_true(launch_overlay.download_progress_card.visible == true, "download_progress_card should be visible")
+
+	# Test modding_status_updated signal reaction
+	launcher.modding_status_updated.emit("Modding test payload...", 80)
+	_assert_true(launch_overlay.visible == true, "launch_overlay should be visible after modding_status_updated")
+
+	# Test overlay_dismiss_requested signal reaction
+	launcher.overlay_dismiss_requested.emit()
+	_assert_true(launch_overlay.visible == false, "launch_overlay should be closed after overlay_dismiss_requested")
+	print("  -> Passed: Structured signals and LaunchModal reactive binding verified.")
+
 	_finish()
 
 func _finish() -> void:

@@ -107,3 +107,238 @@ func _combined_aliases(preset: Dictionary) -> Array[String]:
 				if alias != "" and not aliases.has(alias):
 					aliases.append(alias)
 	return aliases
+
+const USER_BASE_ROMS_DIR: String = "user://base_roms"
+const USER_GAMES_DIR: String = "user://games"
+
+var paths_config_ref: Dictionary = {}
+var get_supported_extensions_cb: Callable
+
+func set_context_references(p_paths_config: Dictionary, p_get_supported_extensions_cb: Callable) -> void:
+	paths_config_ref = p_paths_config
+	get_supported_extensions_cb = p_get_supported_extensions_cb
+
+func find_existing_base_rom(rom_name: String) -> String:
+	var game_slug: String = resolver.game_slug_for_rom(rom_name)
+	var game_folder: String = USER_GAMES_DIR.path_join(game_slug)
+	var target_unified: String = game_folder.path_join(rom_name)
+
+	# Check if user already configured a path for this game/rom in paths_config
+	for g_name in paths_config_ref.keys():
+		var p_path: String = str(paths_config_ref[g_name])
+		if p_path != "" and FileAccess.file_exists(p_path) and not p_path.to_lower().ends_with(".exe"):
+			var p_base: String = p_path.get_file()
+			var matches: bool = (p_base == rom_name or p_path == rom_name)
+			if matches:
+				if (p_path.contains("base_roms") or p_path.contains("base_rom")) and game_folder != "":
+					if not FileAccess.file_exists(target_unified):
+						DirAccess.make_dir_recursive_absolute(game_folder)
+						var m_err: Error = DirAccess.copy_absolute(p_path, target_unified)
+						if m_err == OK:
+							print("[RomCatalogService] Auto-migrated paths_config legacy ROM to unified path: ", target_unified)
+							DirAccess.remove_absolute(p_path)
+							cleanup_legacy_base_roms_dir()
+							paths_config_ref[g_name] = target_unified
+							return target_unified
+					else:
+						DirAccess.remove_absolute(p_path)
+						cleanup_legacy_base_roms_dir()
+						paths_config_ref[g_name] = target_unified
+						return target_unified
+				return p_path
+
+	var candidate_directories: Array[String] = [
+		game_folder,
+		ProjectSettings.globalize_path(game_folder),
+		USER_BASE_ROMS_DIR,
+		"user://base_rom",
+		"user://roms",
+		"user://",
+		"res://base_roms",
+		"res://base_rom",
+		"res://",
+		ProjectSettings.globalize_path(USER_BASE_ROMS_DIR),
+		ProjectSettings.globalize_path("user://base_rom")
+	]
+	
+	var games_da: DirAccess = DirAccess.open(USER_GAMES_DIR)
+	if games_da:
+		games_da.list_dir_begin()
+		var g_sub: String = games_da.get_next()
+		while g_sub != "":
+			if games_da.current_is_dir() and not g_sub.begins_with("."):
+				var sub_dir: String = USER_GAMES_DIR.path_join(g_sub)
+				if not candidate_directories.has(sub_dir):
+					candidate_directories.append(sub_dir)
+			g_sub = games_da.get_next()
+	
+	var target_extension: String = rom_name.get_extension().to_lower()
+	if target_extension == "":
+		for game_name in presets.keys():
+			var preset: Dictionary = presets[game_name]
+			if game_name == rom_name or preset.get("game_name", "") == rom_name:
+				target_extension = preset.get("required_rom", "").get_extension().to_lower()
+				break
+		
+	for dir_path in candidate_directories:
+		if dir_path == "" or not DirAccess.dir_exists_absolute(dir_path):
+			continue
+		var full_file_path: String = dir_path.path_join(rom_name)
+		if FileAccess.file_exists(full_file_path):
+			var chk_fa: FileAccess = FileAccess.open(full_file_path, FileAccess.READ)
+			if chk_fa:
+				var sz: int = chk_fa.get_length()
+				chk_fa.close()
+				if sz >= 32 or sz == 0:
+					print("[RomCatalogService] Found exact ROM file at: ", full_file_path)
+					if (dir_path.contains("base_roms") or dir_path.contains("base_rom")) and game_folder != "":
+						if not FileAccess.file_exists(target_unified):
+							DirAccess.make_dir_recursive_absolute(game_folder)
+							var mig_err: Error = DirAccess.copy_absolute(full_file_path, target_unified)
+							if mig_err == OK:
+								print("[RomCatalogService] Auto-migrated legacy ROM to unified game path: ", target_unified)
+								DirAccess.remove_absolute(full_file_path)
+								cleanup_legacy_base_roms_dir()
+								return target_unified
+						else:
+							DirAccess.remove_absolute(full_file_path)
+							cleanup_legacy_base_roms_dir()
+							return target_unified
+					return full_file_path
+			
+	return _fuzzy_search_matching_rom(candidate_directories, rom_name, target_extension)
+
+func migrate_all_legacy_base_roms() -> void:
+	var legacy_dirs: Array[String] = [USER_BASE_ROMS_DIR, "user://base_rom", "user://roms"]
+	for l_dir in legacy_dirs:
+		if not DirAccess.dir_exists_absolute(l_dir):
+			continue
+		var da: DirAccess = DirAccess.open(l_dir)
+		if not da:
+			continue
+		da.list_dir_begin()
+		var fn: String = da.get_next()
+		while fn != "":
+			if not da.current_is_dir() and not fn.begins_with("."):
+				var old_path: String = l_dir.path_join(fn)
+				var slug: String = resolver.game_slug_for_rom(fn)
+				if slug != "":
+					var game_folder: String = USER_GAMES_DIR.path_join(slug)
+					var target_path: String = game_folder.path_join(fn)
+					if not FileAccess.file_exists(target_path):
+						DirAccess.make_dir_recursive_absolute(game_folder)
+						var err: Error = DirAccess.copy_absolute(old_path, target_path)
+						if err == OK:
+							print("[RomCatalogService] Auto-migrated legacy base ROM to: ", target_path)
+							DirAccess.remove_absolute(old_path)
+					else:
+						DirAccess.remove_absolute(old_path)
+						print("[RomCatalogService] Removed redundant legacy ROM (already in games/): ", old_path)
+			fn = da.get_next()
+	cleanup_legacy_base_roms_dir()
+
+func cleanup_legacy_base_roms_dir() -> void:
+	var legacy_dirs: Array[String] = [USER_BASE_ROMS_DIR, "user://base_rom", "user://roms"]
+	for l_dir in legacy_dirs:
+		if DirAccess.dir_exists_absolute(l_dir):
+			var da: DirAccess = DirAccess.open(l_dir)
+			if da:
+				da.list_dir_begin()
+				var fn: String = da.get_next()
+				var is_empty: bool = true
+				while fn != "":
+					if not fn.begins_with("."):
+						is_empty = false
+						break
+					fn = da.get_next()
+				if is_empty:
+					DirAccess.remove_absolute(l_dir)
+					print("[RomCatalogService] Cleaned up empty legacy directory: ", l_dir)
+
+func _fuzzy_search_matching_rom(candidate_directories: Array[String], rom_name: String, target_extension: String) -> String:
+	var search_keywords: Array[String] = []
+	var base_clean: String = rom_name.get_basename().to_lower()
+	for sep in [" ", "_", "-", "(", ")", "[", "]", "."]:
+		base_clean = base_clean.replace(sep, " ")
+		
+	var generic_tokens: Array[String] = [
+		"usa", "eur", "europe", "japan", "jap", "rev", "version", "ver", 
+		"the", "and", "edition", "v1", "v2", "beta", "game", "gba", "snes", "n64"
+	]
+	
+	for token in base_clean.split(" ", false):
+		var t: String = token.strip_edges()
+		if t.length() >= 3 and not generic_tokens.has(t) and not search_keywords.has(t):
+			search_keywords.append(t)
+
+	for game_name in presets.keys():
+		var preset: Dictionary = presets[game_name]
+		var req: String = preset.get("required_rom", "")
+		var aliases: Array = preset.get("rom_aliases", [])
+		var matches_preset: bool = (req == rom_name)
+		if not matches_preset:
+			for a in aliases:
+				if str(a) == rom_name:
+					matches_preset = true
+					break
+		if matches_preset:
+			var g_clean: String = str(game_name).to_lower()
+			for sep in [" ", "_", "-", "(", ")", "[", "]", ":"]:
+				g_clean = g_clean.replace(sep, " ")
+			for token in g_clean.split(" ", false):
+				var t: String = token.strip_edges()
+				if t.length() >= 3 and not generic_tokens.has(t) and not search_keywords.has(t):
+					search_keywords.append(t)
+
+	if search_keywords.is_empty():
+		return ""
+
+	var supported_extensions: Array[String] = []
+	if get_supported_extensions_cb.is_valid():
+		var exts = get_supported_extensions_cb.call()
+		if exts is Array:
+			for e in exts:
+				supported_extensions.append(str(e))
+	if not supported_extensions.has("zip"):
+		supported_extensions.append("zip")
+	if target_extension != "" and not supported_extensions.has(target_extension):
+		supported_extensions.append(target_extension)
+
+	for dir_path in candidate_directories:
+		if dir_path == "" or not DirAccess.dir_exists_absolute(dir_path):
+			continue
+		var dir_access: DirAccess = DirAccess.open(dir_path)
+		if dir_access:
+			dir_access.list_dir_begin()
+			var file_item: String = dir_access.get_next()
+			while file_item != "":
+				if not dir_access.current_is_dir():
+					var item_ext: String = file_item.get_extension().to_lower()
+					if supported_extensions.has(item_ext):
+						var item_lower: String = file_item.to_lower()
+						for keyword in search_keywords:
+							if item_lower.contains(keyword):
+								var found_path: String = dir_path.path_join(file_item)
+								print("[RomCatalogService] Discovered matching ROM file (", file_item, ") at: ", found_path)
+								if (found_path.contains("base_roms") or found_path.contains("base_rom")):
+									var f_slug: String = resolver.game_slug_for_rom(file_item)
+									if f_slug == "":
+										f_slug = resolver.game_slug_for_rom(rom_name)
+									var f_folder: String = USER_GAMES_DIR.path_join(f_slug)
+									var target_unified: String = f_folder.path_join(file_item)
+									if not FileAccess.file_exists(target_unified):
+										DirAccess.make_dir_recursive_absolute(f_folder)
+										var mig_err: Error = DirAccess.copy_absolute(found_path, target_unified)
+										if mig_err == OK:
+											print("[RomCatalogService] Auto-migrated fuzzy legacy ROM to unified path: ", target_unified)
+											DirAccess.remove_absolute(found_path)
+											cleanup_legacy_base_roms_dir()
+											return target_unified
+									else:
+										DirAccess.remove_absolute(found_path)
+										cleanup_legacy_base_roms_dir()
+										return target_unified
+								return found_path
+				file_item = dir_access.get_next()
+				
+	return ""

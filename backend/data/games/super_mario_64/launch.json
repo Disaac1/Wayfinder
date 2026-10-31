@@ -3,9 +3,6 @@
   "support_tier": 1,
   "launch_mode": "native_cli",
   "patch_extension": ".apsm64ex",
-  "patch_extension_aliases": [
-    ".apsm64ex"
-  ],
   "client_tool": "sm64ex",
   "required_rom": "Super Mario 64 (USA).z64",
   "rom_aliases": [

@@ -3,16 +3,16 @@ extends RefCounted
 
 var presets: Dictionary
 
-func _init(p_presets: Dictionary) -> void:
+func _init(p_presets: Dictionary = {}) -> void:
 	presets = p_presets
 
-func normalize(value: String) -> String:
+static func normalize(value: String) -> String:
 	var result := value.to_lower()
 	for character in [":", "-", "_", " ", "'", ".", "(", ")", "[", "]", "é"]:
 		result = result.replace(character, "e" if character == "é" else "")
 	return result
 
-func slugify(value: String) -> String:
+static func slugify(value: String) -> String:
 	var result := value.to_lower()
 	result = result.replace(":", "")
 	result = result.replace("-", "_")
@@ -20,7 +20,25 @@ func slugify(value: String) -> String:
 	result = result.replace("é", "e")
 	result = result.replace("'", "")
 	result = result.replace(".", "")
-	return result
+	while result.contains("__"):
+		result = result.replace("__", "_")
+	return result.strip_edges().trim_prefix("_").trim_suffix("_")
+
+static func resolve_slug(game_name: String, preset: Dictionary = {}) -> String:
+	if not preset.is_empty():
+		var configured_slug := str(preset.get("slug", ""))
+		var canonical_name := str(preset.get("game_name", ""))
+		var target := normalize(game_name)
+		if canonical_name != "" and normalize(canonical_name) == target:
+			return configured_slug if configured_slug != "" else slugify(canonical_name)
+		for alias in _string_array(preset.get("aliases", [])):
+			if normalize(alias) == target:
+				return configured_slug if configured_slug != "" else (slugify(canonical_name) if canonical_name != "" else slugify(game_name))
+		if configured_slug != "":
+			return configured_slug
+		if canonical_name != "":
+			return slugify(canonical_name)
+	return slugify(game_name)
 
 func get_slug(game_name: String) -> String:
 	var target := normalize(game_name)
@@ -88,7 +106,7 @@ func game_slug_for_rom(rom_name: String) -> String:
 			return get_slug(title)
 	return get_slug(rom_name.get_basename())
 
-func _string_array(value: Variant) -> Array[String]:
+static func _string_array(value: Variant) -> Array[String]:
 	var result: Array[String] = []
 	if value is Array:
 		for item in value:

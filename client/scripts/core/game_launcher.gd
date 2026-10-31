@@ -19,6 +19,7 @@ const PackageInstallerScript = preload("res://scripts/core/package_installer.gd"
 const PcGameInstallerScript = preload("res://scripts/core/pc_game_installer.gd")
 const RomDownloadServiceScript = preload("res://scripts/core/rom_download_service.gd")
 const TrackerManagerScript = preload("res://scripts/core/tracker_manager.gd")
+const CustomWorldSyncServiceScript = preload("res://scripts/core/custom_world_sync_service.gd")
 
 # --- CONSTANTS ---
 const DEFAULT_ARCHIPELAGO_DOWNLOAD_URL: String = "/tools/archipelago.zip"
@@ -53,6 +54,35 @@ signal prompt_tool_installation(tool_name: String, download_url: String, subfold
 signal launch_completed(game_name: String, pid: int)
 signal launch_failed(game_name: String, error_message: String)
 signal config_loaded()
+signal download_progress_updated(task: String, pct: float, dl_bytes: int, total_bytes: int, speed: float)
+signal modding_status_updated(msg: String, pct: int)
+signal overlay_dismiss_requested()
+
+class AsyncCompletion extends RefCounted:
+	signal completed(ok: bool, val: String)
+	var is_done: bool = false
+	var ok: bool = false
+	var val: String = ""
+
+	func finish(p_ok: bool = false, p_val: String = "") -> void:
+		if is_done:
+			return
+		ok = p_ok
+		val = p_val
+		is_done = true
+		completed.emit(p_ok, p_val)
+
+	func wait_completed(node: Node = null) -> Array:
+		if not is_done:
+			if is_instance_valid(node) and node is Node and node.is_inside_tree():
+				var cancel_cb = func(): finish(false, "Context destroyed")
+				node.tree_exiting.connect(cancel_cb, CONNECT_ONE_SHOT)
+				await completed
+				if is_instance_valid(node) and node.tree_exiting.is_connected(cancel_cb):
+					node.tree_exiting.disconnect(cancel_cb)
+			else:
+				await completed
+		return [ok, val]
 
 class LaunchContext:
 	var game_name: String
@@ -93,6 +123,7 @@ var _package_installer
 var _pc_game_installer
 var _rom_download_service
 var _tracker_manager
+var _custom_world_sync_service
 var _tool_installation_generation: int = 0
 
 func _init() -> void:
@@ -101,6 +132,7 @@ func _init() -> void:
 	_config_store.games = launcher_presets
 	_identity_resolver = GameIdentityResolverScript.new(launcher_presets)
 	_rom_catalog_service = RomCatalogServiceScript.new(launcher_presets, _identity_resolver)
+	_rom_catalog_service.set_context_references(paths_config, get_supported_rom_extensions)
 	_executable_locator = ExecutableLocatorScript.new(USER_GAMES_DIR, USER_TOOLS_DIR)
 	_tool_manager = ToolManagerScript.new(paths_config, _executable_locator, save_paths_config)
 	_tool_installer = ToolInstallerScript.new(
@@ -117,9 +149,11 @@ func _init() -> void:
 	_process_launcher = ProcessLauncherScript.new()
 	_patch_manager = PatchManagerScript.new(launcher_presets, get_preset, USER_SAVES_DIR)
 	_rom_archive_service = RomArchiveServiceScript.new(get_game_slug_for_rom, get_game_dir, get_supported_rom_extensions)
+	_rom_archive_service.set_find_executable_callback(find_game_executable)
+	_custom_world_sync_service = CustomWorldSyncServiceScript.new(get_custom_world_destinations)
 	_package_installer = PackageInstallerScript.new(track_http_download_progress, get_progress_bar_str)
-	_pc_game_installer = PcGameInstallerScript.new(resolve_download_url, decrypt_file_aes256, _set_overlay_downloading_state, track_http_download_progress)
-	_rom_download_service = RomDownloadServiceScript.new(resolve_download_url, decrypt_file_aes256, unpack_rom_zip, _set_overlay_downloading_state, track_http_download_progress, get_progress_bar_str)
+	_pc_game_installer = PcGameInstallerScript.new(resolve_download_url, decrypt_file_aes256, _set_overlay_downloading_state, track_http_download_progress, update_launch_progress_ui)
+	_rom_download_service = RomDownloadServiceScript.new(resolve_download_url, decrypt_file_aes256, unpack_rom_zip, _set_overlay_downloading_state, track_http_download_progress, get_progress_bar_str, update_launch_progress_ui)
 	_tracker_manager = TrackerManagerScript.new()
 	load_local_presets_sync()
 
@@ -143,10 +177,12 @@ func load_launcher_config() -> void:
 	print("[Launcher] Using cached launcher configuration because the backend was unavailable.")
 
 func normalize_game_slug(name: String) -> String:
-	return _identity_resolver.normalize(name)
+	return GameIdentityResolver.normalize(name)
 
 func get_game_slug(game_name: String) -> String:
-	return _identity_resolver.get_slug(game_name)
+	if _identity_resolver:
+		return _identity_resolver.get_slug(game_name)
+	return GameIdentityResolver.slugify(game_name)
 
 func get_game_dir(game_name: String) -> String:
 	var slug: String = get_game_slug(game_name)
@@ -155,13 +191,17 @@ func get_game_dir(game_name: String) -> String:
 	return dir_path
 
 func get_game_slug_for_rom(rom_name: String) -> String:
-	return _identity_resolver.game_slug_for_rom(rom_name)
+	if _identity_resolver:
+		return _identity_resolver.game_slug_for_rom(rom_name)
+	return GameIdentityResolver.slugify(rom_name.get_basename())
 
 func get_game_rom_path(game_name: String, rom_name: String) -> String:
 	return get_game_dir(game_name).path_join(rom_name)
 
 func has_preset(game_name: String) -> bool:
-	return _identity_resolver.has_preset(game_name)
+	if _identity_resolver:
+		return _identity_resolver.has_preset(game_name)
+	return false
 
 func has_curated_preset(game_name: String) -> bool:
 	if not has_preset(game_name):
@@ -171,7 +211,17 @@ func has_curated_preset(game_name: String) -> bool:
 	return tier < 4
 
 func get_preset(game_name: String) -> Dictionary:
-	return _identity_resolver.get_preset(game_name)
+	if _identity_resolver:
+		return _identity_resolver.get_preset(game_name)
+	return {
+		"game_name": game_name,
+		"support_tier": 3,
+		"launch_mode": "ap_client",
+		"client_tool": "archipelago_client",
+		"client_component": "Archipelago Launcher",
+		"auto_connect": true,
+		"install_instructions": "Community APWorld: Select your clean base ROM or executable if required. Lodestone will open Archipelago Launcher and connect automatically."
+	}
 
 func get_tracker_config(game_name: String) -> Dictionary:
 	return _tracker_manager.get_tracker_config(get_preset(game_name))
@@ -184,11 +234,12 @@ func open_poptracker(node: Node, game_name: String, server_url: String, slot_nam
 
 func get_saved_path(game_name: String, preset: Dictionary = {}) -> String:
 	var candidate_keys: Array[String] = [game_name, get_game_slug(game_name)]
-	if not preset.is_empty():
-		var canon: String = preset.get("game_name", "")
+	var effective_preset: Dictionary = preset if not preset.is_empty() else get_preset(game_name)
+	if not effective_preset.is_empty():
+		var canon: String = effective_preset.get("game_name", "")
 		if canon != "" and not candidate_keys.has(canon):
 			candidate_keys.append(canon)
-		for a in preset.get("aliases", []):
+		for a in effective_preset.get("aliases", []):
 			var a_str: String = str(a)
 			if a_str != "" and not candidate_keys.has(a_str):
 				candidate_keys.append(a_str)
@@ -196,6 +247,12 @@ func get_saved_path(game_name: String, preset: Dictionary = {}) -> String:
 		var p: String = paths_config.get(k, "")
 		if p != "" and FileAccess.file_exists(p):
 			return p
+	var target_norm: String = GameIdentityResolver.normalize(game_name)
+	for k in paths_config.keys():
+		if GameIdentityResolver.normalize(str(k)) == target_norm:
+			var p: String = paths_config.get(k, "")
+			if p != "" and FileAccess.file_exists(p):
+				return p
 	return ""
 
 func load_roms_catalog() -> void:
@@ -265,277 +322,71 @@ func get_supported_rom_extensions() -> Array[String]:
 func unpack_rom_zip(zip_file_path: String, rom_name: String, callback: Callable) -> void:
 	_rom_archive_service.unpack(zip_file_path, rom_name, callback)
 func find_existing_base_rom(rom_name: String) -> String:
-	var game_slug: String = get_game_slug_for_rom(rom_name)
-	var game_folder: String = USER_GAMES_DIR.path_join(game_slug)
-	var target_unified: String = game_folder.path_join(rom_name)
-
-	# Check if user already configured a path for this game/rom in paths_config
-	for g_name in paths_config.keys():
-		var p_path: String = str(paths_config[g_name])
-		if p_path != "" and FileAccess.file_exists(p_path) and not p_path.to_lower().ends_with(".exe"):
-			var p_base: String = p_path.get_file()
-			var matches: bool = (p_base == rom_name or p_path == rom_name)
-			if matches:
-				# If configured path is in legacy base_roms, auto-migrate to unified game directory
-				if (p_path.contains("base_roms") or p_path.contains("base_rom")) and game_folder != "":
-					if not FileAccess.file_exists(target_unified):
-						DirAccess.make_dir_recursive_absolute(game_folder)
-						var m_err: Error = DirAccess.copy_absolute(p_path, target_unified)
-						if m_err == OK:
-							print("[Launcher] Auto-migrated paths_config legacy ROM to unified path: ", target_unified)
-							DirAccess.remove_absolute(p_path)
-							_cleanup_legacy_base_roms_dir()
-							paths_config[g_name] = target_unified
-							save_paths_config()
-							return target_unified
-					else:
-						DirAccess.remove_absolute(p_path)
-						_cleanup_legacy_base_roms_dir()
-						paths_config[g_name] = target_unified
-						save_paths_config()
-						return target_unified
-				return p_path
-
-	var candidate_directories: Array[String] = [
-		game_folder,
-		ProjectSettings.globalize_path(game_folder),
-		USER_BASE_ROMS_DIR,
-		"user://base_rom",
-		"user://roms",
-		"user://",
-		"res://base_roms",
-		"res://base_rom",
-		"res://",
-		ProjectSettings.globalize_path(USER_BASE_ROMS_DIR),
-		ProjectSettings.globalize_path("user://base_rom")
-	]
-	
-	# Also search all subdirectories of user://games/
-	var games_da: DirAccess = DirAccess.open(USER_GAMES_DIR)
-	if games_da:
-		games_da.list_dir_begin()
-		var g_sub: String = games_da.get_next()
-		while g_sub != "":
-			if games_da.current_is_dir() and not g_sub.begins_with("."):
-				var sub_dir: String = USER_GAMES_DIR.path_join(g_sub)
-				if not candidate_directories.has(sub_dir):
-					candidate_directories.append(sub_dir)
-			g_sub = games_da.get_next()
-	
-	var target_extension: String = rom_name.get_extension().to_lower()
-	if target_extension == "":
-		for game_name in launcher_presets.keys():
-			var preset: Dictionary = launcher_presets[game_name]
-			if game_name == rom_name or preset.get("game_name", "") == rom_name:
-				target_extension = preset.get("required_rom", "").get_extension().to_lower()
-				break
-		
-	for dir_path in candidate_directories:
-		if dir_path == "" or not DirAccess.dir_exists_absolute(dir_path):
-			continue
-		var full_file_path: String = dir_path.path_join(rom_name)
-		if FileAccess.file_exists(full_file_path):
-			var chk_fa: FileAccess = FileAccess.open(full_file_path, FileAccess.READ)
-			if chk_fa:
-				var sz: int = chk_fa.get_length()
-				chk_fa.close()
-				if sz >= 32 or sz == 0:
-					print("[Launcher] Found exact ROM file at: ", full_file_path)
-					# If found in legacy base_roms, auto-migrate to user://games/<game_slug>/
-					if (dir_path.contains("base_roms") or dir_path.contains("base_rom")) and game_folder != "":
-						if not FileAccess.file_exists(target_unified):
-							DirAccess.make_dir_recursive_absolute(game_folder)
-							var mig_err: Error = DirAccess.copy_absolute(full_file_path, target_unified)
-							if mig_err == OK:
-								print("[Launcher] Auto-migrated legacy ROM to unified game path: ", target_unified)
-								DirAccess.remove_absolute(full_file_path)
-								_cleanup_legacy_base_roms_dir()
-								return target_unified
-						else:
-							DirAccess.remove_absolute(full_file_path)
-							_cleanup_legacy_base_roms_dir()
-							return target_unified
-					return full_file_path
-			
-	return _fuzzy_search_matching_rom(candidate_directories, rom_name, target_extension)
+	return _rom_catalog_service.find_existing_base_rom(rom_name)
 
 func migrate_all_legacy_base_roms() -> void:
-	var legacy_dirs: Array[String] = [USER_BASE_ROMS_DIR, "user://base_rom", "user://roms"]
-	for l_dir in legacy_dirs:
-		if not DirAccess.dir_exists_absolute(l_dir):
-			continue
-		var da: DirAccess = DirAccess.open(l_dir)
-		if not da:
-			continue
-		da.list_dir_begin()
-		var fn: String = da.get_next()
-		while fn != "":
-			if not da.current_is_dir() and not fn.begins_with("."):
-				var old_path: String = l_dir.path_join(fn)
-				var slug: String = get_game_slug_for_rom(fn)
-				if slug != "":
-					var game_folder: String = USER_GAMES_DIR.path_join(slug)
-					var target_path: String = game_folder.path_join(fn)
-					if not FileAccess.file_exists(target_path):
-						DirAccess.make_dir_recursive_absolute(game_folder)
-						var err: Error = DirAccess.copy_absolute(old_path, target_path)
-						if err == OK:
-							print("[Launcher] Auto-migrated legacy base ROM to: ", target_path)
-							DirAccess.remove_absolute(old_path)
-					else:
-						DirAccess.remove_absolute(old_path)
-						print("[Launcher] Removed redundant legacy ROM (already in games/): ", old_path)
-			fn = da.get_next()
-	_cleanup_legacy_base_roms_dir()
+	_rom_catalog_service.migrate_all_legacy_base_roms()
 
 func _cleanup_legacy_base_roms_dir() -> void:
-	var legacy_dirs: Array[String] = [USER_BASE_ROMS_DIR, "user://base_rom", "user://roms"]
-	for l_dir in legacy_dirs:
-		if DirAccess.dir_exists_absolute(l_dir):
-			var da: DirAccess = DirAccess.open(l_dir)
-			if da:
-				da.list_dir_begin()
-				var fn: String = da.get_next()
-				var is_empty: bool = true
-				while fn != "":
-					if not fn.begins_with("."):
-						is_empty = false
-						break
-					fn = da.get_next()
-				if is_empty:
-					DirAccess.remove_absolute(l_dir)
-					print("[Launcher] Cleaned up empty legacy directory: ", l_dir)
+	_rom_catalog_service.cleanup_legacy_base_roms_dir()
 
 func _fuzzy_search_matching_rom(candidate_directories: Array[String], rom_name: String, target_extension: String) -> String:
-	var search_keywords: Array[String] = []
-	var base_clean: String = rom_name.get_basename().to_lower()
-	for sep in [" ", "_", "-", "(", ")", "[", "]", "."]:
-		base_clean = base_clean.replace(sep, " ")
-		
-	var generic_tokens: Array[String] = [
-		"usa", "eur", "europe", "japan", "jap", "rev", "version", "ver", 
-		"the", "and", "edition", "v1", "v2", "beta", "game", "gba", "snes", "n64"
-	]
-	
-	for token in base_clean.split(" ", false):
-		var t: String = token.strip_edges()
-		if t.length() >= 3 and not generic_tokens.has(t) and not search_keywords.has(t):
-			search_keywords.append(t)
+	return _rom_catalog_service._fuzzy_search_matching_rom(candidate_directories, rom_name, target_extension)
 
-	for game_name in launcher_presets.keys():
-		var preset: Dictionary = launcher_presets[game_name]
-		var req: String = preset.get("required_rom", "")
-		var aliases: Array = preset.get("rom_aliases", [])
-		var matches_preset: bool = (req == rom_name)
-		if not matches_preset:
-			for a in aliases:
-				if str(a) == rom_name:
-					matches_preset = true
-					break
-		if matches_preset:
-			var g_clean: String = str(game_name).to_lower()
-			for sep in [" ", "_", "-", "(", ")", "[", "]", ":"]:
-				g_clean = g_clean.replace(sep, " ")
-			for token in g_clean.split(" ", false):
-				var t: String = token.strip_edges()
-				if t.length() >= 3 and not generic_tokens.has(t) and not search_keywords.has(t):
-					search_keywords.append(t)
-
-	if search_keywords.is_empty():
-		return ""
-
-	var supported_extensions: Array[String] = get_supported_rom_extensions()
-	if not supported_extensions.has("zip"):
-		supported_extensions.append("zip")
-	if target_extension != "" and not supported_extensions.has(target_extension):
-		supported_extensions.append(target_extension)
-
-	for dir_path in candidate_directories:
-		if dir_path == "" or not DirAccess.dir_exists_absolute(dir_path):
-			continue
-		var dir_access: DirAccess = DirAccess.open(dir_path)
-		if dir_access:
-			dir_access.list_dir_begin()
-			var file_item: String = dir_access.get_next()
-			while file_item != "":
-				if not dir_access.current_is_dir():
-					var item_ext: String = file_item.get_extension().to_lower()
-					if supported_extensions.has(item_ext):
-						var item_lower: String = file_item.to_lower()
-						for keyword in search_keywords:
-							if item_lower.contains(keyword):
-								var found_path: String = dir_path.path_join(file_item)
-								print("[Launcher] Discovered matching ROM file (", file_item, ") at: ", found_path)
-								if (found_path.contains("base_roms") or found_path.contains("base_rom")):
-									var f_slug: String = get_game_slug_for_rom(file_item)
-									if f_slug == "":
-										f_slug = get_game_slug_for_rom(rom_name)
-									var f_folder: String = USER_GAMES_DIR.path_join(f_slug)
-									var target_unified: String = f_folder.path_join(file_item)
-									if not FileAccess.file_exists(target_unified):
-										DirAccess.make_dir_recursive_absolute(f_folder)
-										var mig_err: Error = DirAccess.copy_absolute(found_path, target_unified)
-										if mig_err == OK:
-											print("[Launcher] Auto-migrated fuzzy legacy ROM to unified path: ", target_unified)
-											DirAccess.remove_absolute(found_path)
-											_cleanup_legacy_base_roms_dir()
-											return target_unified
-									else:
-										DirAccess.remove_absolute(found_path)
-										_cleanup_legacy_base_roms_dir()
-										return target_unified
-								return found_path
-				file_item = dir_access.get_next()
-				
-	return ""
-
-func ensure_rom_exists_or_download(node: Node, rom_name: String, callback: Callable) -> void:
+func ensure_rom_exists_or_download(node: Node, rom_name: String, callback: Callable = Callable()) -> Dictionary:
 	if rom_name.strip_edges() == "":
 		print("[Launcher] Game specifies no required ROM. Skipping ROM download/check.")
-		callback.call(true, "")
-		return
+		if callback.is_valid():
+			callback.call(true, "")
+		return {"success": true, "path": "", "error": ""}
 		
 	var game_slug: String = get_game_slug_for_rom(rom_name)
 	var target_game_dir: String = get_game_dir(game_slug)
 	var target_rom_path: String = target_game_dir.path_join(rom_name)
 	
 	var existing_rom: String = find_existing_base_rom(rom_name)
-	if existing_rom != "":
-		_handle_existing_base_rom(node, existing_rom, target_rom_path, rom_name, callback)
-		return
-		
-	var download_entry: Dictionary = get_rom_download_entry(rom_name)
-	if download_entry.is_empty():
-		for g_name in launcher_presets.keys():
-			var preset: Dictionary = launcher_presets[g_name]
-			if preset.get("required_rom", "") == rom_name:
-				download_entry = get_rom_download_entry(g_name)
-				if download_entry.is_empty():
-					var p_url: String = preset.get("rom_download_url", "").strip_edges()
-					if p_url != "":
-						download_entry = {"url": p_url, "key": "", "encrypted": false}
-				break
-			for alias in preset.get("rom_aliases", []):
-				if str(alias) == rom_name:
-					download_entry = get_rom_download_entry(str(alias))
-					if download_entry.is_empty():
-						download_entry = get_rom_download_entry(g_name)
-					break
-			if not download_entry.is_empty():
-				break
+	var comp = AsyncCompletion.new()
+	var internal_cb = func(ok: bool, val: String):
+		if callback.is_valid():
+			callback.call(ok, val)
+		comp.finish(ok, val)
 
-	if download_entry.is_empty() or download_entry.get("url", "") == "":
-		callback.call(false, "Base ROM \"" + rom_name + "\" is missing. Please configure a download link in user://roms.json or place the file in user://games/" + game_slug + "/")
-		return
-		
-	var catalog_url: String = download_entry.get("url", "")
-	var dec_key: String = download_entry.get("key", "")
-	
-	if catalog_url.begins_with("file://"):
-		_handle_local_file_url(node, catalog_url, target_rom_path, rom_name, callback)
-		return
-		
-	_download_base_rom_http(node, catalog_url, target_game_dir, rom_name, target_rom_path, callback, dec_key)
+	if existing_rom != "":
+		_handle_existing_base_rom(node, existing_rom, target_rom_path, rom_name, internal_cb)
+	else:
+		var download_entry: Dictionary = get_rom_download_entry(rom_name)
+		if download_entry.is_empty():
+			for g_name in launcher_presets.keys():
+				var preset: Dictionary = launcher_presets[g_name]
+				if preset.get("required_rom", "") == rom_name:
+					download_entry = get_rom_download_entry(g_name)
+					if download_entry.is_empty():
+						var p_url: String = preset.get("rom_download_url", "").strip_edges()
+						if p_url != "":
+							download_entry = {"url": p_url, "key": "", "encrypted": false}
+					break
+				for alias in preset.get("rom_aliases", []):
+					if str(alias) == rom_name:
+						download_entry = get_rom_download_entry(str(alias))
+						if download_entry.is_empty():
+							download_entry = get_rom_download_entry(g_name)
+						break
+				if not download_entry.is_empty():
+					break
+
+		if download_entry.is_empty() or download_entry.get("url", "") == "":
+			internal_cb.call(false, "Base ROM \"" + rom_name + "\" is missing. Please configure a download link in user://roms.json or place the file in user://games/" + game_slug + "/")
+		else:
+			var catalog_url: String = download_entry.get("url", "")
+			var dec_key: String = download_entry.get("key", "")
+			
+			if catalog_url.begins_with("file://"):
+				_handle_local_file_url(node, catalog_url, target_rom_path, rom_name, internal_cb)
+			else:
+				_download_base_rom_http(node, catalog_url, target_game_dir, rom_name, target_rom_path, internal_cb, dec_key)
+
+	await comp.wait_completed(node)
+	return {"success": comp.ok, "path": comp.val if comp.ok else "", "error": comp.val if not comp.ok else ""}
 
 func _handle_existing_base_rom(node: Node, found_rom: String, target_rom_path: String, rom_name: String, callback: Callable) -> void:
 	_rom_download_service.process_existing(node, found_rom, target_rom_path, rom_name, callback)
@@ -546,20 +397,10 @@ func _handle_local_file_url(node: Node, catalog_url: String, target_rom_path: St
 func _download_base_rom_http(node: Node, download_url: String, base_roms_dir: String, rom_name: String, target_rom_path: String, callback: Callable, decryption_key: String = "", redirect_depth: int = 0) -> void:
 	_rom_download_service.download(node, download_url, base_roms_dir, rom_name, target_rom_path, callback, decryption_key, redirect_depth)
 
-func _set_overlay_downloading_state(node: Node) -> void:
-	if is_instance_valid(node):
-		if node.has_node("%LaunchOverlay"):
-			node.get_node("%LaunchOverlay").visible = true
-		if node.has_node("%PathSection"):
-			node.get_node("%PathSection").visible = false
-		if node.has_node("%EmulatorPathSection"):
-			node.get_node("%EmulatorPathSection").visible = false
-		if node.has_node("%GameSelectionSection"):
-			node.get_node("%GameSelectionSection").visible = false
-		if node.has_node("%LaunchConfirmBtn"):
-			node.get_node("%LaunchConfirmBtn").visible = false
+func _set_overlay_downloading_state(_node: Node = null) -> void:
+	download_progress_updated.emit("Downloading...", 0.0, 0, 0, 0.0)
 
-func ensure_pc_game_installed(node: Node, game_name: String, preset_config: Dictionary, callback: Callable) -> void:
+func ensure_pc_game_installed(node: Node, game_name: String, preset_config: Dictionary, callback: Callable = Callable()) -> Dictionary:
 	var exec_name: String = preset_config.get("client_executable", preset_config.get("executable_name", ""))
 	var aliases: Array = preset_config.get("executable_aliases", [])
 	
@@ -572,30 +413,37 @@ func ensure_pc_game_installed(node: Node, game_name: String, preset_config: Dict
 		else:
 			break
 			
+	var comp = AsyncCompletion.new()
+	var internal_cb = func(ok: bool, val: String):
+		if callback.is_valid():
+			callback.call(ok, val)
+		comp.finish(ok, val)
+
 	if download_entry.is_empty() or download_entry.get("url", "") == "":
-		callback.call(false, "Game files for \"" + game_name + "\" not found on machine, and no download link configured in roms.json.")
-		return
+		internal_cb.call(false, "Game files for \"" + game_name + "\" not found on machine, and no download link configured in roms.json.")
+	else:
+		var download_url: String = download_entry.get("url", "")
+		var dec_key: String = download_entry.get("key", "")
+		var game_dest_dir: String = get_game_dir(game_name)
 		
-	var download_url: String = download_entry.get("url", "")
-	var dec_key: String = download_entry.get("key", "")
-	var game_dest_dir: String = get_game_dir(game_name)
-	
-	print("[Launcher] Downloading standalone PC game (", game_name, ") from: ", download_url)
-	_download_and_unpack_game_archive(node, download_url, game_dest_dir, game_name, dec_key, func(success: bool, msg: String):
-		if not success:
-			callback.call(false, msg)
-			return
-			
-		# Scan extracted directory for executable
-		var found_exe: String = _executable_locator.find_in_directory(game_dest_dir, exec_name, aliases)
-		if found_exe != "":
-			paths_config[game_name] = found_exe
-			save_paths_config()
-			print("[Launcher] PC Game auto-installed and executable located: ", found_exe)
-			callback.call(true, found_exe)
-		else:
-			callback.call(false, "Game archive downloaded and extracted, but could not locate " + exec_name + " in " + game_dest_dir)
-	)
+		print("[Launcher] Downloading standalone PC game (", game_name, ") from: ", download_url)
+		_download_and_unpack_game_archive(node, download_url, game_dest_dir, game_name, dec_key, func(success: bool, msg: String):
+			if not success:
+				internal_cb.call(false, msg)
+				return
+				
+			var found_exe: String = _executable_locator.find_in_directory(game_dest_dir, exec_name, aliases)
+			if found_exe != "":
+				paths_config[game_name] = found_exe
+				save_paths_config()
+				print("[Launcher] PC Game auto-installed and executable located: ", found_exe)
+				internal_cb.call(true, found_exe)
+			else:
+				internal_cb.call(false, "Game archive downloaded and extracted, but could not locate " + exec_name + " in " + game_dest_dir)
+		)
+
+	await comp.wait_completed(node)
+	return {"success": comp.ok, "path": comp.val if comp.ok else "", "error": comp.val if not comp.ok else ""}
 
 func _download_and_unpack_game_archive(node: Node, download_url: String, extract_dir: String, game_name: String, decryption_key: String, callback: Callable, redirect_depth: int = 0) -> void:
 	_pc_game_installer.install(node, download_url, extract_dir, game_name, decryption_key, callback, redirect_depth)
@@ -614,58 +462,8 @@ func get_progress_bar_str(pct: int) -> String:
 		bar_str += "░"
 	return "[" + bar_str + "] " + str(pct) + "%"
 
-func update_launch_progress_ui(node: Node, task_title: String, pct: int, downloaded_bytes: int, total_bytes: int, speed_bps: float = 0.0) -> void:
-	if not is_instance_valid(node):
-		return
-
-	# Update graphical DownloadProgressCard if present in the scene
-	var dl_card: Node = null
-	if node.has_node("%DownloadProgressCard"):
-		dl_card = node.get_node("%DownloadProgressCard")
-	elif node.has_node("DownloadProgressCard"):
-		dl_card = node.get_node("DownloadProgressCard")
-	elif node.has_node("%LaunchOverlay") and node.get_node("%LaunchOverlay").has_node("%DownloadProgressCard"):
-		dl_card = node.get_node("%LaunchOverlay").get_node("%DownloadProgressCard")
-
-	if is_instance_valid(dl_card):
-		dl_card.visible = true
-		dl_card.set_task("Installing " + task_title)
-		dl_card.update_progress(pct, downloaded_bytes, total_bytes, speed_bps)
-
-	# Update graphical ProgressBar if present
-	if node.has_node("%LaunchProgressBar"):
-		var pbar = node.get_node("%LaunchProgressBar")
-		if is_instance_valid(pbar):
-			pbar.visible = true
-			pbar.value = pct
-
-	var display_text: String = "Installing " + task_title + "...\n\n"
-	var speed_str: String = ""
-	if speed_bps > 0.0:
-		var speed_mb: float = speed_bps / BYTES_PER_MB
-		speed_str = " (" + String.num(speed_mb, 1) + " MB/s)"
-		
-	if total_bytes > 0:
-		var dl_mb: float = float(downloaded_bytes) / BYTES_PER_MB
-		var total_mb: float = float(total_bytes) / BYTES_PER_MB
-		display_text += "Progress: " + str(pct) + "%\n"
-		display_text += "Downloaded: " + String.num(dl_mb, 1) + " MB / " + String.num(total_mb, 1) + " MB" + speed_str
-		if speed_bps > 50000.0 and total_bytes > downloaded_bytes:
-			var remaining_bytes = total_bytes - downloaded_bytes
-			var seconds_left = int(float(remaining_bytes) / speed_bps)
-			if seconds_left < 60:
-				display_text += " • ETA: ~" + str(seconds_left) + "s"
-			else:
-				var mins = int(seconds_left / 60)
-				var secs = seconds_left % 60
-				display_text += " • ETA: ~" + str(mins) + "m " + str(secs) + "s"
-	else:
-		var dl_mb: float = float(downloaded_bytes) / BYTES_PER_MB
-		display_text += "Progress: " + str(pct) + "%\n"
-		display_text += "Downloaded: " + String.num(dl_mb, 1) + " MB" + speed_str
-		
-	if "launch_instructions" in node and is_instance_valid(node.launch_instructions):
-		node.launch_instructions.text = display_text
+func update_launch_progress_ui(_node: Node, task_title: String, pct: int, downloaded_bytes: int, total_bytes: int, speed_bps: float = 0.0) -> void:
+	download_progress_updated.emit(task_title, float(pct), downloaded_bytes, total_bytes, speed_bps)
 
 func track_http_download_progress(node: Node, http_request: HTTPRequest, task_title: String, is_active_flag: Array) -> void:
 	var last_bytes: int = 0
@@ -697,17 +495,44 @@ func cancel_tool_installation() -> void:
 	_tool_installation_generation += 1
 	Updater.log_message("INSTALL", "Tool installation cancelled by user.")
 
-func ensure_tool_installed_or_download(node: Node, tool_name: String, download_url: String, subfolder: String, target_exe: String, callback: Callable, fallback_url: String = "", installation_generation: int = -1, expected_sha256: String = "", managed_only: bool = false) -> void:
+func ensure_tool_installed_or_download(node: Node, tool_name: String, download_url: String, subfolder: String, target_exe: String, callback: Callable = Callable(), fallback_url: String = "", installation_generation: int = -1, expected_sha256: String = "", managed_only: bool = false) -> Dictionary:
 	if installation_generation < 0:
 		_tool_installation_generation += 1
 		installation_generation = _tool_installation_generation
-	_tool_installer.install(node, tool_name, download_url, subfolder, target_exe, callback, fallback_url, installation_generation, expected_sha256, managed_only)
+	var comp = AsyncCompletion.new()
+	var internal_cb = func(ok: bool, val: String):
+		if callback.is_valid():
+			callback.call(ok, val)
+		comp.finish(ok, val)
 
-func download_and_extract_zip_to_dir(node: Node, download_url: String, target_dir: String, display_name: String, callback: Callable, backup_files: Array = []) -> void:
-	_package_installer.install(node, download_url, target_dir, display_name, callback, backup_files)
+	_tool_installer.install(node, tool_name, download_url, subfolder, target_exe, internal_cb, fallback_url, installation_generation, expected_sha256, managed_only)
+	await comp.wait_completed(node)
+	if comp.ok:
+		return _tool_manager.install_success(comp.val)
+	return _tool_manager.install_failure(comp.val)
 
-func ensure_emulator_firmware(node: Node, preset_config: Dictionary, emulator_exe_path: String, rom_path: String, callback: Callable) -> void:
-	_firmware_manager.ensure(node, preset_config, emulator_exe_path, rom_path, callback)
+func download_and_extract_zip_to_dir(node: Node, download_url: String, target_dir: String, display_name: String, callback: Callable = Callable(), backup_files: Array = []) -> Dictionary:
+	var comp = AsyncCompletion.new()
+	var internal_cb = func(ok: bool, err: String):
+		if callback.is_valid():
+			callback.call(ok, err)
+		comp.finish(ok, err)
+
+	_package_installer.install(node, download_url, target_dir, display_name, internal_cb, backup_files)
+	await comp.wait_completed(node)
+	return {"success": comp.ok, "error": comp.val if not comp.ok else ""}
+
+func ensure_emulator_firmware(node: Node, preset_config: Dictionary, emulator_exe_path: String, rom_path: String, callback: Callable = Callable()) -> Dictionary:
+	var comp = AsyncCompletion.new()
+	var internal_cb = func(ok: bool, val: String):
+		if callback.is_valid():
+			callback.call(ok, val)
+		comp.finish(ok, val)
+
+	_firmware_manager.ensure(node, preset_config, emulator_exe_path, rom_path, internal_cb)
+	await comp.wait_completed(node)
+	return {"success": comp.ok, "error": comp.val if not comp.ok else ""}
+
 func _inject_emulator_firmware_config(emulator_dir: String, emu_cfg: Dictionary) -> void:
 	ArchipelagoConfig.inject_emulator_firmware_config(emulator_dir, emu_cfg)
 
@@ -717,255 +542,32 @@ func _inject_emulator_firmware_config(emulator_dir: String, emu_cfg: Dictionary)
 # =====================================================================
 
 func sync_archipelago_host_yaml(rom_path: String, bizhawk_path: String = "", dolphin_path: String = "", server_url: String = "") -> void:
-	if bizhawk_path == "":
-		bizhawk_path = paths_config.get("bizhawk_emulator", "")
-		if bizhawk_path == "" or not FileAccess.file_exists(bizhawk_path):
-			bizhawk_path = find_executable_recursive(USER_TOOLS_DIR, "EmuHawk.exe")
-	if dolphin_path == "":
-		dolphin_path = paths_config.get("dolphin_emulator", "")
-		if dolphin_path == "" or not FileAccess.file_exists(dolphin_path):
-			dolphin_path = find_executable_recursive(USER_TOOLS_DIR, "Dolphin.exe")
-
-	var possible_host_yaml_paths: Array[String] = _get_archipelago_host_yaml_paths()
-	var absolute_rom_path: String = ProjectSettings.globalize_path(rom_path).replace("\\", "/")
-	var absolute_bizhawk_path: String = ProjectSettings.globalize_path(bizhawk_path).replace("\\", "/") if bizhawk_path != "" else ""
-	var absolute_dolphin_path: String = ProjectSettings.globalize_path(dolphin_path).replace("\\", "/") if dolphin_path != "" else ""
-
-	_cleanup_legacy_archipelago_rom_copies()
-	sync_custom_worlds_to_archipelago()
-
-	if server_url == "" and Engine.has_singleton("NetworkManager"):
-		server_url = NetworkManager.get_ap_server_url()
-	for target_yaml_path in possible_host_yaml_paths:
-		_write_synced_host_yaml_file(target_yaml_path, absolute_rom_path, absolute_bizhawk_path, absolute_dolphin_path, server_url)
+	ArchipelagoConfig.sync_archipelago_host_yaml(
+		rom_path,
+		bizhawk_path,
+		dolphin_path,
+		server_url,
+		launcher_presets,
+		paths_config,
+		USER_TOOLS_DIR,
+		find_executable_recursive,
+		sync_custom_worlds_to_archipelago
+	)
 
 func _get_archipelago_host_yaml_paths() -> Array[String]:
-	var possible_paths: Array[String] = [
-		USER_TOOLS_DIR.path_join("Archipelago/host.yaml")
-	]
-	if OS.get_name() == "Windows":
-		var appdata_dir: String = OS.get_environment("APPDATA")
-		if appdata_dir != "":
-			possible_paths.append(appdata_dir.path_join("Archipelago").path_join("host.yaml"))
-		var local_appdata_dir: String = OS.get_environment("LOCALAPPDATA")
-		if local_appdata_dir != "":
-			possible_paths.append(local_appdata_dir.path_join("Archipelago").path_join("host.yaml"))
-		possible_paths.append("C:/ProgramData/Archipelago/host.yaml")
-	possible_paths.append(OS.get_environment("HOME").path_join("Archipelago").path_join("host.yaml"))
-	return possible_paths
-
-func get_matching_rom_aliases(rom_path: String) -> Array[String]:
-	var rom_ext: String = rom_path.get_extension().to_lower()
-	var destination_filenames: Array[String] = []
-	for game_name in launcher_presets.keys():
-		var preset: Dictionary = launcher_presets[game_name]
-		var req_rom: String = preset.get("required_rom", "")
-		if req_rom != "" and req_rom.get_extension().to_lower() == rom_ext:
-			if not destination_filenames.has(req_rom):
-				destination_filenames.append(req_rom)
-		var aliases: Array = preset.get("rom_aliases", [])
-		for a in aliases:
-			var alias_str: String = str(a)
-			if alias_str != "" and alias_str.get_extension().to_lower() == rom_ext:
-				if not destination_filenames.has(alias_str):
-					destination_filenames.append(alias_str)
-	return destination_filenames
-
-func _sync_base_rom_files_to_archipelago_dirs(_rom_path: String = "") -> void:
-	# Deprecated: ROMs and ISOs are now stored exclusively in user://games/<game_slug>/
-	_cleanup_legacy_archipelago_rom_copies()
-
-func _cleanup_legacy_archipelago_rom_copies() -> void:
-	# 1. Clean up base_roms directory inside tools/Archipelago
-	var ap_base_roms_dir: String = USER_TOOLS_DIR.path_join("Archipelago/base_roms")
-	if DirAccess.dir_exists_absolute(ap_base_roms_dir):
-		var da: DirAccess = DirAccess.open(ap_base_roms_dir)
-		if da:
-			da.list_dir_begin()
-			var fn: String = da.get_next()
-			while fn != "":
-				if not da.current_is_dir() and not fn.begins_with("."):
-					DirAccess.remove_absolute(ap_base_roms_dir.path_join(fn))
-				fn = da.get_next()
-		DirAccess.remove_absolute(ap_base_roms_dir)
-		print("[Launcher] Cleaned up legacy tools/Archipelago/base_roms directory")
-
-	# 2. Clean up duplicate ROM/ISO files in tools/Archipelago root
-	var ap_dir: String = USER_TOOLS_DIR.path_join("Archipelago")
-	if DirAccess.dir_exists_absolute(ap_dir):
-		var ap_da: DirAccess = DirAccess.open(ap_dir)
-		if ap_da:
-			var rom_extensions: PackedStringArray = [
-				"iso", "rvz", "bin", "cue", "gba", "gbc", "gb",
-				"sfc", "smc", "z64", "n64", "nds", "gcm", "cso",
-				"chd", "wbfs"
-			]
-			ap_da.list_dir_begin()
-			var f: String = ap_da.get_next()
-			while f != "":
-				if not ap_da.current_is_dir() and not f.begins_with("."):
-					var f_ext: String = f.get_extension().to_lower()
-					if rom_extensions.has(f_ext):
-						DirAccess.remove_absolute(ap_dir.path_join(f))
-						print("[Launcher] Cleaned up redundant ROM from tools/Archipelago: ", f)
-				f = ap_da.get_next()
-
-func _find_supplemental_rom_path(rom_path: String, target_filename: String) -> String:
-	if target_filename == "":
-		return ""
-	var game_slug: String = get_game_slug_for_rom(target_filename)
-	var game_folder: String = USER_GAMES_DIR.path_join(game_slug)
-	var candidate_paths: Array[String] = [
-		game_folder.path_join(target_filename),
-		ProjectSettings.globalize_path(game_folder).path_join(target_filename),
-		USER_BASE_ROMS_DIR.path_join(target_filename),
-		ProjectSettings.globalize_path(USER_BASE_ROMS_DIR).path_join(target_filename)
-	]
-	if rom_path != "":
-		var base_dir: String = rom_path.get_base_dir()
-		candidate_paths.append(base_dir.path_join(target_filename))
-		if "Track 1" in rom_path and "Track 2" in target_filename:
-			candidate_paths.append(rom_path.replace("Track 1", "Track 2"))
-		elif "track 1" in rom_path and "track 2" in target_filename.to_lower():
-			candidate_paths.append(rom_path.replace("track 1", "track 2"))
-		elif "Disc 1" in rom_path and "Disc 2" in target_filename:
-			candidate_paths.append(rom_path.replace("Disc 1", "Disc 2"))
-		elif "disc 1" in rom_path and "disc 2" in target_filename.to_lower():
-			candidate_paths.append(rom_path.replace("disc 1", "disc 2"))
-	
-	for c_path in candidate_paths:
-		var norm_path: String = ProjectSettings.globalize_path(c_path).replace("\\", "/")
-		if FileAccess.file_exists(norm_path):
-			return norm_path
-	return ""
+	return ArchipelagoConfig.get_archipelago_host_yaml_paths(USER_TOOLS_DIR)
 
 func _write_synced_host_yaml_file(target_yaml_path: String, absolute_rom_path: String, absolute_bizhawk_path: String, absolute_dolphin_path: String = "", server_url: String = "") -> void:
-	var dir_path: String = target_yaml_path.get_base_dir()
-	DirAccess.make_dir_recursive_absolute(dir_path)
+	ArchipelagoConfig.write_synced_host_yaml_file(target_yaml_path, absolute_rom_path, absolute_bizhawk_path, absolute_dolphin_path, server_url, launcher_presets)
 
-	var yaml_content: String = ""
-	if FileAccess.file_exists(target_yaml_path):
-		var file_access: FileAccess = FileAccess.open(target_yaml_path, FileAccess.READ)
-		if file_access:
-			yaml_content = file_access.get_as_text()
-			file_access.close()
-
-	# Initialize our dedicated, comment-preserving YAML editor
-	var editor = HostYamlEditorScript.new(yaml_content)
-
-	var rom_ext: String = absolute_rom_path.get_extension().to_lower()
-	var rom_filename_lower: String = absolute_rom_path.get_file().to_lower()
-	var clean_server_addr: String = server_url.replace("wss://", "").replace("ws://", "").trim_suffix("/")
-	if clean_server_addr == "" and Engine.has_singleton("NetworkManager"):
-		clean_server_addr = NetworkManager.get_ap_server_url().replace("wss://", "").replace("ws://", "").trim_suffix("/")
-
-	var matched_dolphin: bool = false
-	var matched_bizhawk: bool = false
-
-	# Match against launcher presets to apply data-driven host_yaml configurations
-	for game_key in launcher_presets.keys():
-		var preset: Dictionary = launcher_presets[game_key]
-		if not (preset.has("host_yaml") and preset["host_yaml"] is Dictionary):
-			continue
-
-		var req_rom: String = preset.get("required_rom", "")
-		var req_ext: String = req_rom.get_extension().to_lower()
-		var is_matching_rom: bool = false
-
-		if req_ext != "" and req_ext == rom_ext:
-			is_matching_rom = true
-		else:
-			for alias in preset.get("rom_aliases", []):
-				if str(alias).get_extension().to_lower() == rom_ext:
-					is_matching_rom = true
-					break
-
-		if not is_matching_rom and rom_ext == "exe":
-			var client_exec: String = preset.get("client_executable", preset.get("executable_name", "")).to_lower()
-			if client_exec != "" and (rom_filename_lower == client_exec or client_exec.get_file() == rom_filename_lower):
-				is_matching_rom = true
-			else:
-				for exec_alias in preset.get("executable_aliases", []):
-					if str(exec_alias).to_lower() == rom_filename_lower:
-						is_matching_rom = true
-						break
-
-		if is_matching_rom:
-			var host_cfg: Dictionary = preset["host_yaml"]
-			var req_audio: String = preset.get("required_audio_rom", "")
-			
-			# Resolve nested configuration tree (evaluating templates & conditions)
-			var resolved_cfg: Dictionary = _resolve_host_yaml_tree(
-				host_cfg,
-				absolute_rom_path,
-				absolute_bizhawk_path,
-				absolute_dolphin_path,
-				server_url,
-				clean_server_addr,
-				rom_filename_lower,
-				req_audio
-			)
-			editor.apply_dictionary(resolved_cfg)
-
-			if resolved_cfg.has("luigismansion_options") or resolved_cfg.has("dolphin_settings"):
-				matched_dolphin = true
-			if resolved_cfg.has("bizhawkclient_options"):
-				matched_bizhawk = true
-
-	# Fallback emulator injections if not explicitly declared in launch.json
-	if absolute_dolphin_path != "" and not matched_dolphin:
-		editor.set_value_at_path("luigismansion_options.dolphin_settings.path", absolute_dolphin_path)
-		editor.set_value_at_path("luigismansion_options.dolphin_settings.auto_start", true)
-
-	if absolute_bizhawk_path != "" and not matched_bizhawk:
-		editor.set_value_at_path("bizhawkclient_options.emuhawk_path", absolute_bizhawk_path)
-		editor.set_value_at_path("bizhawkclient_options.rom_start", true)
-
-	var writer_file: FileAccess = FileAccess.open(target_yaml_path, FileAccess.WRITE)
-	if writer_file:
-		writer_file.store_string(editor.to_string_content())
-		writer_file.close()
-		print("[Launcher] Synced Archipelago host.yaml at: ", target_yaml_path)
-
-## Resolves template placeholders and conditional nodes inside a host_yaml dictionary
 func _resolve_host_yaml_tree(node: Variant, rom_path: String, bizhawk_path: String, dolphin_path: String, server_url: String, clean_server_addr: String, rom_filename_lower: String, req_audio: String) -> Variant:
-	if typeof(node) == TYPE_DICTIONARY:
-		var dict: Dictionary = node as Dictionary
-		# Check if this node represents a conditional value with `when_filename_matches`
-		if dict.has("when_filename_matches"):
-			var pattern: String = str(dict["when_filename_matches"]).to_lower().trim_prefix("*").trim_suffix("*")
-			if pattern != "" and not rom_filename_lower.contains(pattern):
-				return null
-			return _resolve_host_yaml_tree(dict.get("value", "{rom_path}"), rom_path, bizhawk_path, dolphin_path, server_url, clean_server_addr, rom_filename_lower, req_audio)
+	return ArchipelagoConfig.resolve_host_yaml_tree(node, rom_path, bizhawk_path, dolphin_path, server_url, clean_server_addr, rom_filename_lower, req_audio)
 
-		var resolved_dict: Dictionary = {}
-		for k in dict.keys():
-			var child_res = _resolve_host_yaml_tree(dict[k], rom_path, bizhawk_path, dolphin_path, server_url, clean_server_addr, rom_filename_lower, req_audio)
-			if child_res != null:
-				resolved_dict[k] = child_res
-		return resolved_dict
-
-	if typeof(node) == TYPE_STRING:
-		var audio_path: String = ""
-		if req_audio != "":
-			audio_path = _find_supplemental_rom_path(rom_path, req_audio)
-		return _evaluate_yaml_template(str(node), rom_path, bizhawk_path, dolphin_path, server_url, clean_server_addr, audio_path)
-
-	# Primitive types (bool, int, float, Array) are returned as-is
-	return node
+func _find_supplemental_rom_path(rom_path: String, target_filename: String) -> String:
+	return ArchipelagoConfig.find_supplemental_rom_path(rom_path, target_filename)
 
 func _evaluate_yaml_template(raw_str: String, rom_path: String, bizhawk_path: String, dolphin_path: String, server_url: String, clean_server_addr: String, audio_path: String = "") -> String:
-	var res: String = raw_str
-	res = res.replace("{rom_path}", rom_path)
-	res = res.replace("{game_dir}", rom_path.get_base_dir() if rom_path.get_extension() != "" else rom_path)
-	res = res.replace("{bizhawk_path}", bizhawk_path)
-	res = res.replace("{dolphin_path}", dolphin_path)
-	res = res.replace("{audio_path}", audio_path)
-	res = res.replace("{server_url}", server_url)
-	res = res.replace("{server_address}", clean_server_addr)
-	res = res.replace("{server_host}", clean_server_addr.split(":")[0] if clean_server_addr.contains(":") else clean_server_addr)
-	res = res.replace("{server_port}", clean_server_addr.split(":")[1] if clean_server_addr.contains(":") else "38000")
-	return res
+	return ArchipelagoConfig.evaluate_yaml_template(raw_str, rom_path, bizhawk_path, dolphin_path, server_url, clean_server_addr, audio_path)
 
 func update_yaml_value(yaml_content: String, section_key: String, option_path: String, val: Variant, extra_lines: Array[String] = []) -> String:
 	return ArchipelagoConfig.update_yaml_value(yaml_content, section_key, option_path, val, extra_lines)
@@ -992,173 +594,14 @@ func get_custom_world_destinations() -> Array[String]:
 	return dests
 
 func sync_custom_worlds_to_archipelago() -> void:
-	var source_apworlds: Dictionary = {}
-	var source_dirs: Array[String] = [
-		"res://custom_worlds",
-		"user://custom_worlds"
-	]
-	
-	for s_dir in source_dirs:
-		if not DirAccess.dir_exists_absolute(s_dir):
-			continue
-		var dir: DirAccess = DirAccess.open(s_dir)
-		if dir:
-			dir.list_dir_begin()
-			var fn: String = dir.get_next()
-			while fn != "":
-				if not dir.current_is_dir() and fn.ends_with(".apworld"):
-					source_apworlds[fn] = s_dir.path_join(fn)
-				fn = dir.get_next()
-
-	if source_apworlds.is_empty():
-		return
-
-	var dest_dirs: Array[String] = get_custom_world_destinations()
-	for dest_dir in dest_dirs:
-		var parent_dir: String = dest_dir.get_base_dir()
-		if not DirAccess.dir_exists_absolute(parent_dir) and not dest_dir.begins_with(USER_TOOLS_DIR):
-			continue
-			
-		DirAccess.make_dir_recursive_absolute(dest_dir)
-		for fn in source_apworlds.keys():
-			var src_path: String = source_apworlds[fn]
-			var dst_path: String = dest_dir.path_join(fn)
-			
-			var should_copy: bool = false
-			if not FileAccess.file_exists(dst_path):
-				should_copy = true
-			else:
-				var src_fa: FileAccess = FileAccess.open(src_path, FileAccess.READ)
-				var dst_fa: FileAccess = FileAccess.open(dst_path, FileAccess.READ)
-				if src_fa and dst_fa:
-					if src_fa.get_length() != dst_fa.get_length():
-						should_copy = true
-				if src_fa: src_fa.close()
-				if dst_fa: dst_fa.close()
-
-			if should_copy:
-				var copy_err: Error = DirAccess.copy_absolute(src_path, dst_path)
-				if copy_err == OK:
-					print("[Launcher] Synced custom world: ", fn, " to: ", dst_path)
-				else:
-					print("[Launcher Warning] Failed to copy custom world: ", fn, " to: ", dst_path, " (Error: ", copy_err, ")")
+	if _custom_world_sync_service:
+		_custom_world_sync_service.sync_to_archipelago()
 
 func sync_custom_worlds_from_server(node: Node, target_games: Array = [], callback: Callable = Callable()) -> void:
-	if not is_instance_valid(node):
-		if callback.is_valid():
-			callback.call(false)
-		return
-		
-	var http: HTTPRequest = HTTPRequest.new()
-	http.use_threads = true
-	http.download_chunk_size = 1048576 # 1 MB buffer for maximum download throughput
-	node.add_child(http)
-	
-	http.request_completed.connect(func(result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray):
-		http.queue_free()
-		if result != HTTPRequest.RESULT_SUCCESS or response_code != 200:
-			print("[Launcher] Failed to list custom worlds from backend. Result: ", result, ", HTTP status: ", response_code)
-			sync_custom_worlds_to_archipelago()
-			if callback.is_valid():
-				callback.call(false)
-			return
-			
-		var parsed = JSON.parse_string(body.get_string_from_utf8())
-		if not (parsed is Dictionary) or not parsed.has("worlds"):
-			print("[Launcher] Backend returned an invalid custom worlds list.")
-			sync_custom_worlds_to_archipelago()
-			if callback.is_valid():
-				callback.call(false)
-			return
-			
-		var worlds: Array = parsed.get("worlds", [])
-		if not target_games.is_empty():
-			var filtered: Array = []
-			var targets: Array[String] = []
-			for tg in target_games:
-				var n: String = str(tg).to_lower().replace(" ", "").replace("_", "").replace("-", "").replace(":", "")
-				if n != "" and not targets.has(n):
-					targets.append(n)
-			for w in worlds:
-				var w_game: String = str(w.get("game", "")).to_lower().replace(" ", "").replace("_", "").replace("-", "").replace(":", "")
-				var w_fn: String = str(w.get("filename", "")).to_lower().replace(".apworld", "").replace("_", "").replace("-", "")
-				var is_match: bool = false
-				for t in targets:
-					if (w_game != "" and (t in w_game or w_game in t)) or (w_fn != "" and (t in w_fn or w_fn in t)):
-						is_match = true
-						break
-				if is_match:
-					filtered.append(w)
-			worlds = filtered
-		_download_next_custom_world(node, worlds, 0, callback)
-	)
-	
-	var list_url: String = NetworkManager.get_http_url() + "/api/custom-worlds"
-	var err: Error = http.request(list_url)
-	if err != OK:
-		print("[Launcher] Failed to start custom worlds list request. Error: ", err)
-		http.queue_free()
-		sync_custom_worlds_to_archipelago()
-		if callback.is_valid():
-			callback.call(false)
-
-func _download_next_custom_world(node: Node, worlds: Array, index: int, finish_cb: Callable) -> void:
-	if index >= worlds.size():
-		sync_custom_worlds_to_archipelago()
-		if finish_cb.is_valid():
-			finish_cb.call(true)
-		return
-
-	var world_info: Dictionary = worlds[index]
-	var fn: String = world_info.get("filename", "")
-	var server_size: int = int(world_info.get("size", 0))
-	if fn == "":
-		_download_next_custom_world(node, worlds, index + 1, finish_cb)
-		return
-
-	var user_cw_dir: String = "user://custom_worlds"
-	DirAccess.make_dir_recursive_absolute(user_cw_dir)
-	var local_file: String = user_cw_dir.path_join(fn)
-	var local_bundle_file: String = "res://custom_worlds".path_join(fn)
-
-	var need_download: bool = true
-	if FileAccess.file_exists(local_file):
-		var fa = FileAccess.open(local_file, FileAccess.READ)
-		if fa:
-			if server_size <= 0 or fa.get_length() == server_size:
-				need_download = false
-			fa.close()
-	elif FileAccess.file_exists(local_bundle_file):
-		var fa = FileAccess.open(local_bundle_file, FileAccess.READ)
-		if fa:
-			if server_size <= 0 or fa.get_length() == server_size:
-				need_download = false
-			fa.close()
-
-	if not need_download:
-		_download_next_custom_world(node, worlds, index + 1, finish_cb)
-		return
-
-	var http: HTTPRequest = HTTPRequest.new()
-	http.use_threads = true
-	http.download_chunk_size = 1048576 # 1 MB buffer for maximum download throughput
-	node.add_child(http)
-	http.download_file = local_file
-	http.request_completed.connect(func(result: int, response_code: int, _headers: PackedStringArray, _body: PackedByteArray):
-		http.queue_free()
-		if result == HTTPRequest.RESULT_SUCCESS and response_code == 200:
-			print("[Launcher] Downloaded updated custom world from server: ", fn)
-		else:
-			print("[Launcher] Failed to download custom world '", fn, "'. Result: ", result, ", HTTP status: ", response_code)
-		_download_next_custom_world(node, worlds, index + 1, finish_cb)
-	)
-	var dl_url: String = NetworkManager.get_http_url() + "/api/custom-worlds/" + fn.uri_encode()
-	var err: Error = http.request(dl_url)
-	if err != OK:
-		print("[Launcher] Failed to start custom world download for '", fn, "'. Error: ", err)
-		http.queue_free()
-		_download_next_custom_world(node, worlds, index + 1, finish_cb)
-
+	if _custom_world_sync_service:
+		_custom_world_sync_service.sync_from_server(node, target_games, callback)
+	elif callback.is_valid():
+		callback.call(false)
 
 # =====================================================================
 #                EXECUTABLE RECURSIVE DISCOVERY
@@ -1351,18 +794,13 @@ func _pipeline_prepare_base_assets(ctx: LaunchContext) -> bool:
 				
 		# 4. Prompt user to select file
 		_report_status(ctx, LaunchStage.PREPARING_ROM, "Base ROM required: " + req_rom, 15)
-		var prompt_state: Dictionary = {"path": "", "done": false}
+		var comp = AsyncCompletion.new()
 		var filters: PackedStringArray = PackedStringArray(["*.bin, *.iso, *.cue, *.gba, *.smc, *.sfc, *.z64, *.n64 ; ROM Files", "*.* ; All Files"])
 		emit_signal("prompt_file_selection", "Base ROM Required for " + ctx.game_name, "Please select your vanilla base ROM file (" + req_rom + ").", filters, func(chosen: String):
-			prompt_state["path"] = chosen
-			prompt_state["done"] = true
+			comp.finish(chosen != "", chosen)
 		)
-		while not prompt_state["done"]:
-			if not is_instance_valid(ctx.node) or not ctx.node.get_tree():
-				return false
-			await ctx.node.get_tree().create_timer(0.05).timeout
-			
-		var user_selected_path: String = prompt_state["path"]
+		await comp.wait_completed(ctx.node)
+		var user_selected_path: String = comp.val
 		if user_selected_path == "" or not FileAccess.file_exists(user_selected_path):
 			emit_signal("launch_failed", ctx.game_name, "Base ROM selection was cancelled or file does not exist.")
 			return false
@@ -1415,18 +853,13 @@ func _pipeline_prepare_base_assets(ctx: LaunchContext) -> bool:
 				return true
 				
 		# Prompt executable selection
-		var prompt_state: Dictionary = {"path": "", "done": false}
+		var comp = AsyncCompletion.new()
 		var filters: PackedStringArray = PackedStringArray(["*.exe ; Executables", "*.* ; All Files"])
 		emit_signal("prompt_file_selection", "Executable Required for " + ctx.game_name, "Please locate where " + ctx.game_name + " is installed.", filters, func(chosen: String):
-			prompt_state["path"] = chosen
-			prompt_state["done"] = true
+			comp.finish(chosen != "", chosen)
 		)
-		while not prompt_state["done"]:
-			if not is_instance_valid(ctx.node) or not ctx.node.get_tree():
-				return false
-			await ctx.node.get_tree().create_timer(0.05).timeout
-			
-		var user_exe: String = prompt_state["path"]
+		await comp.wait_completed(ctx.node)
+		var user_exe: String = comp.val
 		if user_exe == "" or not FileAccess.file_exists(user_exe):
 			emit_signal("launch_failed", ctx.game_name, "Executable selection was cancelled or file does not exist.")
 			return false
@@ -1590,61 +1023,10 @@ func _pipeline_prepare_tools(ctx: LaunchContext) -> bool:
 
 
 func _find_dolphin_tool_path(dolphin_exe_path: String) -> String:
-	if dolphin_exe_path != "":
-		var dolphin_dir: String = dolphin_exe_path.get_base_dir()
-		var tool_candidate: String = dolphin_dir.path_join("DolphinTool.exe")
-		if FileAccess.file_exists(tool_candidate):
-			return tool_candidate
-			
-	var discovered: String = find_game_executable("DolphinTool.exe", ["Dolphin", "Dolphin-x64", "dolphin-master"], [], true)
-	if discovered != "" and FileAccess.file_exists(discovered):
-		return discovered
-	return ""
+	return _rom_archive_service.find_dolphin_tool_path(dolphin_exe_path)
 
 func convert_rvz_to_iso(rvz_path: String, output_iso_path: String, dolphin_tool_path: String, delete_source: bool = false) -> Dictionary:
-	if dolphin_tool_path == "" or not FileAccess.file_exists(dolphin_tool_path):
-		return {"success": false, "error": "DolphinTool.exe not found for RVZ conversion."}
-	if not FileAccess.file_exists(rvz_path):
-		return {"success": false, "error": "Input RVZ file not found: " + rvz_path}
-		
-	var abs_rvz: String = ProjectSettings.globalize_path(rvz_path)
-	var abs_iso: String = ProjectSettings.globalize_path(output_iso_path)
-	
-	DirAccess.make_dir_recursive_absolute(output_iso_path.get_base_dir())
-	print("[Launcher] Converting RVZ to uncompressed ISO via DolphinTool...")
-	print("[Launcher] Command: ", dolphin_tool_path, " convert -i ", abs_rvz, " -o ", abs_iso, " -f iso")
-	
-	var args: Array = ["convert", "-i", abs_rvz, "-o", abs_iso, "-f", "iso"]
-	var pipe_data: Dictionary = OS.execute_with_pipe(dolphin_tool_path, args)
-	if not pipe_data.has("pid") or pipe_data["pid"] <= 0:
-		# Fallback to direct execute if execute_with_pipe fails
-		var output: Array = []
-		var exit_code: int = OS.execute(dolphin_tool_path, args, output, true)
-		if exit_code != 0:
-			var err_msg: String = " ".join(output)
-			return {"success": false, "error": "DolphinTool conversion failed: " + err_msg}
-	else:
-		var pid: int = pipe_data["pid"]
-		while OS.is_process_running(pid):
-			OS.delay_msec(100)
-		var stdout_pipe: FileAccess = pipe_data.get("stdout")
-		if stdout_pipe and stdout_pipe.is_open():
-			stdout_pipe.close()
-		var stderr_pipe: FileAccess = pipe_data.get("stderr")
-		if stderr_pipe and stderr_pipe.is_open():
-			stderr_pipe.close()
-		
-	if not FileAccess.file_exists(output_iso_path):
-		return {"success": false, "error": "DolphinTool finished with 0 but ISO was not generated."}
-		
-	print("[Launcher] RVZ converted to ISO successfully: ", output_iso_path)
-	if delete_source:
-		var global_user_dir: String = ProjectSettings.globalize_path("user://").replace("\\", "/").trim_suffix("/")
-		var global_rvz: String = ProjectSettings.globalize_path(rvz_path).replace("\\", "/")
-		if rvz_path.begins_with("user://") or global_rvz.begins_with(global_user_dir):
-			DirAccess.remove_absolute(rvz_path)
-			print("[Launcher] Deleted source RVZ after successful conversion: ", rvz_path)
-	return {"success": true, "path": output_iso_path}
+	return _rom_archive_service.convert_rvz_to_iso(rvz_path, output_iso_path, dolphin_tool_path, delete_source)
 
 func _pipeline_prepare_firmware(ctx: LaunchContext) -> bool:
 	if not ctx.preset.has("required_firmware") or ctx.emulator_exe_path == "":
@@ -1685,7 +1067,7 @@ func _pipeline_prepare_session_payload(ctx: LaunchContext) -> bool:
 				var patch_dir: String = ctx.patch_path.get_base_dir()
 				var patch_audio_dest: String = patch_dir.path_join(req_audio)
 				if not FileAccess.file_exists(patch_audio_dest):
-					var t2_src: String = _find_supplemental_rom_path("", req_audio)
+					var t2_src: String = ArchipelagoConfig.find_supplemental_rom_path("", req_audio)
 					if t2_src != "":
 						DirAccess.copy_absolute(t2_src, patch_audio_dest)
 						print("[Launcher] Copied required audio track to patch folder: ", patch_audio_dest)
@@ -1834,30 +1216,10 @@ func _pipeline_monitor_post_launch(ctx: LaunchContext) -> void:
 		_dismiss_modding_overlay(ctx.node)
 
 func _async_ensure_rom(node: Node, rom_name: String) -> Dictionary:
-	var state: Dictionary = {"done": false, "ok": false, "val": ""}
-	ensure_rom_exists_or_download(node, rom_name, func(ok: bool, val: String):
-		state["ok"] = ok
-		state["val"] = val
-		state["done"] = true
-	)
-	while not state["done"]:
-		if not is_instance_valid(node) or not node.get_tree():
-			return {"success": false, "error": "Context destroyed"}
-		await node.get_tree().create_timer(0.05).timeout
-	return {"success": state["ok"], "path": state["val"] if state["ok"] else "", "error": state["val"] if not state["ok"] else ""}
+	return await ensure_rom_exists_or_download(node, rom_name)
 
 func _async_ensure_pc_game(node: Node, game_name: String, preset_config: Dictionary) -> Dictionary:
-	var state: Dictionary = {"done": false, "ok": false, "val": ""}
-	ensure_pc_game_installed(node, game_name, preset_config, func(ok: bool, val: String):
-		state["ok"] = ok
-		state["val"] = val
-		state["done"] = true
-	)
-	while not state["done"]:
-		if not is_instance_valid(node) or not node.get_tree():
-			return {"success": false, "error": "Context destroyed"}
-		await node.get_tree().create_timer(0.05).timeout
-	return {"success": state["ok"], "path": state["val"] if state["ok"] else "", "error": state["val"] if not state["ok"] else ""}
+	return await ensure_pc_game_installed(node, game_name, preset_config)
 
 func _async_ensure_tool(node: Node, tool_name: String, download_url: String, subfolder: String, target_file: String, fallback_url: String = "") -> Dictionary:
 	_tool_installation_generation += 1
@@ -1870,58 +1232,17 @@ func _async_ensure_tool(node: Node, tool_name: String, download_url: String, sub
 		fallback_url,
 		_tool_installation_generation
 	)
-	var state: Dictionary = {"done": false, "ok": false, "val": ""}
-	ensure_tool_installed_or_download(node, tool_name, download_url, subfolder, target_file, func(ok: bool, val: String):
-		state["ok"] = ok
-		state["val"] = val
-		state["done"] = true
-	, request.fallback_url, request.generation)
-	while not state["done"]:
-		if not is_instance_valid(node) or not node.get_tree():
-			cancel_tool_installation()
-			return _tool_manager.install_failure("Context destroyed")
-		await node.get_tree().create_timer(0.05).timeout
-	if state["ok"]:
-		return _tool_manager.install_success(state["val"])
-	return _tool_manager.install_failure(state["val"])
+	return await ensure_tool_installed_or_download(node, tool_name, download_url, subfolder, target_file, Callable(), request.fallback_url, request.generation)
 
 func _async_ensure_firmware(node: Node, preset: Dictionary, emu_path: String, rom_path: String) -> bool:
-	var state: Dictionary = {"done": false, "ok": false}
-	ensure_emulator_firmware(node, preset, emu_path, rom_path, func(ok: bool, _val: String):
-		state["ok"] = ok
-		state["done"] = true
-	)
-	while not state["done"]:
-		if not is_instance_valid(node) or not node.get_tree():
-			return false
-		await node.get_tree().create_timer(0.05).timeout
-	return state["ok"]
+	var res: Dictionary = await ensure_emulator_firmware(node, preset, emu_path, rom_path)
+	return res.get("success", false)
 
 func _async_ensure_patch(node: Node, game_name: String, patch_ext: String) -> Dictionary:
-	var state: Dictionary = {"done": false, "ok": false, "val": ""}
-	ensure_patch_file_exists_or_download(node, game_name, patch_ext, func(ok: bool, val: String):
-		state["ok"] = ok
-		state["val"] = val
-		state["done"] = true
-	)
-	while not state["done"]:
-		if not is_instance_valid(node) or not node.get_tree():
-			return {"success": false, "error": "Context destroyed"}
-		await node.get_tree().create_timer(0.05).timeout
-	return {"success": state["ok"], "path": state["val"] if state["ok"] else "", "error": state["val"] if not state["ok"] else ""}
+	return await ensure_patch_file_exists_or_download(node, game_name, patch_ext)
 
 func _async_download_package(node: Node, url: String, target_dir: String, label: String, backups: Array) -> Dictionary:
-	var state: Dictionary = {"done": false, "ok": false, "err": ""}
-	download_and_extract_zip_to_dir(node, url, target_dir, label, func(ok: bool, err: String):
-		state["ok"] = ok
-		state["err"] = err
-		state["done"] = true
-	, backups)
-	while not state["done"]:
-		if not is_instance_valid(node) or not node.get_tree():
-			return {"success": false, "error": "Context destroyed"}
-		await node.get_tree().create_timer(0.05).timeout
-	return {"success": state["ok"], "error": state["err"]}
+	return await download_and_extract_zip_to_dir(node, url, target_dir, label, Callable(), backups)
 
 func _get_preset_packages(preset_config: Dictionary) -> Array:
 	return _tool_manager.get_preset_packages(preset_config)
@@ -2053,8 +1374,16 @@ func is_game_configured(game_name: String) -> bool:
 func is_matching_patch_file(filename: String, patch_extension: String, game_name: String = "") -> bool:
 	return _patch_manager.is_matching_file(filename, patch_extension, game_name)
 
-func ensure_patch_file_exists_or_download(node: Node, active_launch_game: String, patch_extension: String, callback: Callable) -> void:
-	_patch_manager.ensure(node, active_launch_game, patch_extension, callback)
+func ensure_patch_file_exists_or_download(node: Node, active_launch_game: String, patch_extension: String, callback: Callable = Callable()) -> Dictionary:
+	var comp = AsyncCompletion.new()
+	var internal_cb = func(ok: bool, val: String):
+		if callback.is_valid():
+			callback.call(ok, val)
+		comp.finish(ok, val)
+
+	_patch_manager.ensure(node, active_launch_game, patch_extension, internal_cb)
+	await comp.wait_completed(node)
+	return {"success": comp.ok, "path": comp.val if comp.ok else "", "error": comp.val if not comp.ok else ""}
 
 func fallback_download_seed_zip(node: Node, active_launch_game: String, patch_extension: String, callback: Callable) -> void:
 	_patch_manager.fallback(node, active_launch_game, patch_extension, callback)
@@ -2062,47 +1391,11 @@ func fallback_download_seed_zip(node: Node, active_launch_game: String, patch_ex
 #             MODDING STATUS & PROGRESS TRACKING
 # =====================================================================
 
-func _update_modding_status(node: Node, message: String, pct: int) -> void:
-	if not is_instance_valid(node):
-		return
-	if node.has_method("set_modding_status"):
-		node.set_modding_status(message, pct)
-		return
-	elif node.has_node("%LaunchOverlay") and node.get_node("%LaunchOverlay").has_method("set_modding_status"):
-		node.get_node("%LaunchOverlay").set_modding_status(message, pct)
-		return
-	if node.has_node("%LaunchOverlay"):
-		node.get_node("%LaunchOverlay").visible = true
-	if node.has_node("%PathSection"):
-		node.get_node("%PathSection").visible = false
-	if node.has_node("%EmulatorPathSection"):
-		node.get_node("%EmulatorPathSection").visible = false
-	if node.has_node("%GameSelectionSection"):
-		node.get_node("%GameSelectionSection").visible = false
-	if node.has_node("%LaunchConfirmBtn"):
-		node.get_node("%LaunchConfirmBtn").visible = false
-	if node.has_node("%LaunchProgressBar"):
-		var pbar = node.get_node("%LaunchProgressBar")
-		pbar.visible = true
-		pbar.value = pct
-	if "launch_title" in node and is_instance_valid(node.launch_title):
-		node.launch_title.text = "Modding & Launching Game"
-	if "launch_instructions" in node and is_instance_valid(node.launch_instructions):
-		node.launch_instructions.text = message
+func _update_modding_status(_node: Node = null, message: String = "", pct: int = 0) -> void:
+	modding_status_updated.emit(message, pct)
 
-func _dismiss_modding_overlay(node: Node) -> void:
-	if not is_instance_valid(node):
-		return
-	if node.has_node("%LaunchOverlay"):
-		var overlay = node.get_node("%LaunchOverlay")
-		if overlay.has_method("close"):
-			overlay.close()
-		else:
-			overlay.visible = false
-	if node.has_node("%LaunchProgressBar"):
-		node.get_node("%LaunchProgressBar").visible = false
-	if node.has_method("_render_play_dashboard"):
-		node._render_play_dashboard()
+func _dismiss_modding_overlay(_node: Node = null) -> void:
+	overlay_dismiss_requested.emit()
 
 func _check_extension_exists_in_dir(dir_path: String, target_ext: String) -> bool:
 	var da: DirAccess = DirAccess.open(dir_path)

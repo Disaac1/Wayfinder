@@ -33,7 +33,6 @@
   ],
   "rom_aliases": [
     "Castlevania - Symphony of the Night (USA).bin",
-    "Castlevania - Symphony of the Night (USA) (Track 1).bin",
     "slus-00067.bin",
     "sotn.bin"
   ],
@@ -66,4 +65,4 @@
     "source_url": "https://github.com/Michpem/SOTN-AP-MapTracker/releases/tag/0.2.15",
     "auto_tracking": true
   }
-}
+}

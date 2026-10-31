@@ -9,16 +9,6 @@ static var REGISTRY: Dictionary = {}
 static var _slug_map_cache: Dictionary = {}
 static var _slug_map_initialized: bool = false
 
-# Normalizes string for alias lookup
-static func _normalize_key(s: String) -> String:
-	var result = s.to_lower()
-	for ch in [":", "-", "_", " ", "'", ".", "(", ")", "[", "]", "é"]:
-		if ch == "é":
-			result = result.replace(ch, "e")
-		else:
-			result = result.replace(ch, "")
-	return result
-
 # Scans available game directories to build dynamic canonical slug and alias mapping
 static func refresh_slug_cache() -> void:
 	_slug_map_initialized = false
@@ -38,12 +28,17 @@ static func _ensure_slug_cache() -> void:
 			if parsed is Dictionary and parsed.has("games"):
 				for g_name in parsed["games"].keys():
 					var g_data: Dictionary = parsed["games"][g_name]
-					var canonical_slug = g_data.get("slug", g_name.to_lower().replace(":", "").replace("-", "_").replace(" ", "_").replace("'", "").replace(".", ""))
-					_slug_map_cache[_normalize_key(g_name)] = canonical_slug
-					_slug_map_cache[g_name.to_lower().replace("-", "_").replace(" ", "_")] = canonical_slug
+					var canonical_slug = g_data.get("slug", GameIdentityResolver.slugify(g_name))
+					_slug_map_cache[GameIdentityResolver.normalize(g_name)] = canonical_slug
+					_slug_map_cache[GameIdentityResolver.slugify(g_name)] = canonical_slug
+					var canon_title: String = str(g_data.get("game_name", ""))
+					if canon_title != "":
+						_slug_map_cache[GameIdentityResolver.normalize(canon_title)] = canonical_slug
+						_slug_map_cache[GameIdentityResolver.slugify(canon_title)] = canonical_slug
 					for alias in g_data.get("aliases", []):
-						_slug_map_cache[_normalize_key(str(alias))] = canonical_slug
-						_slug_map_cache[str(alias).to_lower().replace("-", "_").replace(" ", "_")] = canonical_slug
+						var a_str: String = str(alias)
+						_slug_map_cache[GameIdentityResolver.normalize(a_str)] = canonical_slug
+						_slug_map_cache[GameIdentityResolver.slugify(a_str)] = canonical_slug
 			fa.close()
 			
 	# 2. Check cached games directories
@@ -59,9 +54,25 @@ static func _ensure_slug_cache() -> void:
 		while folder != "":
 			if dir.current_is_dir() and folder != "." and folder != "..":
 				var canonical_slug: String = folder
-				_slug_map_cache[_normalize_key(folder)] = canonical_slug
-				_slug_map_cache[folder.to_lower().replace("-", "_").replace(" ", "_")] = canonical_slug
+				_slug_map_cache[GameIdentityResolver.normalize(folder)] = canonical_slug
+				_slug_map_cache[GameIdentityResolver.slugify(folder)] = canonical_slug
 				
+				var launch_path = base_dir.path_join(folder).path_join("launch.json")
+				if FileAccess.file_exists(launch_path):
+					var fa = FileAccess.open(launch_path, FileAccess.READ)
+					if fa:
+						var parsed = JSON.parse_string(fa.get_as_text())
+						if parsed is Dictionary:
+							var g_name = parsed.get("game_name", "")
+							if g_name != "":
+								_slug_map_cache[GameIdentityResolver.normalize(str(g_name))] = canonical_slug
+								_slug_map_cache[GameIdentityResolver.slugify(str(g_name))] = canonical_slug
+							for alias in parsed.get("aliases", []):
+								var a_str: String = str(alias)
+								_slug_map_cache[GameIdentityResolver.normalize(a_str)] = canonical_slug
+								_slug_map_cache[GameIdentityResolver.slugify(a_str)] = canonical_slug
+						fa.close()
+
 				var setup_path = base_dir.path_join(folder).path_join("guided_setup.json")
 				if FileAccess.file_exists(setup_path):
 					var fa = FileAccess.open(setup_path, FileAccess.READ)
@@ -70,17 +81,18 @@ static func _ensure_slug_cache() -> void:
 						if parsed is Dictionary:
 							var g_title = parsed.get("game_title", "")
 							if g_title != "":
-								_slug_map_cache[_normalize_key(g_title)] = canonical_slug
+								_slug_map_cache[GameIdentityResolver.normalize(g_title)] = canonical_slug
+								_slug_map_cache[GameIdentityResolver.slugify(g_title)] = canonical_slug
 						fa.close()
 			folder = dir.get_next()
 
 # Helper to normalize game slug dynamically based on loaded game data & aliases
 static func get_game_slug(game_name: String) -> String:
 	_ensure_slug_cache()
-	var key = _normalize_key(game_name)
+	var key = GameIdentityResolver.normalize(game_name)
 	if _slug_map_cache.has(key):
 		return _slug_map_cache[key]
-	var fallback = game_name.to_lower().replace(":", "").replace("-", "_").replace(" ", "_").replace("é", "e").replace("'", "").replace(".", "")
+	var fallback = GameIdentityResolver.slugify(game_name)
 	if _slug_map_cache.has(fallback):
 		return _slug_map_cache[fallback]
 	return fallback
@@ -100,6 +112,10 @@ static func _get_declarative_json_path(game_name: String) -> String:
 static func has_guided_setup(game_name: String) -> bool:
 	if REGISTRY.has(game_name):
 		return true
+	var norm = GameIdentityResolver.normalize(game_name)
+	for reg_key in REGISTRY.keys():
+		if GameIdentityResolver.normalize(str(reg_key)) == norm:
+			return true
 	return _get_declarative_json_path(game_name) != ""
 
 static func get_default_config(game_name: String) -> Dictionary:
@@ -120,8 +136,16 @@ static func validate_and_create(game_name: String, schema: Dictionary) -> Dictio
 	if not has_guided_setup(game_name):
 		return {"valid": false, "reason": "No guided setup registered for " + game_name, "wizard": null}
 		
+	var script_path: String = ""
 	if REGISTRY.has(game_name):
-		var script_path = REGISTRY[game_name]
+		script_path = str(REGISTRY[game_name])
+	else:
+		var norm = GameIdentityResolver.normalize(game_name)
+		for reg_key in REGISTRY.keys():
+			if GameIdentityResolver.normalize(str(reg_key)) == norm:
+				script_path = str(REGISTRY[reg_key])
+				break
+	if script_path != "":
 		var wizard_script = load(script_path)
 		if wizard_script:
 			if wizard_script.has_method("validate_schema"):

@@ -14,10 +14,10 @@ const GuidedSetupRegistry = preload("res://scripts/guided_setup/guided_setup_reg
 @onready var remove_btn: Button = %ConfigRemoveBtn
 @onready var save_btn: Button = %ConfigSaveBtn
 
-const COLOR_HOST_PURPLE: Color = Color(0.67, 0.44, 0.98)
-const COLOR_ERROR_RED: Color = Color(1.0, 0.3, 0.3)
-const COLOR_MUTED_TEXT: Color = Color(0.6, 0.65, 0.7)
-const COLOR_GUIDED_GREEN: Color = Color(0.3, 0.9, 0.5)
+const COLOR_HOST_PURPLE: Color = UITheme.COLOR_HOST_PURPLE
+const COLOR_ERROR_RED: Color = UITheme.COLOR_ERROR_RED
+const COLOR_MUTED_TEXT: Color = UITheme.COLOR_MUTED_TEXT
+const COLOR_GUIDED_GREEN: Color = UITheme.COLOR_GUIDED_GREEN
 
 var active_game_name: String = ""
 var active_schema: Dictionary = {}

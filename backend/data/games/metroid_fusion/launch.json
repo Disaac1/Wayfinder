@@ -5,7 +5,6 @@
   "launch_mode": "ap_client",
   "patch_extension": ".apmetfus",
   "patch_extension_aliases": [
-    ".apmetfus",
     ".apmf",
     ".apgba"
   ],
@@ -35,4 +34,4 @@
     "auto_tracking": true
   },
   "install_instructions": "Tier 1 Full Support: Click Launch to automatically prepare the ROM, update client settings, and auto-start the game connected to the server. If Archipelago Client or BizHawk are missing, click Auto-Install below."
-}
+}

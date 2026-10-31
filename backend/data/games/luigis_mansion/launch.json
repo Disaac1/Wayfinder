@@ -4,15 +4,11 @@
   "support_tier": 1,
   "launch_mode": "ap_client",
   "patch_extension": ".aplm",
-  "patch_extension_aliases": [
-    ".aplm"
-  ],
   "client_tool": "archipelago_client",
   "client_component": "LM Client",
   "emulator_tool": "dolphin",
   "required_rom": "Luigi's Mansion (USA).iso",
   "rom_aliases": [
-    "Luigi's Mansion (USA).iso",
     "Luigi's Mansion (USA, Australia).iso",
     "Luigi's Mansion (NTSC-U).iso",
     "Luigis Mansion (USA).iso",

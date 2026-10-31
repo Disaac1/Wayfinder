@@ -8,6 +8,8 @@
 [ext_resource type="PackedScene" path="res://scenes/modals/generating_overlay.tscn" id="6_generating"]
 [ext_resource type="PackedScene" path="res://scenes/modals/launch_modal.tscn" id="7_launch"]
 [ext_resource type="PackedScene" path="res://scenes/modals/host_tools_modal.tscn" id="8_hosttools"]
+[ext_resource type="Script" path="res://scripts/ui/views/lobby_setup_view.gd" id="9_setup_view"]
+[ext_resource type="Script" path="res://scripts/ui/views/play_dashboard_view.gd" id="10_play_view"]
 
 [node name="Lobby" type="Control" unique_id=1766230274]
 layout_mode = 3
@@ -169,6 +171,7 @@ theme_override_colors/font_color = Color(0.9, 0.6, 0.15, 1)
 layout_mode = 2
 
 [node name="LobbySetupView" type="VBoxContainer" parent="Margin/VBox" unique_id=166881743]
+script = ExtResource("9_setup_view")
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
@@ -239,6 +242,7 @@ size_flags_horizontal = 3
 theme_override_constants/separation = 10
 
 [node name="PlayDashboardView" type="VBoxContainer" parent="Margin/VBox" unique_id=352347372]
+script = ExtResource("10_play_view")
 unique_name_in_owner = true
 visible = false
 layout_mode = 2

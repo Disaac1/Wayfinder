@@ -13,7 +13,6 @@
   "client_component": "Hades Client",
   "client_executable": "Hades.exe",
   "executable_aliases": [
-    "Hades.exe",
     "hades.exe"
   ],
   "sub_folders": [

@@ -41,7 +41,7 @@ func setup(p_data: Dictionary, local_user_id: String, local_is_host: bool) -> vo
 	# 1. Name and Host badge
 	name_label.text = p_name + (" (You)" if is_local else "")
 	if is_local:
-		name_label.add_theme_color_override("font_color", Color(0.22, 0.74, 0.97))
+		name_label.add_theme_color_override("font_color", UITheme.COLOR_LOCAL_PLAYER)
 	else:
 		name_label.remove_theme_color_override("font_color")
 
@@ -50,13 +50,13 @@ func setup(p_data: Dictionary, local_user_id: String, local_is_host: bool) -> vo
 	# 2. Status Badge
 	if not is_connected:
 		status_badge.text = "OFFLINE"
-		status_badge.add_theme_color_override("font_color", Color(0.5, 0.55, 0.6))
+		status_badge.add_theme_color_override("font_color", UITheme.COLOR_STATUS_OFFLINE)
 	elif games.size() > 0:
 		status_badge.text = "READY (" + str(games.size()) + ")"
-		status_badge.add_theme_color_override("font_color", Color(0.2, 0.85, 0.5))
+		status_badge.add_theme_color_override("font_color", UITheme.COLOR_STATUS_READY)
 	else:
 		status_badge.text = "NO GAMES"
-		status_badge.add_theme_color_override("font_color", Color(0.95, 0.75, 0.2))
+		status_badge.add_theme_color_override("font_color", UITheme.COLOR_STATUS_NOT_READY)
 
 	# 3. Games Badges
 	for child in games_container.get_children():
@@ -85,16 +85,10 @@ func setup(p_data: Dictionary, local_user_id: String, local_is_host: bool) -> vo
 		var b: float = float(hash_val & 0x0000FF) / 255.0
 		var col: Color = Color(r, g, b).lerp(Color(0.2, 0.2, 0.25), 0.45)
 		
-		var sb: StyleBoxFlat = StyleBoxFlat.new()
-		sb.bg_color = col
-		sb.corner_radius_top_left = 6
-		sb.corner_radius_top_right = 6
-		sb.corner_radius_bottom_left = 6
-		sb.corner_radius_bottom_right = 6
+		var sb: StyleBoxFlat = UITheme.create_button_style(col, 6)
 		badge.add_theme_stylebox_override("normal", sb)
 		
-		var sb_hover: StyleBoxFlat = sb.duplicate()
-		sb_hover.bg_color = col.lightened(0.2)
+		var sb_hover: StyleBoxFlat = UITheme.create_hover_style(sb, 0.2)
 		badge.add_theme_stylebox_override("hover", sb_hover)
 		
 		if is_local:

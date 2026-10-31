@@ -21,7 +21,7 @@
     "rng_start_gear": false,
     "random_shop": "on",
     "shop_prices": false,
-    "relic_suprise": false,
+    "relic_surprise": false,
     "enemysanity": false,
     "death_link": false
   },
@@ -64,7 +64,7 @@
                 "rng_start_gear": false,
                 "random_shop": "on",
                 "shop_prices": false,
-                "relic_suprise": false,
+                "relic_surprise": false,
                 "enemysanity": false,
                 "death_link": false
               }
@@ -94,7 +94,7 @@
                 "rng_start_gear": false,
                 "random_shop": "off",
                 "shop_prices": false,
-                "relic_suprise": false,
+                "relic_surprise": false,
                 "enemysanity": false,
                 "death_link": false
               }
@@ -124,7 +124,7 @@
                 "rng_start_gear": true,
                 "random_shop": "on",
                 "shop_prices": true,
-                "relic_suprise": true,
+                "relic_surprise": true,
                 "enemysanity": true,
                 "death_link": true
               }
@@ -335,7 +335,7 @@
         },
         {
           "type": "toggle",
-          "option_key": "relic_suprise",
+          "option_key": "relic_surprise",
           "label": "Relic Surprise (All relics disguise as identical mystery sprites)"
         }
       ]

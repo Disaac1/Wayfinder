@@ -68,7 +68,7 @@ func build_wizard_ui(container: VBoxContainer, on_change_cb: Callable) -> void:
 	var title_lbl = Label.new()
 	title_lbl.text = _get_game_title() + " Guided Setup"
 	title_lbl.add_theme_font_size_override("font_size", 16)
-	title_lbl.add_theme_color_override("font_color", Color(0.2, 0.8, 1.0))
+	title_lbl.add_theme_color_override("font_color", UITheme.COLOR_ACCENT_CYAN)
 	title_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top_bar.add_child(title_lbl)
 	
@@ -98,26 +98,12 @@ func build_wizard_ui(container: VBoxContainer, on_change_cb: Callable) -> void:
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn.custom_minimum_size = Vector2(0, 36)
 		
-		var style = StyleBoxFlat.new()
-		style.corner_radius_top_left = 6
-		style.corner_radius_top_right = 6
-		style.corner_radius_bottom_left = 6
-		style.corner_radius_bottom_right = 6
+		var is_active: bool = (step_num == current_step)
+		var text_color: Color = Color.WHITE if is_active else UITheme.COLOR_MUTED_TEXT
+		btn.add_theme_color_override("font_color", text_color)
 		
-		if step_num == current_step:
-			btn.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
-			style.bg_color = Color(0.25, 0.45, 0.85)
-		else:
-			btn.add_theme_color_override("font_color", Color(0.6, 0.65, 0.75))
-			style.bg_color = Color(0.14, 0.16, 0.22)
-			
-		btn.add_theme_stylebox_override("normal", style)
-		var h_style = style.duplicate()
-		h_style.bg_color = style.bg_color.lightened(0.15)
-		btn.add_theme_stylebox_override("hover", h_style)
-		var p_style = style.duplicate()
-		p_style.bg_color = style.bg_color.darkened(0.1)
-		btn.add_theme_stylebox_override("pressed", p_style)
+		var bg_color: Color = UITheme.COLOR_BTN_PRIMARY_BG if is_active else UITheme.COLOR_BTN_SECONDARY_BG
+		UITheme.apply_button_styles(btn, bg_color, 6)
 			
 		btn.pressed.connect(func():
 			current_step = step_num
@@ -161,19 +147,7 @@ func build_wizard_ui(container: VBoxContainer, on_change_cb: Callable) -> void:
 		next_btn.focus_mode = Control.FOCUS_NONE
 		next_btn.text = "Next Step ▶"
 		next_btn.custom_minimum_size = Vector2(120, 36)
-		var style = StyleBoxFlat.new()
-		style.bg_color = Color(0.18, 0.55, 0.35)
-		style.corner_radius_top_left = 6
-		style.corner_radius_top_right = 6
-		style.corner_radius_bottom_left = 6
-		style.corner_radius_bottom_right = 6
-		next_btn.add_theme_stylebox_override("normal", style)
-		var h_style = style.duplicate()
-		h_style.bg_color = style.bg_color.lightened(0.15)
-		next_btn.add_theme_stylebox_override("hover", h_style)
-		var p_style = style.duplicate()
-		p_style.bg_color = style.bg_color.darkened(0.1)
-		next_btn.add_theme_stylebox_override("pressed", p_style)
+		UITheme.apply_button_styles(next_btn, UITheme.COLOR_BTN_SUCCESS_BG, 6)
 		next_btn.pressed.connect(func():
 			current_step += 1
 			build_wizard_ui(container, on_change_cb)
@@ -197,7 +171,7 @@ func add_step_description(container: VBoxContainer, text: String) -> void:
 	var desc = Label.new()
 	desc.text = text
 	desc.add_theme_font_size_override("font_size", 14)
-	desc.add_theme_color_override("font_color", Color(0.9, 0.8, 0.3))
+	desc.add_theme_color_override("font_color", UITheme.COLOR_WARNING_YELLOW)
 	container.add_child(desc)
 
 func add_card_grid(container: VBoxContainer, items: Array, columns: int, selected_val, on_select: Callable) -> GridContainer:
@@ -221,25 +195,10 @@ func add_card_grid(container: VBoxContainer, items: Array, columns: int, selecte
 		var item_val = item.get("val", item_id)
 		var is_selected = (str(selected_val) == str(item_id) or str(selected_val) == str(item_val))
 		
-		var style = StyleBoxFlat.new()
-		style.bg_color = Color(0.2, 0.45, 0.7) if is_selected else Color(0.14, 0.16, 0.22)
-		style.border_width_left = 2 if is_selected else 1
-		style.border_width_top = 2 if is_selected else 1
-		style.border_width_right = 2 if is_selected else 1
-		style.border_width_bottom = 2 if is_selected else 1
-		style.border_color = Color(0.4, 0.8, 1.0) if is_selected else Color(0.3, 0.35, 0.45)
-		style.corner_radius_top_left = 6
-		style.corner_radius_top_right = 6
-		style.corner_radius_bottom_left = 6
-		style.corner_radius_bottom_right = 6
-		btn.add_theme_stylebox_override("normal", style)
-		var hover_style = style.duplicate()
-		hover_style.bg_color = style.bg_color.lightened(0.15)
-		hover_style.border_color = Color(0.5, 0.85, 1.0)
-		btn.add_theme_stylebox_override("hover", hover_style)
-		var pressed_style = style.duplicate()
-		pressed_style.bg_color = style.bg_color.darkened(0.1)
-		btn.add_theme_stylebox_override("pressed", pressed_style)
+		var bg_col: Color = UITheme.COLOR_CARD_SELECTED_BG if is_selected else UITheme.COLOR_BG_DARK
+		var border_col: Color = UITheme.COLOR_BORDER_FOCUS if is_selected else UITheme.COLOR_BORDER_DEFAULT
+		var border_w: int = 2 if is_selected else 1
+		UITheme.apply_button_styles(btn, bg_col, 6, border_col, border_w, UITheme.COLOR_BORDER_HOVER)
 		
 		btn.pressed.connect(func():
 			on_select.call(item_id, item)

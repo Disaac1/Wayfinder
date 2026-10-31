@@ -1,49 +1,26 @@
 class_name RomCatalogManager
 extends RefCounted
 
-const ROM_JSON_PATH: String = "user://rom.json"
 const ROMS_JSON_PATH: String = "user://roms.json"
 const DEFAULT_FALLBACK_URL: String = "https://lodestone.disaac1.com/roms.json"
 
-static func get_catalog_path() -> String:
-	if FileAccess.file_exists(ROM_JSON_PATH):
-		return ROM_JSON_PATH
-	if FileAccess.file_exists(ROMS_JSON_PATH):
-		return ROMS_JSON_PATH
-	return ROM_JSON_PATH
 
 static func load_catalog() -> Dictionary:
-	var paths_to_check: Array[String] = [
-		ROM_JSON_PATH,
-		ROMS_JSON_PATH,
-		"res://rom.json",
-		"res://roms.json",
-		OS.get_executable_path().get_base_dir().path_join("rom.json"),
-		OS.get_executable_path().get_base_dir().path_join("roms.json")
-	]
-	
 	var catalog: Dictionary = {}
-	for p in paths_to_check:
-		if FileAccess.file_exists(p):
-			var f: FileAccess = FileAccess.open(p, FileAccess.READ)
-			if f:
-				var parsed: Variant = JSON.parse_string(f.get_as_text())
-				f.close()
-				if parsed is Dictionary:
-					for k in parsed.keys():
-						catalog[k] = parsed[k]
-					break
+	if FileAccess.file_exists(ROMS_JSON_PATH):
+		var f: FileAccess = FileAccess.open(ROMS_JSON_PATH, FileAccess.READ)
+		if f:
+			var parsed: Variant = JSON.parse_string(f.get_as_text())
+			f.close()
+			if parsed is Dictionary:
+				for k in parsed.keys():
+					catalog[k] = parsed[k]
+
 	return catalog
 
 static func save_catalog(data: Dictionary) -> bool:
 	var json_text: String = JSON.stringify(data, "  ")
 	var success_count: int = 0
-	
-	var f1: FileAccess = FileAccess.open(ROM_JSON_PATH, FileAccess.WRITE)
-	if f1:
-		f1.store_string(json_text)
-		f1.close()
-		success_count += 1
 		
 	var f2: FileAccess = FileAccess.open(ROMS_JSON_PATH, FileAccess.WRITE)
 	if f2:
@@ -55,7 +32,7 @@ static func save_catalog(data: Dictionary) -> bool:
 
 static func get_catalog_info() -> Dictionary:
 	var cat: Dictionary = load_catalog()
-	var file_found: bool = FileAccess.file_exists(ROM_JSON_PATH) or FileAccess.file_exists(ROMS_JSON_PATH)
+	var file_found: bool = FileAccess.file_exists(ROMS_JSON_PATH)
 	var configured_count: int = 0
 	
 	for k in cat.keys():
@@ -67,7 +44,7 @@ static func get_catalog_info() -> Dictionary:
 			
 	return {
 		"exists": file_found,
-		"path": get_catalog_path(),
+		"path": ROMS_JSON_PATH,
 		"total_count": cat.size(),
 		"configured_count": configured_count,
 		"entries": cat

@@ -123,14 +123,14 @@ func _refresh_quick_actions() -> void:
 		conn_address_label.text = ap_url
 		if ap_url.begins_with("wss://") or "/ap/" in ap_url:
 			conn_mode_badge.text = "🔒 Cloud Relay (15s Heartbeat Active)"
-			conn_mode_badge.add_theme_color_override("font_color", Color(0.3, 0.9, 0.5))
+			conn_mode_badge.add_theme_color_override("font_color", UITheme.COLOR_GUIDED_GREEN)
 		else:
 			conn_mode_badge.text = "🌐 Direct Server IP"
-			conn_mode_badge.add_theme_color_override("font_color", Color(0.4, 0.7, 1.0))
+			conn_mode_badge.add_theme_color_override("font_color", UITheme.COLOR_PRIMARY_BLUE)
 	else:
 		conn_address_label.text = "Server not yet started (generate seed to launch)"
 		conn_mode_badge.text = "⚪ Standby"
-		conn_mode_badge.add_theme_color_override("font_color", Color(0.6, 0.65, 0.75))
+		conn_mode_badge.add_theme_color_override("font_color", UITheme.COLOR_MUTED_TEXT)
 
 	for child in slots_container.get_children():
 		child.queue_free()
@@ -140,7 +140,7 @@ func _refresh_quick_actions() -> void:
 	if players_list.is_empty():
 		var empty_lbl = Label.new()
 		empty_lbl.text = "No players currently in room."
-		empty_lbl.add_theme_color_override("font_color", Color(0.6, 0.65, 0.75))
+		empty_lbl.add_theme_color_override("font_color", UITheme.COLOR_MUTED_TEXT)
 		slots_container.add_child(empty_lbl)
 		return
 		
@@ -150,13 +150,7 @@ func _refresh_quick_actions() -> void:
 		var games_str: String = ", ".join(p_games) if not p_games.is_empty() else "No Game"
 		
 		var row: PanelContainer = PanelContainer.new()
-		var row_style = StyleBoxFlat.new()
-		row_style.bg_color = Color(0.14, 0.16, 0.22, 0.9)
-		row_style.set_corner_radius_all(6)
-		row_style.content_margin_left = 12
-		row_style.content_margin_top = 8
-		row_style.content_margin_right = 12
-		row_style.content_margin_bottom = 8
+		var row_style: StyleBoxFlat = UITheme.create_card_style()
 		row.add_theme_stylebox_override("panel", row_style)
 		
 		var hbox: HBoxContainer = HBoxContainer.new()
@@ -165,14 +159,14 @@ func _refresh_quick_actions() -> void:
 		var name_lbl: Label = Label.new()
 		name_lbl.text = "👤 " + p_name + " (" + games_str + ")"
 		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		name_lbl.add_theme_color_override("font_color", Color(0.9, 0.95, 1.0))
+		name_lbl.add_theme_color_override("font_color", UITheme.COLOR_TEXT_LIGHT)
 		hbox.add_child(name_lbl)
 		
 		# Release button
 		var rel_btn: Button = Button.new()
 		rel_btn.text = "Release Checks"
 		rel_btn.tooltip_text = "Send out all remaining items for " + p_name + " (/release " + p_name + ")"
-		rel_btn.add_theme_color_override("font_color", Color(0.38, 0.82, 0.6))
+		rel_btn.add_theme_color_override("font_color", UITheme.COLOR_SUCCESS_GREEN)
 		rel_btn.pressed.connect(_show_confirm_command.bind(
 			"Release Checks for " + p_name,
 			"Are you sure you want to release all checks for " + p_name + "? All remaining items in their world will be sent to the multiworld.",
@@ -184,7 +178,7 @@ func _refresh_quick_actions() -> void:
 		var col_btn: Button = Button.new()
 		col_btn.text = "Collect Items"
 		col_btn.tooltip_text = "Collect all remaining items for " + p_name + " (/collect " + p_name + ")"
-		col_btn.add_theme_color_override("font_color", Color(0.4, 0.75, 1.0))
+		col_btn.add_theme_color_override("font_color", UITheme.COLOR_PRIMARY_BLUE)
 		col_btn.pressed.connect(_show_confirm_command.bind(
 			"Collect Items for " + p_name,
 			"Are you sure you want to collect all items for " + p_name + "?",

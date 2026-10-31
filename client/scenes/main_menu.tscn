@@ -4,6 +4,7 @@
 [ext_resource type="Theme" uid="uid://cljyxg4h2rvd5" path="res://themes/main_theme.tres" id="1_theme"]
 [ext_resource type="Script" uid="uid://d3ya2bo2v684r" path="res://scripts/ui/main_menu.gd" id="1_xxxx"]
 [ext_resource type="PackedScene" path="res://scenes/modals/rom_catalog_modal.tscn" id="3_rom_modal"]
+[ext_resource type="PackedScene" path="res://scenes/modals/update_overlay.tscn" id="4_update_overlay"]
 
 [node name="MainMenu" type="Control" unique_id=646118204]
 layout_mode = 3
@@ -243,3 +244,8 @@ ok_button_text = "Open"
 file_mode = 0
 access = 2
 filters = PackedStringArray("*.json ; JSON Files")
+
+[node name="UpdateOverlay" parent="." instance=ExtResource("4_update_overlay")]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1

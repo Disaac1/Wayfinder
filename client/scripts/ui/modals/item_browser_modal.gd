@@ -12,7 +12,7 @@ var is_location_mode: bool = false
 var available_items: Array = []
 var search_query: String = ""
 
-const COLOR_SELECTED: Color = Color(0.67, 0.44, 0.98)
+const COLOR_SELECTED: Color = UITheme.COLOR_SELECTED
 
 func _ready() -> void:
 	close_btn.pressed.connect(close)
